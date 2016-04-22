@@ -967,10 +967,9 @@ pip install distorm3
     <link href="http://yoursite.com/blog/2016/03/07/rootkit-tutorial/"/>
     <id>http://yoursite.com/blog/2016/03/07/rootkit-tutorial/</id>
     <published>2016-03-08T02:25:37.000Z</published>
-    <updated>2016-04-21T20:55:39.000Z</updated>
+    <updated>2016-04-22T15:35:52.000Z</updated>
     
-    <content type="html">&lt;hr&gt;
-&lt;blockquote&gt;
+    <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
 &lt;li&gt;0x1: Definition of rootkit &lt;/li&gt;
 &lt;li&gt;0x2: Classification of Rootkit&lt;/li&gt;
@@ -1117,8 +1116,7 @@ pip install distorm3
     
     <summary type="html">
     
-      &lt;hr&gt;
-&lt;blockquote&gt;
+      &lt;blockquote&gt;
 &lt;ul&gt;
 &lt;li&gt;0x1: Definition of rootkit &lt;/li&gt;
 &lt;li&gt;0x2: Classification of Rootkit&lt;/li&gt;
