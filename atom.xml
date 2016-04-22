@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-04-21T20:57:56.000Z</updated>
+  <updated>2016-04-22T06:41:00.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -16,9 +16,40 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>电影无人区的思考</title>
+    <link href="http://yoursite.com/blog/2016/04/22/wurenqu/"/>
+    <id>http://yoursite.com/blog/2016/04/22/wurenqu/</id>
+    <published>2016-04-22T06:39:20.000Z</published>
+    <updated>2016-04-22T06:41:00.000Z</updated>
+    
+    <content type="html">&lt;p&gt;从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。&lt;/p&gt;
+&lt;p&gt;今天是2016年，又一个三年，这是我第三次看这部电影，而这时候，却身处美国的一个中西部农村。这种黑色、公路片对我一直有巨大的诱惑力，之前看过《两杆大烟枪》、《老无所依》、《不准掉头》、《偷拐抢骗》、《杀手没有假期》，还有宁浩的疯狂系列，都非常喜欢。&lt;/p&gt;
+&lt;p&gt;黑色让人沉思，公路让人浮想联翩。想找个假期能狂奔在美国西部的公路上，没有尽头，去体验那种放肆。&lt;/p&gt;
+&lt;p&gt;无人区，这里没有人，只有动物。&lt;br&gt;一个没有人的区域，自然没有法律、没有道德、没有人情，只有生物本能的生与死、苦与乐。&lt;br&gt;而人与动物的区别，就是，人会用火。&lt;br&gt;火可以用来取暖，炙热情感。就像电影中的潘肖，牺牲自己也要让她把这个故事带出去。&lt;/p&gt;
+&lt;p&gt;好温馨的表达，人会用火。多点燃你心中的火，多温暖你身边的人。&lt;/p&gt;
+&lt;p&gt;突然用电影来表达这些，感觉实在是太不和谐了。其实只是单纯的记录一下看过的这部电影。&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。&lt;/p&gt;
+&lt;p&gt;今天是2016年，又一个三年，这是我第三次看这部电影，而这时候
+    
+    </summary>
+    
+      <category term="Life" scheme="http://yoursite.com/categories/Life/"/>
+    
+    
+      <category term="Life" scheme="http://yoursite.com/tags/Life/"/>
+    
+      <category term="Movie" scheme="http://yoursite.com/tags/Movie/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Linux系统调用权威指南</title>
-    <link href="http://yoursite.com/2016/04/08/2016-04-08-linux-syscalls/"/>
-    <id>http://yoursite.com/2016/04/08/2016-04-08-linux-syscalls/</id>
+    <link href="http://yoursite.com/blog/2016/04/08/linux-syscalls/"/>
+    <id>http://yoursite.com/blog/2016/04/08/linux-syscalls/</id>
     <published>2016-04-08T21:08:08.000Z</published>
     <updated>2016-04-21T20:57:56.000Z</updated>
     
@@ -522,8 +553,8 @@ $ echo $?
   
   <entry>
     <title>kbeast Analysis and Detection</title>
-    <link href="http://yoursite.com/2016/04/02/2016-04-02-kbeast-analysis-detection/"/>
-    <id>http://yoursite.com/2016/04/02/2016-04-02-kbeast-analysis-detection/</id>
+    <link href="http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/"/>
+    <id>http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/</id>
     <published>2016-04-02T21:24:15.000Z</published>
     <updated>2016-04-21T20:57:06.000Z</updated>
     
@@ -693,8 +724,8 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
   
   <entry>
     <title>A Comprehensive Virtualized Enviroment Setup and Analysis</title>
-    <link href="http://yoursite.com/2016/03/30/2016-03-30-virt-setup-analysis/"/>
-    <id>http://yoursite.com/2016/03/30/2016-03-30-virt-setup-analysis/</id>
+    <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
+    <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
     <published>2016-03-31T02:17:12.000Z</published>
     <updated>2016-04-21T20:56:29.000Z</updated>
     
@@ -915,15 +946,15 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
     
     
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
+    
+      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
     
@@ -933,8 +964,8 @@ pip install distorm3
   
   <entry>
     <title>A Comprehensive Tutorial of Rootkit</title>
-    <link href="http://yoursite.com/2016/03/07/2016-03-07-rootkit-tutorial/"/>
-    <id>http://yoursite.com/2016/03/07/2016-03-07-rootkit-tutorial/</id>
+    <link href="http://yoursite.com/blog/2016/03/07/rootkit-tutorial/"/>
+    <id>http://yoursite.com/blog/2016/03/07/rootkit-tutorial/</id>
     <published>2016-03-08T02:25:37.000Z</published>
     <updated>2016-04-21T20:55:39.000Z</updated>
     
@@ -1121,8 +1152,8 @@ pip install distorm3
   
   <entry>
     <title>内存持久战-防御机制</title>
-    <link href="http://yoursite.com/2016/02/23/2016-02-23-memorywar-defense/"/>
-    <id>http://yoursite.com/2016/02/23/2016-02-23-memorywar-defense/</id>
+    <link href="http://yoursite.com/blog/2016/02/23/memorywar-defense/"/>
+    <id>http://yoursite.com/blog/2016/02/23/memorywar-defense/</id>
     <published>2016-02-23T16:54:07.000Z</published>
     <updated>2016-04-21T20:54:57.000Z</updated>
     
@@ -1173,11 +1204,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
       <category term="Defense" scheme="http://yoursite.com/tags/Defense/"/>
     
@@ -1185,8 +1216,8 @@ pip install distorm3
   
   <entry>
     <title>Memory page classificatition</title>
-    <link href="http://yoursite.com/2016/02/20/2016-02-20-memory-classification/"/>
-    <id>http://yoursite.com/2016/02/20/2016-02-20-memory-classification/</id>
+    <link href="http://yoursite.com/blog/2016/02/20/memory-classification/"/>
+    <id>http://yoursite.com/blog/2016/02/20/memory-classification/</id>
     <published>2016-02-21T03:03:23.000Z</published>
     <updated>2016-04-21T01:23:47.000Z</updated>
     
@@ -1207,8 +1238,8 @@ pip install distorm3
   
   <entry>
     <title>Understanding your kernel oops</title>
-    <link href="http://yoursite.com/2016/02/20/2016-02-20-kernel-opps/"/>
-    <id>http://yoursite.com/2016/02/20/2016-02-20-kernel-opps/</id>
+    <link href="http://yoursite.com/blog/2016/02/20/kernel-opps/"/>
+    <id>http://yoursite.com/blog/2016/02/20/kernel-opps/</id>
     <published>2016-02-21T03:01:20.000Z</published>
     <updated>2016-04-21T01:23:47.000Z</updated>
     
@@ -1229,8 +1260,8 @@ pip install distorm3
   
   <entry>
     <title>Valgrind 内存检测</title>
-    <link href="http://yoursite.com/2016/02/20/2016-02-20-valgrind-memory/"/>
-    <id>http://yoursite.com/2016/02/20/2016-02-20-valgrind-memory/</id>
+    <link href="http://yoursite.com/blog/2016/02/20/valgrind-memory/"/>
+    <id>http://yoursite.com/blog/2016/02/20/valgrind-memory/</id>
     <published>2016-02-21T02:55:45.000Z</published>
     <updated>2016-04-21T01:23:47.000Z</updated>
     
@@ -1249,8 +1280,8 @@ pip install distorm3
   
   <entry>
     <title>内存持久战-攻击模型</title>
-    <link href="http://yoursite.com/2016/02/18/2016-02-18-memorywar-attack/"/>
-    <id>http://yoursite.com/2016/02/18/2016-02-18-memorywar-attack/</id>
+    <link href="http://yoursite.com/blog/2016/02/18/memorywar-attack/"/>
+    <id>http://yoursite.com/blog/2016/02/18/memorywar-attack/</id>
     <published>2016-02-19T03:06:45.000Z</published>
     <updated>2016-04-21T20:54:33.000Z</updated>
     
@@ -1292,18 +1323,18 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
   <entry>
     <title>内存持久战-内存安全性</title>
-    <link href="http://yoursite.com/2016/02/17/2016-02-17-memory-safety/"/>
-    <id>http://yoursite.com/2016/02/17/2016-02-17-memory-safety/</id>
+    <link href="http://yoursite.com/blog/2016/02/17/memory-safety/"/>
+    <id>http://yoursite.com/blog/2016/02/17/memory-safety/</id>
     <published>2016-02-18T01:07:28.000Z</published>
     <updated>2016-04-21T20:53:49.000Z</updated>
     
@@ -1376,18 +1407,18 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
   <entry>
     <title>我的百度过“度”期</title>
-    <link href="http://yoursite.com/2016/01/08/2016-01-08-baiduculture/"/>
-    <id>http://yoursite.com/2016/01/08/2016-01-08-baiduculture/</id>
+    <link href="http://yoursite.com/blog/2016/01/08/baiduculture/"/>
+    <id>http://yoursite.com/blog/2016/01/08/baiduculture/</id>
     <published>2016-01-08T18:19:18.000Z</published>
     <updated>2016-04-21T20:52:55.000Z</updated>
     
@@ -1481,8 +1512,8 @@ pip install distorm3
   
   <entry>
     <title>云平台高可用之虚拟机迁移</title>
-    <link href="http://yoursite.com/2016/01/02/2016-01-02-highavailability-migration/"/>
-    <id>http://yoursite.com/2016/01/02/2016-01-02-highavailability-migration/</id>
+    <link href="http://yoursite.com/blog/2016/01/02/highavailability-migration/"/>
+    <id>http://yoursite.com/blog/2016/01/02/highavailability-migration/</id>
     <published>2016-01-03T04:02:39.000Z</published>
     <updated>2016-04-21T20:52:09.000Z</updated>
     
@@ -1582,8 +1613,8 @@ pip install distorm3
   
   <entry>
     <title>KVM/Qemu虚拟机简介</title>
-    <link href="http://yoursite.com/2016/01/01/2016-01-01-kvm-qemu-bytalk/"/>
-    <id>http://yoursite.com/2016/01/01/2016-01-01-kvm-qemu-bytalk/</id>
+    <link href="http://yoursite.com/blog/2016/01/01/kvm-qemu-bytalk/"/>
+    <id>http://yoursite.com/blog/2016/01/01/kvm-qemu-bytalk/</id>
     <published>2016-01-01T21:05:23.000Z</published>
     <updated>2016-04-21T20:51:19.000Z</updated>
     
@@ -1644,8 +1675,8 @@ make &amp;amp;&amp;amp; make install
   
   <entry>
     <title>PIN for Dynamic Binary Instrumentation</title>
-    <link href="http://yoursite.com/2015/12/18/2015-12-18-pin-for-dynamic-binary-instrumentation/"/>
-    <id>http://yoursite.com/2015/12/18/2015-12-18-pin-for-dynamic-binary-instrumentation/</id>
+    <link href="http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/"/>
+    <id>http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/</id>
     <published>2015-12-18T23:39:46.000Z</published>
     <updated>2016-04-21T20:50:26.000Z</updated>
     
@@ -1791,8 +1822,8 @@ KNOB&amp;lt;&lt;span class=&quot;built_in&quot;&gt;string&lt;/span&gt;&amp;gt; K
   
   <entry>
     <title>像黑客一样写博客: Octopress + Github Pages</title>
-    <link href="http://yoursite.com/2015/12/16/2015-12-16-octopress-tutorial/"/>
-    <id>http://yoursite.com/2015/12/16/2015-12-16-octopress-tutorial/</id>
+    <link href="http://yoursite.com/blog/2015/12/16/octopress-tutorial/"/>
+    <id>http://yoursite.com/blog/2015/12/16/octopress-tutorial/</id>
     <published>2015-12-17T00:45:50.000Z</published>
     <updated>2016-04-21T20:49:18.000Z</updated>
     
