@@ -1,0 +1,1218 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="System,Kernel,Syscall,OS," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.JPG?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="长话短说（Too long;Don’t read)
+什么是系统调用
+准备知识
+硬件与软件
+用户程序，内核与CPU特权级
+中断
+特殊模块寄存器
+编写汇编代码触发系统调用不是个好主意
+
+
+
+
+传统系统调用
+自己写汇编代码使用传统系统调用
+内核层面：int $0x80入口
+iret: 从传统系统调用返回
+
+
+快速系统调用
+32位快速系统调用
+sysenter/sysexit
+_ _kernel_vs">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux系统调用权威指南">
+<meta property="og:url" content="http://yoursite.com/2016/04/08/2016-04-08-linux-syscalls/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="长话短说（Too long;Don’t read)
+什么是系统调用
+准备知识
+硬件与软件
+用户程序，内核与CPU特权级
+中断
+特殊模块寄存器
+编写汇编代码触发系统调用不是个好主意
+
+
+
+
+传统系统调用
+自己写汇编代码使用传统系统调用
+内核层面：int $0x80入口
+iret: 从传统系统调用返回
+
+
+快速系统调用
+32位快速系统调用
+sysenter/sysexit
+_ _kernel_vs">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/idt.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/isr_stack.png">
+<meta property="og:updated_time" content="2016-04-21T20:57:56.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux系统调用权威指南">
+<meta name="twitter:description" content="长话短说（Too long;Don’t read)
+什么是系统调用
+准备知识
+硬件与软件
+用户程序，内核与CPU特权级
+中断
+特殊模块寄存器
+编写汇编代码触发系统调用不是个好主意
+
+
+
+
+传统系统调用
+自己写汇编代码使用传统系统调用
+内核层面：int $0x80入口
+iret: 从传统系统调用返回
+
+
+快速系统调用
+32位快速系统调用
+sysenter/sysexit
+_ _kernel_vs">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/idt.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> Linux系统调用权威指南 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Linux系统调用权威指南
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-04-08T17:08:08-04:00" content="2016-04-08">
+              2016-04-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/operating-system/" itemprop="url" rel="index">
+                    <span itemprop="name">operating-system</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/04/08/2016-04-08-linux-syscalls/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/08/2016-04-08-linux-syscalls/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<ul>
+<li>长话短说（Too long;Don’t read)</li>
+<li>什么是系统调用</li>
+<li>准备知识<ul>
+<li>硬件与软件</li>
+<li>用户程序，内核与CPU特权级</li>
+<li>中断</li>
+<li>特殊模块寄存器</li>
+<li>编写汇编代码触发系统调用不是个好主意</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>传统系统调用<ul>
+<li>自己写汇编代码使用传统系统调用</li>
+<li>内核层面：<code>int $0x80</code>入口</li>
+<li><code>iret</code>: 从传统系统调用返回</li>
+</ul>
+</li>
+<li>快速系统调用<ul>
+<li>32位快速系统调用<ul>
+<li><code>sysenter/sysexit</code></li>
+<li><code>_ _kernel_vsyscall</code>内幕</li>
+<li>自己写汇编代码使用<code>sysenter</code></li>
+<li>内核层面：<code>sysenter</code>入口</li>
+<li><code>sysexit</code>: 从<code>sysenter</code>中返回</li>
+</ul>
+</li>
+<li>64位快速系统调用<ul>
+<li><code>syscall/sysret</code></li>
+<li>自己写汇编代码使用syscall</li>
+<li>内核层面：<code>syscall</code>入口</li>
+<li>sysret: 从syscall中返回</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>syscall(2)：半手动调用syscall<ul>
+<li>glibc <code>syscall</code>封装器内幕</li>
+</ul>
+</li>
+<li>虚拟系统调用<ul>
+<li>内核中的vDSO</li>
+<li>在内存中定位vDSO</li>
+<li>glibc中的vDSO</li>
+</ul>
+</li>
+<li><code>glibc</code>系统调用封装器</li>
+<li>重要的syscall相关bugs<ul>
+<li>CVE-2010-3301</li>
+<li>Android <code>sysenter</code> ABI 破坏</li>
+</ul>
+</li>
+<li>结论</li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h2 id="长话短说-Too-long-Don’t-read"><a href="#长话短说-Too-long-Don’t-read" class="headerlink" title="长话短说(Too long; Don’t read)"></a>长话短说(Too long; Don’t read)</h2><p>文章解释了Linux程序在内核中是如何调用函数的。</p>
+<p>读完你可以知道：触发系统调用的不同方法，如何编写汇编代码触发系统调用(含代码样例), 内核执行系统调用的入口，内核从系统调用返回的出口，glibc封装器，相关bugs，还有更多，更多。</p>
+<h2 id="什么是系统调用？"><a href="#什么是系统调用？" class="headerlink" title="什么是系统调用？"></a>什么是系统调用？</h2><p>当你运行的程序调用 open,fork,read,write（以及其它类似的函数)时,就会触发系统调用。</p>
+<p>系统调用描述的是用户程序进入内核后执行的任务。用户程序利用系统调用能执行许多操作：创建进程、网络、文件以及I/O操作等。</p>
+<p><a href="http://man7.org/linux/man-pages/man2/syscalls.2.html" target="_blank" rel="external">man page for syscalls(2)</a> 列出了全部系统调用。</p>
+<p>用户程序可以通过不同的方式执行系统调用，不同CPU架构中，底层执行系统调用的指令也有所不同。</p>
+<p>作为应用程序开发者，不必刻意去考虑系统调用是如何执行的。你只需要简单的加上合适的头文件，像调用普通函数一样就可以使用系统调用了。</p>
+<p>glibc提供了封装代码将底层抽象，把你传递的参数放置好之后开始进入内核。</p>
+<p>在深入理解系统调用执行的细节之前，我们需要定义一些术语，再谈一谈后面要用到的核心知识点。</p>
+<h2 id="准备知识"><a href="#准备知识" class="headerlink" title="准备知识"></a>准备知识</h2><h3 id="硬件与软件"><a href="#硬件与软件" class="headerlink" title="硬件与软件"></a>硬件与软件</h3><p>这篇博客作以下假设：</p>
+<ul>
+<li>你在使用32位、64位Intel或AMD CPU. 文中提到的方法可能对那些使用其它系统的人同样有效，但列出的代码都是依赖CPU的。</li>
+<li>你感兴趣的是Linux kernel 3.13.0. 其它的内核版本类似，但实际的代码行号，代码架构以及文件路径会有所不同。文中也提供了3.13.0内核源代码的github链接。</li>
+<li><p>你感兴趣的是<code>glibc</code>，或者由<code>glibc</code>衍生的其它libc实现(比如<code>eglibc</code>).</p>
+<p>文中提到的x86-64指的是基于x86架构的64位Intel和AMD处理器。</p>
+</li>
+</ul>
+<h3 id="用户程序，内核与CPU特权级"><a href="#用户程序，内核与CPU特权级" class="headerlink" title="用户程序，内核与CPU特权级"></a>用户程序，内核与CPU特权级</h3><p>用户程序(如编辑器、终端、ssh进程等)需要与内核交互，内核才能代表用户程序执行一些其不能执行的操作。</p>
+<p>举个例子，如果一个用户程序需要执行一些I/O操作(open,read,write等)或者修改自身的地址空间(mmap,sbrk等)，必须要通知内核才能代表其自身完成这些操作。</p>
+<p>那么又是什么阻碍了用户程序自身执行这些操作呢？</p>
+<p>x86-64处理器引入了特权级的概念。特权级是个复杂的话题，需要另写博文详述了。当然，本文重点不在此，因此将特权级的概念简化如下：</p>
+<ol>
+<li>特权级实现了访问控制。当前特权级决定了哪些CPU指令和I/O操作能被执行。</li>
+<li>内核运行在最高特权级，称为“Ring 0”；用户程序运行在最低特权级,称为”Ring 3”.</li>
+</ol>
+<p>用户程序要执行特权操作，必须经历特权级转变的过程(从”Ring 3”到“Ring 0”),才能让内核来执行这些操作。</p>
+<p>有许多方法能引起特权级转变并触发内核执行相关操作。</p>
+<p>从常用的方法说起：中断。</p>
+<h3 id="中断"><a href="#中断" class="headerlink" title="中断"></a>中断</h3><p>可以把中断理解为硬件或软件引发的一个事件。</p>
+<p>硬件中断源于硬件设备通知内核某个特殊事件的发生。网卡收到数据包时产生的中断是比较常见的硬件中断。</p>
+<p>软件中断由某段代码的执行而引发。在x86-64系统中，执行 int指令就会引发软件中断。</p>
+<p>中断通常都会被分配一个中断号。这些中断号有着特殊的含义。</p>
+<p>想象存储在CPU内存中的一个数组，数组的每个条目都映射为一个中断号。每个条目还存储了当CPU接收到中断信号后将要执行的函数地址以及一些其它的选项，选项中含有中断处理函数应该在哪个特权级上执行的信息。</p>
+<p>下面的这张图取自Intel CPU手册，描述了数组中每个条目的存储结构。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/idt.png" alt="idt"></p>
+<p>仔细看，会发现有一个2位的域标记着特权级描述符(DPL)。这个值决定了当执行中断处理函数时CPU需要的最低特权级。</p>
+<p>当CPU接收到特定类型事件时，通过DPL信息知道它应该执行在哪个地址空间，以及事件处理器应该执行在哪个特权级上。</p>
+<p>实际上，在x86-64系统中有许多不同的方法处理中断。对这个感兴趣想了解更多的可以参考 <a href="http://wiki.osdev.org/8259_PIC" target="_blank" rel="external">8259 Programmable Interrupt Controller, Advanced Interrupt Controllers</a>和<a href="http://wiki.osdev.org/IOAPIC" target="_blank" rel="external"> IO Advanced Interrupt Controllers</a>.</p>
+<p>当处理硬件中断和软件中断时，还会涉及到其它一些复杂的工作要处理，比如中断号冲突与重映射等问题。</p>
+<p>讨论系统调用时，我们不必关注以上这些细节。</p>
+<h3 id="特殊模块寄存器"><a href="#特殊模块寄存器" class="headerlink" title="特殊模块寄存器"></a>特殊模块寄存器</h3><p>特殊模块寄存器（MSRs)是用来控制CPU某些特性的一组控制寄存器。 CPU文档中列举了每个MSRs的地址。</p>
+<p>可以执行CPU指令 <code>rdmsr/wrmsr</code>来读/写 MSRs.</p>
+<p>也有一些命令行工具可以用来读/写 MSRs. 但不建议这么做，因为修改这些值（尤其当系统在运行的时候)是相当危险的，除非你真的能做到小心翼翼。</p>
+<p>如果你不介意让你的系统不稳定或者不可恢复的损坏你的数据，你可以安装<code>msr-tools</code>工具并加载<code>msr</code>内核模块来读/写MSRs.</p>
+<pre><code>% sudo apt-get install msr-tools
+% sudo modprobe msr
+% sudo rdmsr
+</code></pre><p>下文中我们会看到一些系统调用的方法就会用到这些MSRs.</p>
+<h3 id="编写汇编代码触发系统调用不是个好主意"><a href="#编写汇编代码触发系统调用不是个好主意" class="headerlink" title="编写汇编代码触发系统调用不是个好主意"></a>编写汇编代码触发系统调用不是个好主意</h3><p>自己编写汇编代码来触发系统调用可不是个好主意。</p>
+<p>最大的原因就在于一些系统调用在执行之前或之后会有额外的代码需要在glibc中执行。</p>
+<p>在下面的例子中，我们会用到<code>exit</code>系统调用。你可以在<code>exit</code>被调用时利用<a href="http://man7.org/linux/man-pages/man3/atexit.3.html" target="_blank" rel="external"><code>atexit</code></a>注册处理函数。</p>
+<p>这些处理函数都是被glibc调用的，注意，不是kernel. 因此，当你自己写汇编代码调用<code>exit</code>时，你自己注册的处理函数是不会执行的，因为你绕过了glibc。</p>
+<p>然而，写汇编代码来执行系统调用是个不错的学习经验。</p>
+<h2 id="传统系统调用"><a href="#传统系统调用" class="headerlink" title="传统系统调用"></a>传统系统调用</h2><p>从上文的准备知识中，我们可以知道两件事情：</p>
+<ol>
+<li>可以通过软件中断来触发内核的执行</li>
+<li>可以通过汇编指令 <code>int</code> 来产生软件中断</li>
+</ol>
+<p>结合这两个概念我们再去了解Linux系统中的传统系统调用接口。</p>
+<p>Linux内核分配了一个特殊的软件中断号，让用户程序进入到内核中执行系统调用。</p>
+<p>Linux内核会为中断处理号 128(0x80)注册一个中断处理器<code>ia32-syscall</code>. 通过代码来看看到底怎么做的。</p>
+<p>内核3.13.0源码中的<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/traps.c#L770" target="_blank" rel="external"><code>arch/x86/kernel/traps.c</code></a>中有个<code>trap_init</code>函数:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> __<span class="function">init <span class="title">trap_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">        <span class="comment">/* ..... other code ... */</span></span><br><span class="line"></span><br><span class="line">        set_system_intr_gate(IA32_SYSCALL_VECTOR, ia32_syscall);</span><br></pre></td></tr></table></figure>
+<p>其中，<code>IA32_SYSCALL_VECTOR</code>在<code>arch/x86/include/asm/irq_vectors.h</code>中被定义为 <code>0x80</code>.</p>
+<p>进一步看，既然内核预留了一个软件中断供用户程序来触发内核的执行，那在这么多的系统调用中，内核又是如何知道该执行哪一个呢？</p>
+<p>这时，用户程序需要在<code>eax</code>寄存器中放入系统调用号。系统调用相关的其它参数会被传入到剩余的通用寄存器中。</p>
+<p><a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L378-L397" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a>中的注释对此有具体的介绍:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">* Emulated IA32 system calls via <span class="keyword">int</span> <span class="number">0x80</span>.</span><br><span class="line">*</span><br><span class="line">* Arguments:</span><br><span class="line">* %eax System call number.</span><br><span class="line">* %ebx Arg1</span><br><span class="line">* %ecx Arg2</span><br><span class="line">* %edx Arg3</span><br><span class="line">* %esi Arg4</span><br><span class="line">* %edi Arg5</span><br><span class="line">* %ebp Arg6    [note: not saved in the <span class="built_in">stack</span> frame, should not be touched]</span><br><span class="line">*</span><br></pre></td></tr></table></figure>
+<p>现在我们知道了如何执行系统调用以及如何传递这些参数，可以开始试着写一些内联汇编代码。</p>
+<h3 id="自己编写汇编代码使用传统系统调用"><a href="#自己编写汇编代码使用传统系统调用" class="headerlink" title="自己编写汇编代码使用传统系统调用"></a>自己编写汇编代码使用传统系统调用</h3><p>要使用传统系统调用，你可以写一小段内联汇编代码，尽管从学习的角度来看这很有用，我绝不鼓励读者们自己编写汇编代码使用系统调用。</p>
+<p>在下面的例子中，我们会试着去执行<code>exit</code>系统调用，它只需要一个参数：退出状态.</p>
+<p>首先，我们需要找到<code>exit</code>的系统调用号。Linux内核中有个文件将每个系统调用列在了一张表中。很多脚本在构建的时候会处理此文件以产生一些头文件供用户使用。</p>
+<p>看看上述的表格，可以在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_32.tbl" target="_blank" rel="external"><code>arch/x86/syscalls/syscall_32.tbl</code></a>找到:</p>
+<pre><code>1 i386 exit sys_exit
+</code></pre><p>可见 <code>exit</code>的系统调用号是1. 根据上文所述，我们需要将系统调用号写入<code>eax</code>寄存器中，以及第一个参数（退出状态)写入<code>ebx</code>寄存器中。</p>
+<p>下面介绍的一段C代码（含有一些内联汇编）做的就是上面的工作。可以看到退出状态是’42’.</p>
+<p>（实际上这个例子可以简化一些，但我认为多用一些文字描述会更有用，让那些之前从没见过GCC内联汇编代码的人也可以用下面的例子作为参考）</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> syscall_nr = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int</span> exit_status = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">asm</span> (<span class="string">"movl %0, %%eax\n"</span></span><br><span class="line">             <span class="string">"movl %1, %%ebx\n"</span></span><br><span class="line">       <span class="string">"int $0x80"</span></span><br><span class="line">    : <span class="comment">/* output parameters, we aren't outputting anything, no none */</span></span><br><span class="line">      <span class="comment">/* (none) */</span></span><br><span class="line">    : <span class="comment">/* input parameters mapped to %0 and %1, repsectively */</span></span><br><span class="line">      <span class="string">"m"</span> (syscall_nr), <span class="string">"m"</span> (exit_status)</span><br><span class="line">    : <span class="comment">/* registers that we are "clobbering", unneeded since we are calling exit */</span></span><br><span class="line">      <span class="string">"eax"</span>, <span class="string">"ebx"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来，编译，执行，然后检查退出状态。</p>
+<pre><code>$ gcc -o test test.c
+$ ./test
+$ echo $?
+42
+</code></pre><p>成功了！ 这就是我们利用软件中断来执行<code>exit</code>系统调用的全过程。</p>
+<h3 id="内核层面：int-0x80入口"><a href="#内核层面：int-0x80入口" class="headerlink" title="内核层面：int $0x80入口"></a>内核层面：<code>int $0x80</code>入口</h3><p>目前为止，我们知道了如何从用户程序中触发系统调用。<br>下面来看看内核如何利用系统调用号执行系统调用中的代码。</p>
+<p>回顾前文，内核调用<code>ia32_syscall</code>来注册系统调用处理函数。</p>
+<p>该函数是用汇编实现的，定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L426" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a>中。该函数做了很多事情，但最重要的还是它触发了实际的系统调用：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ia32_do_call:</span><br><span class="line">        <span class="function">IA32_ARG_FIXUP</span><br><span class="line">        call *<span class="title">ia32_sys_call_table</span><span class="params">(,%rax,<span class="number">8</span>)</span> <span class="meta"># xxx: rip relative</span></span></span><br></pre></td></tr></table></figure>
+<p>注意到，<code>IA32_ARG_FIXUP</code> 是一个宏，做的是重新处理初始参数，以让当前的系统调用层能正确的理解这些参数。</p>
+<p><code>ia32_sys_call_table</code> 是<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L426" target="_blank" rel="external"><code>arch/x86/ia32/syscall_ia32.c</code></a>中定义的一张表。注意代码中的最后一行 <code>#include</code>. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">sys_call_ptr_t</span> ia32_sys_call_table[__NR_ia32_syscall_max+<span class="number">1</span>] = &#123;</span><br><span class="line">        <span class="comment">/*</span><br><span class="line">         * Smells like a compiler bug -- it doesn't work</span><br><span class="line">         * when the &amp; below is removed.</span><br><span class="line">         */</span></span><br><span class="line">        [<span class="number">0</span> ... __NR_ia32_syscall_max] = &amp;compat_ni_syscall,</span><br><span class="line">#include &lt;<span class="keyword">asm</span>/syscalls_32.h&gt;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>回想一下前面提到在 <a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_32.tbl" target="_blank" rel="external"><code>arch/x86/syscalls/syscall_32.tbl</code></a> 中定义的系统调用表。</p>
+<p>一些脚本在编译的时候使用这张表生成<code>syscalls_32.h</code>头文件。头文件中由一些有效的C代码组成，就像上面一样，以<code>#include</code>的形式插入到<code>ia32_sys_call_table</code>中，里面含有系统调用号引用的函数地址。</p>
+<p>到目前为止，你已经知道如何通过传统系统调用进入内核了。</p>
+<h3 id="iret-从传统系统调用返回"><a href="#iret-从传统系统调用返回" class="headerlink" title="iret: 从传统系统调用返回"></a>iret: 从传统系统调用返回</h3><p>了解了如何通过软件中断进入内核执行系统调用之后，应该思考，内核应该如何返回到用户程序中并恢复其原始特权级呢？</p>
+<p>查阅 <a href="ftp://download.intel.com/design/processor/manuals/253668.pdf" target="_blank" rel="external">Intel Software Developer’s Manual</a> （警告：PDF很大), 可以找到一些有用的图表，描述了当特权级转变时，程序栈的状态。</p>
+<p>请看图：</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/isr_stack.png" alt="isr-stack"></p>
+<p>当用户程序利用软件中断将执行环境转变到内核函数<code>ia32_syscall</code>中时，发生特权级转变。上图描述的就是当进入到<code>ia32_syscall</code>中时栈的状态。</p>
+<p>这就意味着在<code>ia32_syscall</code>执行前，返回地址和CPU标志(用来编码特权级)以及其它的信息都被存储在栈中。</p>
+<p>如此一来，为了恢复用户程序的执行，内核只需要将栈中的这些值拷贝到相应的寄存器中。</p>
+<p>好了，这些都是如何做到的？</p>
+<p>有很多方法可以做到，其中最简单的就是使用<code>iret</code>指令。</p>
+<p>Intel指令集手册中指出，<code>iret</code>指令从栈中将返回地址和保存的寄存器的值按照初始顺序pop出来。</p>
+<pre><code>As with a real-address mode interrupt return, the IRET instruction pops the return instruction pointer, return code segment selector, and EFLAGS image from the stack to the EIP, CS, and EFLAGS registers, respectively, and then resumes execution of the interrupted program or procedure.
+</code></pre><p>在Linux内核中找到相关的代码有一点点困难，因为它们隐藏在许多宏中,类似的标志以及系统调用退出的追踪信息都会经过额外的处理。</p>
+<p>遍历内核中汇编存根里面所有的宏最终会找到<code>iret</code>，用来从系统调用返回到用户程序。</p>
+<p>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L1042-L1043" target="_blank" rel="external"><code>arch/x86/kernel/entry_64.S</code></a>中可以找到<code>irq_return</code>:</p>
+<pre><code>irq_return:
+INTERRUPT_RETURN
+</code></pre><p>其中<code>INTERRUPT_RETURN</code>在 <a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L132" target="_blank" rel="external"><code>arch/x86/include/asm/irqflags.h</code></a>被定义为<code>iretq</code></p>
+<p>到目前为止，你已经知道传统系统调用是如何工作的了。</p>
+<h2 id="快速系统调用"><a href="#快速系统调用" class="headerlink" title="快速系统调用"></a>快速系统调用</h2><p>传统的系统调用过程看起来似乎很合理，但最新的方法是不需要软件中断来触发系统调用的，而且比使用软件中断更快。</p>
+<p>这两种快速的方法都分别包含两条指令。一条指令用来进入内核，另一条则用来退出内核。两种方法都在Intel CPU的文档中定义为”快速系统调用”.</p>
+<p>然而，Intel和AMD在具体实现的时候，针对CPU分别运行在32位和64位时该采用哪种方法才有更效的问题上产生了分歧。</p>
+<p>为了在Intel和AMD处理器中最大化兼容性：</p>
+<p>   32位系统中使用：<code>sysenter</code>和<code>sysexit</code><br>   64位系统中使用：<code>syscall</code>和<code>sysret</code></p>
+<h3 id="32位快速系统调用"><a href="#32位快速系统调用" class="headerlink" title="32位快速系统调用"></a>32位快速系统调用</h3><h4 id="sysenter-sysexit"><a href="#sysenter-sysexit" class="headerlink" title="sysenter/sysexit"></a><code>sysenter</code>/<code>sysexit</code></h4><p>  用<code>sysenter</code>触发系统调用比传统中断方法要复杂一些，其涉及到用户程序(通过glibc）与内核之间更多的协调问题。</p>
+<p>  我们逐步来了解这些细节。首先来看看Intel指令集参考手册中是如何描述<code>sysenter</code>以及如何使用它的。</p>
+<p>  看下面：</p>
+<pre><code>  Prior to executing the SYSENTER instruction, software must specify the privilege level 0 code segment and code entry point, and the privilege level 0 stack segment and stack pointer by writing values to the following MSRs:
+
+• IA32_SYSENTER_CS (MSR address 174H) — The lower 16 bits of this MSR are the segment selector for the privilege level 0 code segment. This value is also used to determine the segment selector of the privilege level 0 stack segment (see the Operation section). This value cannot indicate a null selector.
+
+• IA32_SYSENTER_EIP (MSR address 176H) — The value of this MSR is loaded into RIP (thus, this value references the first instruction of the selected operating procedure or routine). In protected mode, only bits 31:0 are loaded.
+
+• IA32_SYSENTER_ESP (MSR address 175H) — The value of this MSR is loaded into RSP (thus, this value contains the stack pointer for the privilege level 0 stack). This value cannot represent a non-canonical address. In protected mode, only bits 31:0 are loaded.
+</code></pre><p>换句话说：为了让内核接收到<code>sysenter</code>触发的系统调用，内核必须设置3个特殊模块寄存器（MSRs). 其中最重要的是 <code>IA32_SYSENTER_EIP</code>(地址是0x176). 该MSR代表的是用户程序在执行 <code>sysenter</code>指令时，内核将要执行的函数地址。</p>
+<p>我们可以在内核代码<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso32-setup.c#L240" target="_blank" rel="external"><code>arch/x86/vdso/vdso32-setup.c</code></a>中找到写MSR的相关代码：</p>
+<pre><code>void enable_sep_cpu(void)
+</code></pre><p>{<br>        /<em> … other code … </em>/</p>
+<pre><code>wrmsr(MSR_IA32_SYSENTER_EIP, (unsigned long) ia32_sysenter_target, 0);
+</code></pre><p><code>MSR_IA32_SYSENTER_EIP</code>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/uapi/asm/msr-index.h#L54" target="_blank" rel="external"><code>arch/x86/include/uapi/asm/msr-index.h</code></a>中定义为 <code>0x00000176</code>。</p>
+<p>类似传统软件中断型的系统调用, 使用<code>sysenter</code>触发系统调用时也定义了一些规范。</p>
+<p>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L99-L117" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a>的注释中可以找到相关内容:</p>
+<pre><code>* 32bit SYSENTER instruction entry.
+ *
+ * Arguments:
+ * %eax System call number.
+ * %ebx Arg1
+ * %ecx Arg2
+ * %edx Arg3
+ * %esi Arg4
+ * %edi Arg5
+ * %ebp user stack
+ * 0(%ebp) Arg6
+</code></pre><p>回想一下，传统的系统调用方法包括返回到用户程序的机制：<code>iret</code>指令。</p>
+<p>要理解让<code>sysenter</code>正确执行的逻辑不太简单，因为不像软件中断,<code>sysenter</code>并不存储返回地址。</p>
+<p>实际上，在执行<code>sysenter</code>指令之前，内核要做的一些记录工作都是会随着时间而变化的(如果已经改变了，你就会看到下文中将要描述的bugs了)</p>
+<p>为了兼容未来特性的变化，用户程序使用内核中的函数<br><code>_ _kernel_vsyscall</code>。当调用该函数的进程执行时，会被映射到每个用户进程空间中去。</p>
+<p>这听起来有点诡异。它是内核中的代码，却在用户层执行。</p>
+<p>实际上，<code>_ _kernel_vsyscall</code>是vDSO(virtual Dynamic Shared Object)的一部分，而vDSO允许程序在用户层中执行内核代码。</p>
+<p>后文中会具体介绍什么是vDSO，vDSO做了什么以及工作原理是什么。</p>
+<p>我们先来了解<code>_ _kernel_vsyscall</code>的一些细节。</p>
+<h4 id="kernel-vsyscall内幕"><a href="#kernel-vsyscall内幕" class="headerlink" title="_ _kernel_vsyscall内幕"></a><code>_ _kernel_vsyscall</code>内幕</h4><p><code>_ _kernel_vsyscall</code>函数封装了<code>sysenter</code>调用的规范，定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso32/sysenter.S#L31-L40" target="_blank" rel="external"><code>arch/x86/vdso/vdso32/sysenter.S</code></a>:</p>
+<pre><code>__kernel_vsyscall:
+.LSTART_vsyscall:
+    push %ecx
+.Lpush_ecx:
+    push %edx
+.Lpush_edx:
+    push %ebp
+.Lenter_kernel:
+    movl %esp,%ebp
+    sysenter
+</code></pre><p><code>_ _kernel_vsyscall</code>既然是vDSO(也被称为共享库)的一部分，那用户程序是如何在运行时定位该函数地址的呢？</p>
+<p><code>_ _kernel_vsyscall</code>函数的地址被写入到 <a href="https://www.gnu.org/software/libc/manual/html_node/Auxiliary-Vector.html" target="_blank" rel="external">ELF 辅助向量</a>, 用户程序以及库函数(主要指glibc)可以在这里找到其地址并使用。</p>
+<p>以下方法可用来查找ELF辅助向量：</p>
+<ol>
+<li>使用<a href="http://man7.org/linux/man-pages/man3/getauxval.3.html" target="_blank" rel="external"><code>getauxval</code></a>函数，带有<code>AT_SYSINFO</code>参数.</li>
+<li>迭代搜索环境变量,然后从内存中解析这些变量.</li>
+</ol>
+<p>第一种方法较为简单，但glibc 2.16前的版本不支持。 下文例子中介绍的代码中实现的是第二种方法。</p>
+<p>从有关<code>__kernel_vsyscall</code>的代码中可以看出，在执行<code>sysenter</code>指令之前<code>__kernel_vsyscall</code>会做一些记录工作。</p>
+<p>因此，我们需要做的就是手动利用<code>sysenter</code>进入到内核中：</p>
+<p>  . 在ELF辅助向量中找到<code>AT_SYSINFO</code>,也就是<code>_ _kernel_vsyscall</code>被写入的地址<br>  . 像传统系统调用一样，将系统调用号和参数写入寄存器中<br>  . 调用<code>_ _kernel_vsyscall</code>函数</p>
+<p>你可能从来没写过属于你自己的<code>sysenter</code>封装函数，那是因为内核利用<code>sysenter</code>进入和退出系统调用的规范是会变化的，到那时候你的代码就会崩溃了。</p>
+<p>在开始用<code>sysenter</code>触发系统调用前，你都要调用<code>_ _kernel_vsyscall</code>函数。</p>
+<p>那么，让我们开始吧。</p>
+<h4 id="自己写汇编使用sysenter"><a href="#自己写汇编使用sysenter" class="headerlink" title="自己写汇编使用sysenter"></a>自己写汇编使用sysenter</h4><p>继续利用前面传统系统调用的例子，我们调用<code>exit</code>，退出状态是42.</p>
+<p><code>exit</code>的系统调用号是1. 根据前文描述，我们只需要将系统调用号写进<code>eax</code>寄存器中，并把第一个参数(退出状态)写到<code>ebx</code>寄存器中。</p>
+<p>（实际上这个例子可以简化一些，但我认为多用一些文字描述会更有趣，让那些之前没见过GCC内联汇编代码的人也可以用下面的例子作为参考）</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;elf.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[], <span class="keyword">char</span>* envp[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> syscall_nr = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">int</span> exit_status = <span class="number">42</span>;</span><br><span class="line">  Elf32_auxv_t *auxv;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* auxilliary vectors are located after the end of the environment</span><br><span class="line">   * variables</span><br><span class="line">   *</span><br><span class="line">   * check this helpful diagram: https://static.lwn.net/images/2012/auxvec.png</span><br><span class="line">   */</span></span><br><span class="line">  <span class="keyword">while</span>(*envp++ != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* envp is now pointed at the auxilliary vectors, since we've iterated</span><br><span class="line">   * through the environment variables.</span><br><span class="line">   */</span></span><br><span class="line">  <span class="keyword">for</span> (auxv = (Elf32_auxv_t *)envp; auxv-&gt;a_type != AT_NULL; auxv++)</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">if</span>( auxv-&gt;a_type == AT_SYSINFO) &#123;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* <span class="doctag">NOTE:</span> in glibc 2.16 and higher you can replace the above code with</span><br><span class="line">   * a call to getauxval(3):  getauxval(AT_SYSINFO)</span><br><span class="line">   */</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">asm</span>(</span><br><span class="line">      <span class="string">"movl %0,  %%eax    \n"</span></span><br><span class="line">      <span class="string">"movl %1, %%ebx    \n"</span></span><br><span class="line">      <span class="string">"call *%2          \n"</span></span><br><span class="line">      : <span class="comment">/* output parameters, we aren't outputting anything, no none */</span></span><br><span class="line">        <span class="comment">/* (none) */</span></span><br><span class="line">      : <span class="comment">/* input parameters mapped to %0 and %1, repsectively */</span></span><br><span class="line">        <span class="string">"m"</span> (syscall_nr), <span class="string">"m"</span> (exit_status), <span class="string">"m"</span> (auxv-&gt;a_un.a_val)</span><br><span class="line">      : <span class="comment">/* registers that we are "clobbering", unneeded since we are calling exit */</span></span><br><span class="line">        <span class="string">"eax"</span>, <span class="string">"ebx"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来，编译，执行，然后检查退出状态:</p>
+<pre><code>$ gcc -m32 -o test test.c
+$ ./test
+$ echo $?
+42
+</code></pre><p>成功了! 我们利用 <code>sysenter</code>触发了<code>exit</code>系统调用，而不需要引发软件中断。</p>
+<h4 id="内核层面：sysenter入口"><a href="#内核层面：sysenter入口" class="headerlink" title="内核层面：sysenter入口"></a>内核层面：<code>sysenter</code>入口</h4><p>目前我们已经知道用户程序如何通过<code>_ _kernel_vsyscall</code>函数利用<code>sysenter</code>触发系统调用，下面来看看内核如何利用系统调用号来执行系统调用中的代码。</p>
+<p>回想前面的章节，内核调用<code>ia32_sysenter_target</code>来注册系统调用处理函数。</p>
+<p>此函数在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L162-L163" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a>中以汇编代码实现。我们来看看<code>eax</code>寄存器中的值是在哪里被用来执行系统调用的:</p>
+<pre><code>sysenter_dispatch:
+    call    *ia32_sys_call_table(,%rax,8)
+</code></pre><p>这段代码和前文传统系统调用模式的代码很类似：名为<code>ia32_sys_call_table</code>的表存储着系统调用号。</p>
+<p>在所有必要的记录工作完成后，传统系统调用模型以及<code>sysenter</code>系统调用模型采用相同的机制和系统调用表来分配系统调用。</p>
+<p>参照 <code>int $0x80</code>（内核层面：int $0x80入口这一章节)，可以了解到<code>ia32_sys_call_table</code> 是如何定义和构造的。</p>
+<p>以上内容就是如何通过<code>sysenter</code>系统调用进入内核的全部过程。</p>
+<h4 id="sysexit-从sysenter中返回"><a href="#sysexit-从sysenter中返回" class="headerlink" title="sysexit: 从sysenter中返回"></a>sysexit: 从sysenter中返回</h4><p>内核利用<code>sysexit</code>指令将执行环境恢复到用户程序。</p>
+<p><code>sysexit</code>指令的使用不像<code>iret</code>那么直接。调用者需要将返回地址写入<code>rdx</code>寄存器中，并将栈指针写入<code>rcx</code>寄存器。</p>
+<p>这就意味着你的代码中需要计算执行环境要返回的地址，保存地址值，并在调用<code>sysexit</code>前能恢复。</p>
+<p>可以在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L169-L185" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a> 找到相关代码:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">sysexit_from_sys_call:</span><br><span class="line">        andl    $~TS_COMPAT,TI_status+THREAD_INFO(%rsp,RIP-ARGOFFSET)</span><br><span class="line">        <span class="comment">/* clear IF, that popfq doesn't enable interrupts early */</span></span><br><span class="line">        andl  $~<span class="number">0x200</span>,EFLAGS-R11(%rsp)</span><br><span class="line">        movl    RIP-R11(%rsp),%edx              <span class="comment">/* User %eip */</span></span><br><span class="line">        CFI_REGISTER rip,rdx</span><br><span class="line">        RESTORE_ARGS <span class="number">0</span>,<span class="number">24</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span></span><br><span class="line">        xorq    %r8,%r8</span><br><span class="line">        xorq    %r9,%r9</span><br><span class="line">        xorq    %r10,%r10</span><br><span class="line">        xorq    %r11,%r11</span><br><span class="line">        popfq_cfi</span><br><span class="line">        <span class="comment">/*CFI_RESTORE rflags*/</span></span><br><span class="line">        popq_cfi %rcx                           <span class="comment">/* User %esp */</span></span><br><span class="line">        CFI_REGISTER rsp,rcx</span><br><span class="line">        TRACE_IRQS_ON</span><br><span class="line">        ENABLE_INTERRUPTS_SYSEXIT32</span><br></pre></td></tr></table></figure>
+<p><code>ENABLE_INTERRUPTS_SYSEXIT32</code>是定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L139-L143" target="_blank" rel="external"><code>arch/x86/include/asm/irqflags.h</code></a>的宏，其中含有<code>sysexit</code>指令。</p>
+<p>好了，你已经知道32位快速系统调用是如何工作的了。</p>
+<h3 id="64位快速系统调用"><a href="#64位快速系统调用" class="headerlink" title="64位快速系统调用"></a>64位快速系统调用</h3><p>下一步之旅就是去探索64位快速系统调用了。其分别利用<code>syscall</code> 、<code>sysret</code>指令进入系统调用、从系统调用中返回。</p>
+<h4 id="syscall-sysret"><a href="#syscall-sysret" class="headerlink" title="syscall/sysret"></a>syscall/sysret</h4><p>Intel指令集参考指南解释了<code>syscall</code>指令是如何工作的:</p>
+<pre><code>SYSCALL invokes an OS system-call handler at privilege level 0. It does so by loading RIP from the IA32_LSTAR MSR (after saving the address of the instruction following SYSCALL into RCX).
+</code></pre><p>换句话说：为了让内核接收到系统调用，内核必须向<code>IA32_LSTAR</code> MSR注册当系统调用触发时要执行的代码地址。</p>
+<p>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/cpu/common.c#L1128" target="_blank" rel="external"><code>arch/x86/kernel/cpu/common.c</code></a> 可以找到相关代码:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">syscall_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">        <span class="comment">/* ... other code ... */</span></span><br><span class="line">        wrmsrl(MSR_LSTAR, system_call);</span><br></pre></td></tr></table></figure>
+<p><code>MSR_LSTAR</code>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/uapi/asm/msr-index.h#L9" target="_blank" rel="external"><code>arch/x86/include/uapi/asm/msr-index.h</code></a>定义为 0xc0000082。</p>
+<p>类似传统软件中断型的系统调用, 使用<code>syscall</code>触发系统调用时也定义了一些规范。</p>
+<p>用户程序需要将系统调用号写入<code>rax</code>寄存器中。系统调用的参数要c传入通用寄存器中。</p>
+<p><a href="http://www.x86-64.org/documentation/abi.pdf" target="_blank" rel="external">x86-64 ABI </a>章节A.2.1 对此有所描述:</p>
+<pre><code>1. User-level applications use as integer registers for passing the sequence %rdi, %rsi, %rdx, %rcx, %r8 and %r9. The kernel interface uses %rdi, %rsi, %rdx, %r10, %r8 and %r9.
+2. A system-call is done via the syscall instruction. The kernel destroys registers %rcx and %r11.
+3. The number of the syscall has to be passed in register %rax.
+4. System-calls are limited to six arguments,no argument is passed directly on the stack.
+5. Returning from the syscall, register %rax contains the result of the system-call. A value in the range between -4095 and -1 indicates an error, it is -errno.
+6. Only values of class INTEGER or class MEMORY are passed to the kernel.
+</code></pre><p><a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L569-L591" target="_blank" rel="external"><code>arch/x86/kernel/entry_64.S</code></a>的注释中也有相关介绍。</p>
+<p>现在我们已经知道了如何执行系统调用以及如何传递这些参数，开始着手写一些内联汇编代码。</p>
+<h4 id="自己写汇编使用syscall"><a href="#自己写汇编使用syscall" class="headerlink" title="自己写汇编使用syscall"></a>自己写汇编使用syscall</h4><p>基于前面介绍的例子，我们开始着手编写一小段含有内联汇编的C程序，代码中执行<code>exit</code>系统调用并传递退出状态：42.</p>
+<p>首先，我们要找到<code>exit</code>的系统调用号。在这个例子中，我们需要从<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_64.tbl#L69" target="_blank" rel="external"><code>arch/x86/syscalls/syscall_64.tbl</code></a>中读取这张表：</p>
+<pre><code>60 common exit sys_exit
+</code></pre><p><code>exit</code>的系统调用号是60. 根据前文介绍，我们只需将60写入<code>eax</code>寄存器，以及第一个参数(退出状态)写入<code>rdi</code>寄存器。</p>
+<p>请看下面这段含有内联汇编的C代码。类似前面的例子，从清晰度来看，冗余的文字可能比代码本身更重要。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> syscall_nr = <span class="number">60</span>;</span><br><span class="line">  <span class="keyword">long</span> exit_status = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">asm</span> (<span class="string">"movq %0, %%rax\n"</span></span><br><span class="line">       <span class="string">"movq %1, %%rdi\n"</span></span><br><span class="line">       <span class="string">"syscall"</span></span><br><span class="line">    : <span class="comment">/* output parameters, we aren't outputting anything, no none */</span></span><br><span class="line">      <span class="comment">/* (none) */</span></span><br><span class="line">    : <span class="comment">/* input parameters mapped to %0 and %1, repsectively */</span></span><br><span class="line">      <span class="string">"m"</span> (syscall_nr), <span class="string">"m"</span> (exit_status)</span><br><span class="line">    : <span class="comment">/* registers that we are "clobbering", unneeded since we are calling exit */</span></span><br><span class="line">      <span class="string">"rax"</span>, <span class="string">"rdi"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来，编译，执行，然后检查退出状态:</p>
+<pre><code>$ gcc -o test test.c
+$ ./test
+$ echo $?
+42
+</code></pre><p>成功了! 我们利用<code>syscall</code>系统调用方式来触发<code>exit</code>系统调用。避免了软件中断，如果我们要用micro-benchmark 来计算时间的话，这种方法执行起来要快许多。</p>
+<h4 id="内核层面：syscall入口"><a href="#内核层面：syscall入口" class="headerlink" title="内核层面：syscall入口"></a>内核层面：syscall入口</h4><p>现在我们已经知道了如何从用户程序中触发系统调用。接下来就要介绍内核如何利用系统调用号执行系统调用中的代码。</p>
+<p>回想前文，我们知道如何将<code>system_call</code>函数的地址写入<code>LSTAR</code> MSR中。</p>
+<p>下面就来看看这个函数中的代码是如何利用<code>rax</code>寄存器将执行环境切换到系统调用中的。可以参考<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L629" target="_blank" rel="external"><code>arch/x86/kernel/entry_64.S</code></a>:</p>
+<pre><code>call *sys_call_table(,%rax,8)  # XXX:    rip relative
+</code></pre><p>类似传统系统调用，<code>sys_call_table</code>一张在C文件中定义的表，其利用<code>#include</code>将脚本产生的C代码包含进来。</p>
+<p>在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/syscall_64.c#L25-L32" target="_blank" rel="external"><code>arch/x86/kernel/syscall_64.c</code></a>,注意底部的<code>#include</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">asmlinkage <span class="keyword">const</span> <span class="keyword">sys_call_ptr_t</span> sys_call_table[__NR_syscall_max+<span class="number">1</span>] = &#123;</span><br><span class="line">        <span class="comment">/*</span><br><span class="line">         * Smells like a compiler bug -- it doesn't work</span><br><span class="line">         * when the &amp; below is removed.</span><br><span class="line">         */</span></span><br><span class="line">        [<span class="number">0</span> ... __NR_syscall_max] = &amp;sys_ni_syscall,</span><br><span class="line">#include &lt;<span class="keyword">asm</span>/syscalls_64.h&gt;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>从前文我们知道，系统调用表定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_64.tbl" target="_blank" rel="external"><code>arch/x86/syscalls/syscall_64.tbl</code></a>。与传统中断模式一样，脚本在内核编译的时候执行并通过<code>syscall_64.tbl</code>文件中的表生成<code>syscalls_64.h</code>文件。</p>
+<p>上述代码包括能生成系统调用号索引的函数指针数组的C代码。</p>
+<p>以上就是如何通过<code>syscall</code>系统调用进入内核的全过程。</p>
+<h4 id="sysret-从syscall中返回"><a href="#sysret-从syscall中返回" class="headerlink" title="sysret: 从syscall中返回"></a>sysret: 从syscall中返回</h4><p>内核利用<code>sysret</code>指令将执行环境恢复到用户程序执行<code>syscall</code>的地方。</p>
+<p><code>sysret</code>比起<code>sysexit</code>来要简单一些，因为当执行<code>syscall</code>时，需要被恢复执行的地址保存在<code>rcx</code>寄存器中。</p>
+<p>只要能将这个地址保存起来，并在执行<code>sysret</code>前将其恢复到<code>rcx</code>寄存器中，执行环境就能在触发<code>syscall</code>的地方恢复。</p>
+<p>这种机制比较方便，因为<code>sysenter</code>却要求你自己在代码中计算这个地址，并将其重写到寄存器中。</p>
+<p>上述代码在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L650-L655" target="_blank" rel="external"><code>arch/x86/kernel/entry_64.S</code></a>:</p>
+<pre><code>movq RIP-ARGOFFSET(%rsp),%rcx
+CFI_REGISTER    rip,rcx
+RESTORE_ARGS 1,-ARG_SKIP,0
+/*CFI_REGISTER  rflags,r11*/
+movq    PER_CPU_VAR(old_rsp), %rsp
+USERGS_SYSRET64
+</code></pre><p>其中<code>USERGS_SYSRET64</code>是定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L133-L135" target="_blank" rel="external"><code>arch/x86/include/asm/irqflags.h</code></a>中的宏，其中包含<code>sysret</code>指令。</p>
+<p>好了，目前为止，你已经知道64位系统调用是如何工作的了。</p>
+<h2 id="syscall-2-半手动调用syscall"><a href="#syscall-2-半手动调用syscall" class="headerlink" title="syscall(2)半手动调用syscall"></a>syscall(2)半手动调用syscall</h2><p>太棒了，针对不同系统调用模型，我们已经知道如何编写汇编代码去触发这些系统调用了。</p>
+<p>通常来说，你没必要自己写汇编代码。glibc提供的封装器函数已经为你处理好了所有的汇编代码。</p>
+<p>当然，也有一些系统调用，glibc并没有为其做好封装器。其中一个例子就是<code>futex</code>–快速用户层上锁系统调用。</p>
+<p>等等，为什么<a href="http://man7.org/linux/man-pages/man7/futex.7.html#NOTES" target="_blank" rel="external"><code>futex</code></a>没有系统调用封装器呢？</p>
+<p><code>futex</code>是为库函数调用准备的，而不是应用程序。因此，要想调用<code>futex</code>，你必须这样做:</p>
+<ol>
+<li>为你想支持的平台生成汇编存根(stub)</li>
+<li>使用glibc提供的<code>syscall</code>封装器</li>
+</ol>
+<p>有些时候，如果你想执行那些没有封装器的系统调用，你别无选择，只能利用第二种方法：使用glibc提供的<code>syscall</code>函数。</p>
+<p>我们试试利用glibc提供的<code>syscall</code>调用<code>exit</code>，其退出状态是42:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">long</span> syscall_nr = <span class="number">60</span>;</span><br><span class="line">  <span class="keyword">long</span> exit_status = <span class="number">42</span>;</span><br><span class="line"></span><br><span class="line">  syscall(syscall_nr, exit_status);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来，编译，执行，然后检查退出状态:</p>
+<pre><code>$ gcc -o test test.c
+$ ./test
+$ echo $?
+42
+</code></pre><p>成功了！我们利用glibc提供的<code>syscall</code>封装器成功的调用了<code>exit</code>.</p>
+<h3 id="glibc-syscall封装器内幕"><a href="#glibc-syscall封装器内幕" class="headerlink" title="glibc syscall封装器内幕"></a>glibc syscall封装器内幕</h3><p>来看看前面例子中<code>syscall</code>封装器在glibc中是如何工作的</p>
+<p>在<a href="https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/sysv/linux/x86_64/syscall.S#L24-L42" target="_blank" rel="external"><code>sysdeps/unix/sysv/linux/x86_64/syscall.S</code></a>：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">/* Usage: long syscall (syscall_number, arg1, arg2, arg3, arg4, arg5, arg6)</span><br><span class="line">   We need to do some arg shifting, the syscall_number will be in</span><br><span class="line">   rax.  */</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        .text</span><br><span class="line">ENTRY (syscall)</span><br><span class="line">        movq %rdi, %rax         /* Syscall number -&gt; rax.  */</span><br><span class="line">        movq %rsi, %rdi         /* shift arg1 - arg5.  */</span><br><span class="line">        movq %rdx, %rsi</span><br><span class="line">        movq %rcx, %rdx</span><br><span class="line">        movq %r8, %r10</span><br><span class="line">        movq %r9, %r8</span><br><span class="line">        movq 8(%rsp),%r9        /* arg6 is on the stack.  */</span><br><span class="line">        syscall                 /* Do the system call.  */</span><br><span class="line">        cmpq $-4095, %rax       /* Check %rax for error.  */</span><br><span class="line">        jae SYSCALL_ERROR_LABEL /* Jump to error handler if error.  */</span><br><span class="line">L(pseudo_end):</span><br><span class="line">        ret                     /* Return to caller.  */</span><br></pre></td></tr></table></figure>
+<p>前面我们给出了x86_64 ABI文档的参考链接，其描述了用户层和内核层的调用规范。</p>
+<p>这段汇编stud很酷，因为它同时遵守两种调用规范。传递到这个函数的参数遵守用户层调用规范，但是在转移到另一组不同的寄存器利用<code>syscall</code>进入内核之前，又遵守内核层规范。</p>
+<p>以上就是在你要执行默认没有封装器的系统调用时，glibc提供的<code>syscall</code>封装器的工作方式。</p>
+<h2 id="虚拟系统调用"><a href="#虚拟系统调用" class="headerlink" title="虚拟系统调用"></a>虚拟系统调用</h2><p>到目前为止，我们已经介绍了所有进入内核触发系统调用的方法，并演示了如何手动(或者半手动）触发系统调用将系统从用户层切换到内核层。</p>
+<p>倘若程序能触发一些系统调用，而不需要进入到内核呢？</p>
+<p>这就是Linux vDSO存在的原因。Linux vDSO是内核代码的一部分，但是却被映射到用户程序地址空间中在用户层执行。</p>
+<p>这也就是一些系统调用不用进入到内核就能被执行的原因。举个这样的例子: <code>gettimeofday</code>系统调用。</p>
+<p>程序调用<code>gettimeofday</code>并不会真正进入到内核。而是简单的调用了内核提供的一小段代码，然后在用户层执行。</p>
+<p>没有软件中断，也不需要复杂的<code>sysenter</code>或者<code>syscall</code>的记录工作。<code>gettimeofday</code>只是一个普通的函数调用。</p>
+<p>当你执行<code>ldd</code>命令时，可以看到vDSO出现在第一个条目中：</p>
+<pre><code>$ ldd `which bash`
+ linux-vdso.so.1 =&gt;  (0x00007fff667ff000)
+ libtinfo.so.5 =&gt; /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007f623df7d000)
+  libdl.so.2 =&gt; /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f623dd79000)
+  libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f623d9ba000)
+  /lib64/ld-linux-x86-64.so.2 (0x00007f623e1ae000)
+</code></pre><p>下面来看看vDSO在内核中是如何设置的。</p>
+<h3 id="内核中的vDSO"><a href="#内核中的vDSO" class="headerlink" title="内核中的vDSO"></a>内核中的vDSO</h3><p>可以在 <a href="https://github.com/torvalds/linux/tree/v3.13/arch/x86/vdso" target="_blank" rel="external"><code>arch/x86/vdso/</code></a>中找到vDSO的源码。 其中包括一小段汇编代码、一些C源文件和一个链接器脚本</p>
+<p>此<a href="https://sourceware.org/binutils/docs/ld/Scripts.html" target="_blank" rel="external">链接器脚本</a>是个很酷的东西，可以具体去了解一下。</p>
+<p>看看<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso.lds.S" target="_blank" rel="external"><code>arch/x86/vdso/vdso.lds.S</code></a>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*</span><br><span class="line"> * This controls what userland symbols we export from the vDSO.</span><br><span class="line"> */</span></span><br><span class="line">VERSION &#123;</span><br><span class="line">        LINUX_2<span class="number">.6</span> &#123;</span><br><span class="line">        global:</span><br><span class="line">                clock_gettime;</span><br><span class="line">                __vdso_clock_gettime;</span><br><span class="line">                gettimeofday;</span><br><span class="line">                __vdso_gettimeofday;</span><br><span class="line">                getcpu;</span><br><span class="line">                __vdso_getcpu;</span><br><span class="line">                time;</span><br><span class="line">                __vdso_time;</span><br><span class="line">        local: *;</span><br><span class="line">        &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>链接器脚本很有用处，但并不被大家所熟知。链接器脚本会处理vDSO要导出的符号表。</p>
+<p>可以看到，vDSO导出了4个不同的函数，每个函数都有两个名字。<br>可以在此文件夹下的C文件中找到函数的定义。</p>
+<p>例如，<code>gettimeofday</code>的源代码可以在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vclock_gettime.c#L281-L282" target="_blank" rel="external"><code>arch/x86/vdso/vclock_gettime.c</code></a>中找到:</p>
+<pre><code>int gettimeofday(struct timeval *, struct timezone *)
+    __attribute__((weak, alias(&quot;__vdso_gettimeofday&quot;)));
+</code></pre><p>这段代码将<code>gettimeofday</code>作为<code>__vdso_gettimeofday</code> 的弱别名(<a href="https://gcc.gnu.org/onlinedocs/gcc-4.3.5/gcc/Function-Attributes.html" target="_blank" rel="external">weak alias</a>)。</p>
+<p><a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vclock_gettime.c#L260-L280" target="_blank" rel="external">同文件</a>中的<code>__vdso_gettimeofday</code>函数中包含了当用户程序执行<code>gettimeofday</code>系统调用时真正在用户层执行的源代码。</p>
+<h3 id="在内存中定为vDSO"><a href="#在内存中定为vDSO" class="headerlink" title="在内存中定为vDSO"></a>在内存中定为vDSO</h3><p>由于地址空间布局随机化(<a href="https://en.wikipedia.org/wiki/Address_space_layout_randomization" target="_blank" rel="external">ASLR</a>)的原因,当程序开始执行时，vDSO会被加载到随机的地址空间中。</p>
+<p>如果vDSO加载到随机地址空间中，用户程序是如何找到它的呢？</p>
+<p>回想前文提到的<code>sysenter</code>系统调用方法，用户程序要调用<code>_ _kernel_vsyscall</code>函数，而不是自己写<code>sysenter</code>汇编代码。</p>
+<p>而<code>_ _kernel_vsyscall</code>函数也是vDSO的一部分。</p>
+<p>提供的代码样例中通过搜索<a href="https://www.gnu.org/software/libc/manual/html_node/Auxiliary-Vector.html" target="_blank" rel="external">ELF辅助头文件</a>找到和<code>AT_SYSINFO</code>匹配的头文件，头文件中含有<code>_ _kernel_vsyscall</code>函数的地址。</p>
+<p>类似的，要定位到vDSO, 用户程序可以搜索ELF辅助头文件找到和<code>AT_SYSINFO_EHDR</code>匹配的头文件. 里面包含由链接器脚本生成的vDSO的ELF头的起始地址。</p>
+<p>两个例子中，程序被加载时内核都会将其地址写入到ELF头中。这也就是为何正确的地址总是出现<code>AT_SYSINFO_EHDR</code>和<code>AT_SYSINFO</code>中。</p>
+<p>一旦定为到ELF头部信息，用户程序就能解析ELF对象了(可以用<a href="http://www.mr511.de/software/english.html" target="_blank" rel="external">libelf</a>),并且可以根据需要调用ELF对象中的函数。</p>
+<p>这样很酷，因为这就意味着vDSO能充分利用ELF有用的特性，比如<a href="https://www.akkadia.org/drepper/symbol-versioning" target="_blank" rel="external"> symbol versioning</a>。</p>
+<p>内核文档 <a href="https://github.com/torvalds/linux/tree/v3.13/Documentation/vDSO" target="_blank" rel="external"><code>Documentation/vDSO/</code></a>中有解析vDSO和调用其中函数的例子。</p>
+<h3 id="glibc中的vDSO"><a href="#glibc中的vDSO" class="headerlink" title="glibc中的vDSO"></a>glibc中的vDSO</h3><p>大多数情况下，大家都会访问vDSO，但并不会意识到。那是因为glibc利用前面章节介绍的接口对其进行了封装抽象。</p>
+<p>当一个程序被加载时，<a href="http://man7.org/linux/man-pages/man8/ld.so.8.html" target="_blank" rel="external">动态链接器和加载器</a>便会加载程序依赖的DSOs，也包括vDSO.</p>
+<p>当glibc解析被加载程序的ELF头部时，会存储有关于vDSO的一些位置信息。也包括简短的stub函数，用来在真正执行系统调用前搜索vDSO中的符号名。</p>
+<p>举个例子，<code>glibc</code>中的<code>gettimeofday</code>函数，定义在<a href="https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c#L26-L37" target="_blank" rel="external"><code>sysdeps/unix/sysv/linux/x86_64/gettimeofday.c</code></a>中：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">gettimeofday_ifunc</span> <span class="params">(<span class="keyword">void</span>)</span> __<span class="title">asm__</span> <span class="params">(<span class="string">"__gettimeofday"</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *</span><br><span class="line"><span class="title">gettimeofday_ifunc</span> <span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  PREPARE_VERSION (linux26, <span class="string">"LINUX_2.6"</span>, <span class="number">61765110</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* If the vDSO is not available we fall back on the old vsyscall.  */</span></span><br><span class="line">  return (_dl_vdso_vsym (<span class="string">"gettimeofday"</span>, &amp;linux26)</span><br><span class="line">          ?: (void *) VSYSCALL_ADDR_vgettimeofday);</span><br><span class="line">&#125;</span><br><span class="line">__asm (<span class="string">".type __gettimeofday, %gnu_indirect_function"</span>);</span><br></pre></td></tr></table></figure>
+<p>这段glibc中的代码会在vDSO中搜索<code>gettimeofday</code>函数并且返回其地址。这些工作都通过 <a href="http://willnewton.name/uncategorized/using-gnu-indirect-functions/" target="_blank" rel="external">间接函数</a>封装好了。</p>
+<p>这就是程序如何通过glibc调用<code>gettimeofday</code>并访问vDSO却完全不用切换到内核、引发特权级转变以及触发软件中断的全过程。</p>
+<p>其中也总结了Linux 32/64位 Intel/AMD系统的每种系统调用方法的优势。</p>
+<h2 id="glibc-系统调用封装器"><a href="#glibc-系统调用封装器" class="headerlink" title="glibc 系统调用封装器"></a>glibc 系统调用封装器</h2><p>在讨论系统调用的时候，简单的提提glibc是如何处理系统调用是很有意义的。</p>
+<p>对于许多系统调用来说，glibc只需要一个简单的封装函数将参数传入合适的寄存器中，然后执行<code>syscall</code>或者<code>int $0x80</code>指令，或者调用<code>_ _kernel_vsyscall</code>。</p>
+<p>这些都是利用一系列在文本文件中定义的表完成的，这些表会经过脚本处理并输出C代码。</p>
+<p>例如，<a href="https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/syscalls.list" target="_blank" rel="external">`sysdeps/unix/syscalls.list</a> `文件描述了一些常用的系统调用:</p>
+<pre><code>access - access i:si __access access acct - acct i:S acct chdir - chdir i:s __chdir chdir chmod - chmod i:si __chmod chmod
+</code></pre><p>要了解每一栏目的含义，可以查看处理此文件的脚本注释： <a href="https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/make-syscalls.sh" target="_blank" rel="external"><code>sysdeps/unix/make-syscalls.sh</code></a>.</p>
+<p>对于更复杂的系统调用，比如<code>exit</code>，其会触发那些有真正C代码或汇编代码实现的处理函数，并不会出现在类似这样的文本文件中。</p>
+<p>以后的博文中会具体介绍glibc的实现以及linux内核中一些重要的系统调用。</p>
+<h2 id="重要的syscall相关bugs"><a href="#重要的syscall相关bugs" class="headerlink" title="重要的syscall相关bugs"></a>重要的syscall相关bugs</h2><p>很荣幸能利用这次机会提两个与linux系统调用相关的神奇bugs.</p>
+<p>一起来瞧一瞧吧！</p>
+<h3 id="CVE-2010-3301"><a href="#CVE-2010-3301" class="headerlink" title="CVE-2010-3301"></a>CVE-2010-3301</h3><p><a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=2010-3301" target="_blank" rel="external">这个安全利用</a>能让本地用户获取root权限。</p>
+<p>引起这个漏洞的原因就在于汇编代码中的一个小bug，其允许用户程序触发x86_64系统中的传统系统调用。</p>
+<p>此利用代码相当聪明:在一个特定的地址下，利用<code>mmap</code>生成一块内存区域，并利用一个整数让代码产生溢出：</p>
+<p>（还记得上面章节中提到的传统中断方式中的这段代码吗？）</p>
+<pre><code>call *ia32_sys_call_table(,%rax,8)
+</code></pre><p>此代码可以将执行环境切换到一块任意的地址中，在那执行内核代码，从而可以将运行的进程权限提升到root.</p>
+<h3 id="Android-sysenter-ABI-破坏"><a href="#Android-sysenter-ABI-破坏" class="headerlink" title="Android sysenter ABI 破坏"></a>Android <code>sysenter</code> ABI 破坏</h3><p>还记得前面说过不要在应用程序代码中硬编码<code>sysenter</code> ABI吗？</p>
+<p>不幸的是，用android-x86的一些人就容易犯这些错误。只要内核的ABI一改变，andorid-x86就瞬间无法工作。</p>
+<p>工作于内核的人最终用一些陈旧的<code>sysenter</code>硬编码序列来恢复<code>sysenter</code> ABI,以避免对Android设备的破坏。</p>
+<p><a href="http://git.kernel.org/cgit/linux/kernel/git/tip/tip.git/commit/?id=30bfa7b3488bfb1bb75c9f50a5fcac1832970c60" target="_blank" rel="external">这里</a>是提交给Linux 内核的patch. 你也可以在提交信息中找到向android源码提交的攻击代码的链接</p>
+<p>记住：千万不要自己编写汇编代码使用<code>sysenter</code>. 如果你因为某种原因要自己实现，可以使用前面例子中的一些代码，起码要仔细检查一下 <code>__kernel_vsyscall</code>函数。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>Linux内核中的系统调用机制是及其复杂的。触发系统调用有许多中方案，各都有其优缺点。</p>
+<p>自己编写汇编代码来触发系统调用可不是个好主意，因为在你代码下层的ABI可能会崩溃。系统中的内核以及libc的实现会（可能会）选择最快的方式来触发系统调用。</p>
+<p>如果你不能使用glibc提供的封装器(或者那个封装器不存在),你起码应该用<code>syscall</code>封装器函数，或者仔细检查vDSO提供的<code>_ _kernel_vsyscall</code>.</p>
+<p>继续关注将来研究单个系统调用及其实现的相关文章。</p>
+<h2 id="相关博文"><a href="#相关博文" class="headerlink" title="相关博文"></a>相关博文</h2><p>如果你喜欢这篇博客，你可能对以下底层技术的相关博客也感兴趣。</p>
+<p><a href="http://blog.packagecloud.io/eng/2016/02/29/how-does-strace-work/" target="_blank" rel="external">How does strace work?</a></p>
+<p><a href="http://blog.packagecloud.io/eng/2016/03/14/how-does-ltrace-work/" target="_blank" rel="external">How does ltrace work?</a></p>
+<p><a href="http://blog.packagecloud.io/eng/2016/03/21/apt-hash-sum-mismatch/" target="_blank" rel="external">APT Hash sum mismatch</a></p>
+<p><a href="http://blog.packagecloud.io/eng/2014/10/28/howto-gpg-sign-verify-deb-packages-apt-repositories/" target="_blank" rel="external">HOWTO: GPG sign and verify deb packages and APT repositories</a></p>
+<p><a href="http://blog.packagecloud.io/eng/2014/11/24/howto-gpg-sign-verify-rpm-packages-yum-repositories/" target="_blank" rel="external">HOWTO: GPG sign and verify RPM packages and yum repositories</a></p>
+<h2 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h2><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>此文是一篇完整的译文，尽量在原文的基础上做到通俗易懂</p>
+<p>仅为学习使用，未经博主同意，请勿转载。</p>
+<p>原英文地址：<a href="http://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#bit-fast-system-calls。" target="_blank" rel="external">http://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#bit-fast-system-calls。</a></p>
+<p>本文地址：<a href="http://www.chongh.wiki/blog/2016/04/08/linux-syscalls/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/08/linux-syscalls/</a></p>
+<p>作者[新浪微博:<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a>]</p>
+<p>感谢好友 <a href="http://weibo.com/u/2765244861?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@睡眼惺忪的小叶先森</a>与<a href="http://weibo.com/u/2495479763?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@skyline09</a>指出的一些勘误及意见。</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/System/" rel="tag">#System</a>
+          
+            <a href="/tags/Kernel/" rel="tag">#Kernel</a>
+          
+            <a href="/tags/Syscall/" rel="tag">#Syscall</a>
+          
+            <a href="/tags/OS/" rel="tag">#OS</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/02/2016-04-02-kbeast-analysis-detection/" rel="next" title="kbeast Analysis and Detection">
+                <i class="fa fa-chevron-left"></i> kbeast Analysis and Detection
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/04/08/2016-04-08-linux-syscalls/"
+           data-title="Linux系统调用权威指南" data-url="http://yoursite.com/2016/04/08/2016-04-08-linux-syscalls/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">26</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#长话短说-Too-long-Don’t-read"><span class="nav-number">1.</span> <span class="nav-text">长话短说(Too long; Don’t read)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是系统调用？"><span class="nav-number">2.</span> <span class="nav-text">什么是系统调用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#准备知识"><span class="nav-number">3.</span> <span class="nav-text">准备知识</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#硬件与软件"><span class="nav-number">3.1.</span> <span class="nav-text">硬件与软件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#用户程序，内核与CPU特权级"><span class="nav-number">3.2.</span> <span class="nav-text">用户程序，内核与CPU特权级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#中断"><span class="nav-number">3.3.</span> <span class="nav-text">中断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#特殊模块寄存器"><span class="nav-number">3.4.</span> <span class="nav-text">特殊模块寄存器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编写汇编代码触发系统调用不是个好主意"><span class="nav-number">3.5.</span> <span class="nav-text">编写汇编代码触发系统调用不是个好主意</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#传统系统调用"><span class="nav-number">4.</span> <span class="nav-text">传统系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#自己编写汇编代码使用传统系统调用"><span class="nav-number">4.1.</span> <span class="nav-text">自己编写汇编代码使用传统系统调用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内核层面：int-0x80入口"><span class="nav-number">4.2.</span> <span class="nav-text">内核层面：int $0x80入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#iret-从传统系统调用返回"><span class="nav-number">4.3.</span> <span class="nav-text">iret: 从传统系统调用返回</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#快速系统调用"><span class="nav-number">5.</span> <span class="nav-text">快速系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#32位快速系统调用"><span class="nav-number">5.1.</span> <span class="nav-text">32位快速系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#sysenter-sysexit"><span class="nav-number">5.1.1.</span> <span class="nav-text">sysenter/sysexit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#kernel-vsyscall内幕"><span class="nav-number">5.1.2.</span> <span class="nav-text">_ _kernel_vsyscall内幕</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自己写汇编使用sysenter"><span class="nav-number">5.1.3.</span> <span class="nav-text">自己写汇编使用sysenter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内核层面：sysenter入口"><span class="nav-number">5.1.4.</span> <span class="nav-text">内核层面：sysenter入口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#sysexit-从sysenter中返回"><span class="nav-number">5.1.5.</span> <span class="nav-text">sysexit: 从sysenter中返回</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#64位快速系统调用"><span class="nav-number">5.2.</span> <span class="nav-text">64位快速系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#syscall-sysret"><span class="nav-number">5.2.1.</span> <span class="nav-text">syscall/sysret</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自己写汇编使用syscall"><span class="nav-number">5.2.2.</span> <span class="nav-text">自己写汇编使用syscall</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内核层面：syscall入口"><span class="nav-number">5.2.3.</span> <span class="nav-text">内核层面：syscall入口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#sysret-从syscall中返回"><span class="nav-number">5.2.4.</span> <span class="nav-text">sysret: 从syscall中返回</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#syscall-2-半手动调用syscall"><span class="nav-number">6.</span> <span class="nav-text">syscall(2)半手动调用syscall</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#glibc-syscall封装器内幕"><span class="nav-number">6.1.</span> <span class="nav-text">glibc syscall封装器内幕</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟系统调用"><span class="nav-number">7.</span> <span class="nav-text">虚拟系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内核中的vDSO"><span class="nav-number">7.1.</span> <span class="nav-text">内核中的vDSO</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在内存中定为vDSO"><span class="nav-number">7.2.</span> <span class="nav-text">在内存中定为vDSO</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#glibc中的vDSO"><span class="nav-number">7.3.</span> <span class="nav-text">glibc中的vDSO</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#glibc-系统调用封装器"><span class="nav-number">8.</span> <span class="nav-text">glibc 系统调用封装器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#重要的syscall相关bugs"><span class="nav-number">9.</span> <span class="nav-text">重要的syscall相关bugs</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CVE-2010-3301"><span class="nav-number">9.1.</span> <span class="nav-text">CVE-2010-3301</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Android-sysenter-ABI-破坏"><span class="nav-number">9.2.</span> <span class="nav-text">Android sysenter ABI 破坏</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">10.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#相关博文"><span class="nav-number">11.</span> <span class="nav-text">相关博文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">12.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
