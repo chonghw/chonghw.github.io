@@ -685,9 +685,9 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
   </entry>
   
@@ -915,11 +915,11 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
     
     
+      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
+    
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
       <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
-      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
     
@@ -1111,9 +1111,9 @@ pip install distorm3
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -1173,11 +1173,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
       <category term="Defense" scheme="http://yoursite.com/tags/Defense/"/>
     
@@ -1292,11 +1292,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
@@ -1376,11 +1376,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
