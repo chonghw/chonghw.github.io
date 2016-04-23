@@ -678,7 +678,7 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
     <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
     <published>2016-03-31T02:17:12.000Z</published>
-    <updated>2016-04-21T20:56:29.000Z</updated>
+    <updated>2016-04-23T20:24:09.000Z</updated>
     
     <content type="html">&lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
 &lt;blockquote&gt;
@@ -692,8 +692,7 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
 &lt;/blockquote&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;h3 id=&quot;0x00-全文环境&quot;&gt;&lt;a href=&quot;#0x00-全文环境&quot; class=&quot;headerlink&quot; title=&quot;0x00 全文环境&quot;&gt;&lt;/a&gt;0x00 全文环境&lt;/h3&gt;&lt;p&gt;Ubuntu12.04 + Kvm-kmod-3.8 + Qemu-kvm-1.1.2+ Libvirt 1.3.2 + Libvmi + Volatility &lt;/p&gt;
-&lt;p&gt;###Ox01 虚拟机创建KVM/QEMU  &lt;/p&gt;
-&lt;p&gt;Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。&lt;br&gt;另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。&lt;/p&gt;
+&lt;h3 id=&quot;Ox01-虚拟机创建KVM-QEMU&quot;&gt;&lt;a href=&quot;#Ox01-虚拟机创建KVM-QEMU&quot; class=&quot;headerlink&quot; title=&quot;Ox01 虚拟机创建KVM/QEMU&quot;&gt;&lt;/a&gt;Ox01 虚拟机创建KVM/QEMU&lt;/h3&gt;&lt;p&gt;Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。&lt;br&gt;另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。&lt;/p&gt;
 &lt;p&gt;可执行：&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;modprobe kvm 
 modprobe kvm_intel 
@@ -728,7 +727,7 @@ br0              8000.68f728eddb0d      no          eth0
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后在创建虚拟机的时候可添加-net nic -net tap参数，如&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;/usr/local/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -net nic -net tap -monitor stdio    
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后创建的虚拟机便工作在网桥模式中。&lt;/p&gt;
-&lt;h3 id=&quot;0x01-虚拟机管理Libvirt&quot;&gt;&lt;a href=&quot;#0x01-虚拟机管理Libvirt&quot; class=&quot;headerlink&quot; title=&quot;0x01 虚拟机管理Libvirt&quot;&gt;&lt;/a&gt;0x01 虚拟机管理Libvirt&lt;/h3&gt;&lt;p&gt;除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：&lt;/p&gt;
+&lt;h3 id=&quot;0x02-虚拟机管理Libvirt&quot;&gt;&lt;a href=&quot;#0x02-虚拟机管理Libvirt&quot; class=&quot;headerlink&quot; title=&quot;0x02 虚拟机管理Libvirt&quot;&gt;&lt;/a&gt;0x02 虚拟机管理Libvirt&lt;/h3&gt;&lt;p&gt;除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png&quot; alt=&quot;libvirt-internal&quot;&gt;&lt;/p&gt;
 &lt;p&gt;详细介绍可参考：&lt;a href=&quot;http://libvirt.org/internals.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvirt internals&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;安装libvirt: &lt;/p&gt;

@@ -103,7 +103,7 @@
 0x03 虚拟机监控Libvmi
 0x04 虚拟机监控Volatility">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png">
-<meta property="og:updated_time" content="2016-04-21T20:56:29.000Z">
+<meta property="og:updated_time" content="2016-04-23T20:24:09.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="A Comprehensive Virtualized Enviroment Setup and Analysis">
 <meta name="twitter:description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
@@ -376,8 +376,7 @@
 </blockquote>
 <a id="more"></a>
 <h3 id="0x00-全文环境"><a href="#0x00-全文环境" class="headerlink" title="0x00 全文环境"></a>0x00 全文环境</h3><p>Ubuntu12.04 + Kvm-kmod-3.8 + Qemu-kvm-1.1.2+ Libvirt 1.3.2 + Libvmi + Volatility </p>
-<p>###Ox01 虚拟机创建KVM/QEMU  </p>
-<p>Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。<br>另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。</p>
+<h3 id="Ox01-虚拟机创建KVM-QEMU"><a href="#Ox01-虚拟机创建KVM-QEMU" class="headerlink" title="Ox01 虚拟机创建KVM/QEMU"></a>Ox01 虚拟机创建KVM/QEMU</h3><p>Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。<br>另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。</p>
 <p>可执行：</p>
 <pre><code>modprobe kvm 
 modprobe kvm_intel 
@@ -412,7 +411,7 @@ br0              8000.68f728eddb0d      no          eth0
 </code></pre><p>之后在创建虚拟机的时候可添加-net nic -net tap参数，如</p>
 <pre><code>/usr/local/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -net nic -net tap -monitor stdio    
 </code></pre><p>之后创建的虚拟机便工作在网桥模式中。</p>
-<h3 id="0x01-虚拟机管理Libvirt"><a href="#0x01-虚拟机管理Libvirt" class="headerlink" title="0x01 虚拟机管理Libvirt"></a>0x01 虚拟机管理Libvirt</h3><p>除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：</p>
+<h3 id="0x02-虚拟机管理Libvirt"><a href="#0x02-虚拟机管理Libvirt" class="headerlink" title="0x02 虚拟机管理Libvirt"></a>0x02 虚拟机管理Libvirt</h3><p>除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png" alt="libvirt-internal"></p>
 <p>详细介绍可参考：<a href="http://libvirt.org/internals.html" target="_blank" rel="external">libvirt internals</a></p>
 <p>安装libvirt: </p>
@@ -812,7 +811,7 @@ pip install distorm3
               
             
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x00-全文环境"><span class="nav-number">1.</span> <span class="nav-text">0x00 全文环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x01-虚拟机管理Libvirt"><span class="nav-number">2.</span> <span class="nav-text">0x01 虚拟机管理Libvirt</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x03-虚拟机监控Libvmi"><span class="nav-number">3.</span> <span class="nav-text">0x03 虚拟机监控Libvmi</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x04-虚拟机监控Volatility"><span class="nav-number">4.</span> <span class="nav-text">0x04 虚拟机监控Volatility</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x0A-References"><span class="nav-number">5.</span> <span class="nav-text">0x0A References</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x00-全文环境"><span class="nav-number">1.</span> <span class="nav-text">0x00 全文环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Ox01-虚拟机创建KVM-QEMU"><span class="nav-number">2.</span> <span class="nav-text">Ox01 虚拟机创建KVM/QEMU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x02-虚拟机管理Libvirt"><span class="nav-number">3.</span> <span class="nav-text">0x02 虚拟机管理Libvirt</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x03-虚拟机监控Libvmi"><span class="nav-number">4.</span> <span class="nav-text">0x03 虚拟机监控Libvmi</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x04-虚拟机监控Volatility"><span class="nav-number">5.</span> <span class="nav-text">0x04 虚拟机监控Volatility</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x0A-References"><span class="nav-number">6.</span> <span class="nav-text">0x0A References</span></a></li></ol></div>
             
           </div>
         </section>
