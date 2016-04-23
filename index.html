@@ -472,57 +472,7 @@
 <ul>
 <li>长话短说（Too long;Don’t read)</li>
 <li>什么是系统调用</li>
-<li>准备知识<ul>
-<li>硬件与软件</li>
-<li>用户程序，内核与CPU特权级</li>
-<li>中断</li>
-<li>特殊模块寄存器</li>
-<li>编写汇编代码触发系统调用不是个好主意</li>
-</ul>
-</li>
-</ul>
-<ul>
-<li>传统系统调用<ul>
-<li>自己写汇编代码使用传统系统调用</li>
-<li>内核层面：<code>int $0x80</code>入口</li>
-<li><code>iret</code>: 从传统系统调用返回</li>
-</ul>
-</li>
-<li>快速系统调用<ul>
-<li>32位快速系统调用<ul>
-<li><code>sysenter/sysexit</code></li>
-<li><code>_ _kernel_vsyscall</code>内幕</li>
-<li>自己写汇编代码使用<code>sysenter</code></li>
-<li>内核层面：<code>sysenter</code>入口</li>
-<li><code>sysexit</code>: 从<code>sysenter</code>中返回</li>
-</ul>
-</li>
-<li>64位快速系统调用<ul>
-<li><code>syscall/sysret</code></li>
-<li>自己写汇编代码使用syscall</li>
-<li>内核层面：<code>syscall</code>入口</li>
-<li>sysret: 从syscall中返回</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>syscall(2)：半手动调用syscall<ul>
-<li>glibc <code>syscall</code>封装器内幕</li>
-</ul>
-</li>
-<li>虚拟系统调用<ul>
-<li>内核中的vDSO</li>
-<li>在内存中定位vDSO</li>
-<li>glibc中的vDSO</li>
-</ul>
-</li>
-<li><code>glibc</code>系统调用封装器</li>
-<li>重要的syscall相关bugs<ul>
-<li>CVE-2010-3301</li>
-<li>Android <code>sysenter</code> ABI 破坏</li>
-</ul>
-</li>
-<li>结论</li>
+<li>准备知识</li>
 </ul>
 </blockquote>
           <div class="post-more-link text-center">

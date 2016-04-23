@@ -52,21 +52,22 @@
     <link href="http://yoursite.com/blog/2016/04/08/linux-syscalls/"/>
     <id>http://yoursite.com/blog/2016/04/08/linux-syscalls/</id>
     <published>2016-04-08T21:08:08.000Z</published>
-    <updated>2016-04-21T20:57:56.000Z</updated>
+    <updated>2016-04-23T20:08:03.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
 &lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
 &lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;ul&gt;
-&lt;li&gt;硬件与软件&lt;/li&gt;
-&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
-&lt;li&gt;中断&lt;/li&gt;
-&lt;li&gt;特殊模块寄存器&lt;/li&gt;
-&lt;li&gt;编写汇编代码触发系统调用不是个好主意&lt;/li&gt;
+&lt;li&gt;准备知识&lt;/li&gt;
 &lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;pre&gt;&lt;code&gt;+ 硬件与软件
++ 用户程序，内核与CPU特权级
++ 中断
++ 特殊模块寄存器
++ 编写汇编代码触发系统调用不是个好主意
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
 &lt;ul&gt;
 &lt;li&gt;传统系统调用&lt;ul&gt;
 &lt;li&gt;自己写汇编代码使用传统系统调用&lt;/li&gt;
@@ -111,7 +112,6 @@
 &lt;li&gt;结论&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;h2 id=&quot;长话短说-Too-long-Don’t-read&quot;&gt;&lt;a href=&quot;#长话短说-Too-long-Don’t-read&quot; class=&quot;headerlink&quot; title=&quot;长话短说(Too long; Don’t read)&quot;&gt;&lt;/a&gt;长话短说(Too long; Don’t read)&lt;/h2&gt;&lt;p&gt;文章解释了Linux程序在内核中是如何调用函数的。&lt;/p&gt;
 &lt;p&gt;读完你可以知道：触发系统调用的不同方法，如何编写汇编代码触发系统调用(含代码样例), 内核执行系统调用的入口，内核从系统调用返回的出口，glibc封装器，相关bugs，还有更多，更多。&lt;/p&gt;
 &lt;h2 id=&quot;什么是系统调用？&quot;&gt;&lt;a href=&quot;#什么是系统调用？&quot; class=&quot;headerlink&quot; title=&quot;什么是系统调用？&quot;&gt;&lt;/a&gt;什么是系统调用？&lt;/h2&gt;&lt;p&gt;当你运行的程序调用 open,fork,read,write（以及其它类似的函数)时,就会触发系统调用。&lt;/p&gt;
@@ -483,57 +483,7 @@ $ echo $?
 &lt;ul&gt;
 &lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
 &lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;ul&gt;
-&lt;li&gt;硬件与软件&lt;/li&gt;
-&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
-&lt;li&gt;中断&lt;/li&gt;
-&lt;li&gt;特殊模块寄存器&lt;/li&gt;
-&lt;li&gt;编写汇编代码触发系统调用不是个好主意&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ul&gt;
-&lt;li&gt;传统系统调用&lt;ul&gt;
-&lt;li&gt;自己写汇编代码使用传统系统调用&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;int $0x80&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;iret&lt;/code&gt;: 从传统系统调用返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;快速系统调用&lt;ul&gt;
-&lt;li&gt;32位快速系统调用&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;sysenter/sysexit&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;内幕&lt;/li&gt;
-&lt;li&gt;自己写汇编代码使用&lt;code&gt;sysenter&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;sysenter&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;sysexit&lt;/code&gt;: 从&lt;code&gt;sysenter&lt;/code&gt;中返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;64位快速系统调用&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;syscall/sysret&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;自己写汇编代码使用syscall&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;syscall&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;sysret: 从syscall中返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;syscall(2)：半手动调用syscall&lt;ul&gt;
-&lt;li&gt;glibc &lt;code&gt;syscall&lt;/code&gt;封装器内幕&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;虚拟系统调用&lt;ul&gt;
-&lt;li&gt;内核中的vDSO&lt;/li&gt;
-&lt;li&gt;在内存中定位vDSO&lt;/li&gt;
-&lt;li&gt;glibc中的vDSO&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;glibc&lt;/code&gt;系统调用封装器&lt;/li&gt;
-&lt;li&gt;重要的syscall相关bugs&lt;ul&gt;
-&lt;li&gt;CVE-2010-3301&lt;/li&gt;
-&lt;li&gt;Android &lt;code&gt;sysenter&lt;/code&gt; ABI 破坏&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;结论&lt;/li&gt;
+&lt;li&gt;准备知识&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/blockquote&gt;
     

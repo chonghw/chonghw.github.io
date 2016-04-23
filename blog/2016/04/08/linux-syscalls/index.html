@@ -84,79 +84,22 @@
 
 <meta name="description" content="长话短说（Too long;Don’t read)
 什么是系统调用
-准备知识
-硬件与软件
-用户程序，内核与CPU特权级
-中断
-特殊模块寄存器
-编写汇编代码触发系统调用不是个好主意
-
-
-
-
-传统系统调用
-自己写汇编代码使用传统系统调用
-内核层面：int $0x80入口
-iret: 从传统系统调用返回
-
-
-快速系统调用
-32位快速系统调用
-sysenter/sysexit
-_ _kernel_vs">
+准备知识">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux系统调用权威指南">
 <meta property="og:url" content="http://yoursite.com/blog/2016/04/08/linux-syscalls/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="长话短说（Too long;Don’t read)
 什么是系统调用
-准备知识
-硬件与软件
-用户程序，内核与CPU特权级
-中断
-特殊模块寄存器
-编写汇编代码触发系统调用不是个好主意
-
-
-
-
-传统系统调用
-自己写汇编代码使用传统系统调用
-内核层面：int $0x80入口
-iret: 从传统系统调用返回
-
-
-快速系统调用
-32位快速系统调用
-sysenter/sysexit
-_ _kernel_vs">
+准备知识">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/idt.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/isr_stack.png">
-<meta property="og:updated_time" content="2016-04-21T20:57:56.000Z">
+<meta property="og:updated_time" content="2016-04-23T20:08:03.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux系统调用权威指南">
 <meta name="twitter:description" content="长话短说（Too long;Don’t read)
 什么是系统调用
-准备知识
-硬件与软件
-用户程序，内核与CPU特权级
-中断
-特殊模块寄存器
-编写汇编代码触发系统调用不是个好主意
-
-
-
-
-传统系统调用
-自己写汇编代码使用传统系统调用
-内核层面：int $0x80入口
-iret: 从传统系统调用返回
-
-
-快速系统调用
-32位快速系统调用
-sysenter/sysexit
-_ _kernel_vs">
+准备知识">
 <meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/idt.png">
 
 
@@ -411,15 +354,16 @@ _ _kernel_vs">
 <ul>
 <li>长话短说（Too long;Don’t read)</li>
 <li>什么是系统调用</li>
-<li>准备知识<ul>
-<li>硬件与软件</li>
-<li>用户程序，内核与CPU特权级</li>
-<li>中断</li>
-<li>特殊模块寄存器</li>
-<li>编写汇编代码触发系统调用不是个好主意</li>
+<li>准备知识</li>
 </ul>
-</li>
-</ul>
+</blockquote>
+<a id="more"></a>
+<pre><code>+ 硬件与软件
++ 用户程序，内核与CPU特权级
++ 中断
++ 特殊模块寄存器
++ 编写汇编代码触发系统调用不是个好主意
+</code></pre><blockquote>
 <ul>
 <li>传统系统调用<ul>
 <li>自己写汇编代码使用传统系统调用</li>
@@ -464,7 +408,6 @@ _ _kernel_vs">
 <li>结论</li>
 </ul>
 </blockquote>
-<a id="more"></a>
 <h2 id="长话短说-Too-long-Don’t-read"><a href="#长话短说-Too-long-Don’t-read" class="headerlink" title="长话短说(Too long; Don’t read)"></a>长话短说(Too long; Don’t read)</h2><p>文章解释了Linux程序在内核中是如何调用函数的。</p>
 <p>读完你可以知道：触发系统调用的不同方法，如何编写汇编代码触发系统调用(含代码样例), 内核执行系统调用的入口，内核从系统调用返回的出口，glibc封装器，相关bugs，还有更多，更多。</p>
 <h2 id="什么是系统调用？"><a href="#什么是系统调用？" class="headerlink" title="什么是系统调用？"></a>什么是系统调用？</h2><p>当你运行的程序调用 open,fork,read,write（以及其它类似的函数)时,就会触发系统调用。</p>
