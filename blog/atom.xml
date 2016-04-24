@@ -896,15 +896,15 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/blog/categories/virtualization/"/>
     
     
+      <category term="Security" scheme="http://yoursite.com/blog/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/blog/tags/Binary/"/>
+    
       <category term="Virtualization" scheme="http://yoursite.com/blog/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/blog/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/blog/tags/QEMU/"/>
-    
-      <category term="Security" scheme="http://yoursite.com/blog/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/blog/tags/Binary/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/blog/tags/Libvmi/"/>
     
