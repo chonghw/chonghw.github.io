@@ -1,0 +1,780 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Security,System,Attack,Memory,Defense," />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="继前两篇文章 内存持久战-内存安全性, 内存持久战-攻击模型, 再加上防御措施，才能算是完整的内存战争。本文首先介绍目前广泛部署的防御机制，然后根据 内存持久战-攻击模型 每一步实施的攻击破坏介绍相对应的防御细节。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存持久战-防御机制">
+<meta property="og:url" content="http://yoursite.com/blog/blog/2016/02/23/memorywar-defense/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="继前两篇文章 内存持久战-内存安全性, 内存持久战-攻击模型, 再加上防御措施，才能算是完整的内存战争。本文首先介绍目前广泛部署的防御机制，然后根据 内存持久战-攻击模型 每一步实施的攻击破坏介绍相对应的防御细节。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorywar.png">
+<meta property="og:updated_time" content="2016-04-21T20:54:57.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="内存持久战-防御机制">
+<meta name="twitter:description" content="继前两篇文章 内存持久战-内存安全性, 内存持久战-攻击模型, 再加上防御措施，才能算是完整的内存战争。本文首先介绍目前广泛部署的防御机制，然后根据 内存持久战-攻击模型 每一步实施的攻击破坏介绍相对应的防御细节。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorywar.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 内存持久战-防御机制 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/blog/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/blog/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/blog/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/blog/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                内存持久战-防御机制
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-02-23T11:54:07-05:00" content="2016-02-23">
+              2016-02-23
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/security/" itemprop="url" rel="index">
+                    <span itemprop="name">security</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/blog/2016/02/23/memorywar-defense/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/02/23/memorywar-defense/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>继前两篇文章 <a href="http://www.chongh.wiki/blog/2016/02/17/memory-safety/" target="_blank" rel="external">内存持久战-内存安全性</a>, <a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/" target="_blank" rel="external">内存持久战-攻击模型</a>, 再加上防御措施，才能算是完整的内存战争。本文首先介绍目前广泛部署的防御机制，然后根据 <a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/" target="_blank" rel="external">内存持久战-攻击模型</a> 每一步实施的攻击破坏介绍相对应的防御细节。</p>
+<a id="more"></a>
+<h3 id="广泛部署的防御机制"><a href="#广泛部署的防御机制" class="headerlink" title="广泛部署的防御机制"></a>广泛部署的防御机制</h3><p>目前广泛部署的防御机制有栈粉碎性保护（Stack smashing protection)，DEP/W⊕X以及ASLR(Address Space Layout Randomization)。针对Windows平台，也提出了一些特殊的机制，比如 SafeSEH 与 SEHOP 用来保护堆的元数据和异常处理器。</p>
+<p>栈粉碎性保护,SafeSEH以及SEHOP的基本思想是在返回地址与缓冲区(比如函数入口）之间放置随机数作为哨兵（称为cookie或canary),在函数返回前先检测哨兵的值是否被篡改，以达到检测缓冲区溢出攻击的目的。这些机制都属于代码指针保护方式（code pointer integrity),主要检测一些特殊代码指针，如栈上的返回地址、异常处理器指针的完整性，然而对于直接修改（比如索引错误）却无能为力。有关stack smashing 可参考这篇文章 <a href="http://www.drdobbs.com/security/anatomy-of-a-stack-smashing-attack-and-h/240001832?pgno=1" target="_blank" rel="external">Anatomy of a Stack Smashing Attack and How GCC Prevents It
+</a></p>
+<p>W⊕X（write XOR executable)属于DEP（data execution prevention)的子集，是不可执行数据（Non-executable data）与代码完整性(code integrity)的结合。所有现代CPU都支持设置不可执行页面权限，结合不可写代码权限，就可以实施W⊕X机制，很简单也很实际。然而无法防御ROP（return oriented programming),ROP指的是在将现有代码中的可复用代码（可以是现有的函数）以及一些指令序列（gadgets)连接起来实施恶意操作。有关ROP可参考这篇文章，<a href="https://www.blackhat.com/presentations/bh-usa-08/Shacham/BH_US_08_Shacham_Return_Oriented_Programming.pdf" target="_blank" rel="external">Return-oriented Programming:<br>Exploitation without Code Injection</a>.</p>
+<p>ASLR在下文会详细描述。</p>
+<h3 id="防御机制Step-by-step"><a href="#防御机制Step-by-step" class="headerlink" title="防御机制Step-by-step"></a>防御机制Step-by-step</h3><p>从目前提出的所有防御机制来看，可将其划分为两大类：概率性以及确定性防御。概率性机制用来随机化一些对象，如ISR(Instruction Set Randomization), ASLR(Address Space Layout Randomizatioin)以及DSR(Data Space Randomization),可选手段相对较少。 确定性防御机制实施reference monitor, 有关reference monitor的定义可参考，<a href="https://en.wikipedia.org/wiki/Reference_monitor" target="_blank" rel="external">wikipedia page on reference monior</a>,主要就是在参考验证机制上定义了一些设计要求。 其主要利用静态与动态注入技术，静态注入可在编译阶段实施，动态注入需要在运行时加入代码，损耗相对较大。有关注入技术，可参考我前面的文章 <a href="http://www.chongh.wiki/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" target="_blank" rel="external">PIN for Dynamic Binary Instrumentation</a>。</p>
+<p>下面将针对攻击模型中实施的每个步骤介绍相对应的防御机制，每种防御机制对应每一步的攻击过程。<br>可以先去回顾一下 <a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/" target="_blank" rel="external">内存持久战-攻击模型</a> 的完整实施过程。注意，以下介绍的防御机制并没有时序关系,以横向关系依次描述。</p>
+<p><strong><em>Step 1&amp;2: Memory safety.</em></strong> 考虑完整的内存安全性，空间错误和时域错误都需要阻止。类型安全（Type-safe)的语言通过检查数组边界并使用自动垃圾回收来实施空间与时域安全性。对于非类型安全语言，可嵌入reference monitor针对非安全代码实施类似的策略，对象可以是源码、中间语言、二进制。</p>
+<p>针对空间安全，可跟踪指针边界，将指针结构体的表示方法扩展，加入额外信息。但是这种需要源码标注(annotation)，对于庞大的代码基是不实用的，甚至会改变内存结构带来二进制兼容性问题。可参考 <a href="https://www.cs.virginia.edu/~weimer/p/p477-necula.pdf" target="_blank" rel="external">CCured</a> 项目。为解决兼容性问题，越来越多研究者开始追踪对象边界，不但要知道对象分配的内存区域边界，并利用指针运算而不是引用指针来保护指针边界。</p>
+<p>然而，检测边界并不能解决use-after-free, double-free(use-after-free的特列)问题. 此时，实施时域安全可作为补充。1）特殊的分配器：释放的内存只能被同类型对象重用并对齐。此策略可阻止user-after-free攻击，但对dangling pointers无效；2）基于对象的方法：利用影子内存标记每一块释放的内存位置，如果访问最近被释放的空间就能被检测到。著名的Valgrind内存检测就是利用此方法来检测user-after-free错误的。有关Valgrind的内存检测技术将会在后续的文章<a href="http://www.chongh.wiki/blog/2016/02/20/valgrind-memory/" target="_blank" rel="external">Valgrind内存检测</a> 详细介绍。如果标记的内存区域重新被新的指针指向，对其的非法访问就检测不到了；3）基于指针的方法：同时维护指针的边界信息与内存分配信息实施全面的内存安全。</p>
+<p><strong><em>Step 3: 代码完整性(code integrity, 对应修改代码),代码指针完整性(code pointer integrity，对应修改代码指针)以及数据完整性（data integrity，对应修改数据变量).</em></strong></p>
+<p>代码完整性保证程序中的代码不可写性，可以将含有代码的所有内存页面设置为read-only,所有现代CPU都支持此操作。但是，代码完整性并不支持自我修改(self-modifying)的代码以及即时(Just-In-Time, JIT)编译。代码指针完整性保护指针不被修改，对于不变指针，如全局偏移表、虚拟函数表（vtable),可将其内存页设置read-only。但大部分指针，如定义的函数指针或保存的返回地址必须是可写的。另外，就算内存中所有的函数指针都能实施代码指针完整性，并不能防御use-after-free攻击，例如，通过悬挂指针读取错误的vtable<br>来改变程序的控制流并不会涉及内存中的覆盖代码指针操作。</p>
+<p>数据完整性的实施近似空间安全保护，但并没有实施时域安全保护。数据完整性包括基于对象的完整性保护以及基于points-to集合的完整性保护。基于对象的完整性保护利用静态指针分析来鉴别出不安全的指针集(比如可能会越界的指针)以及指针的points-to集合，然后在代码中插入用影子内存跟踪对象的创建与释放的代码，当对不安全的指针进行写操作或引用操作时会检测指针的位置是否标记在影子内存中。基于points-to集合的完整性保护在基于对象的完整性保护上加了一个限制，每个解引用只能写它自己指向的集合对象，是对其保护的加强。</p>
+<p><strong><em>Step 4: ISR(对应指针转向攻击者特定代码),ASLR（对应指向shellcode或者gadget的地址),DSR(对应解析输出的数据变量).</em></strong></p>
+<p>ISR随机化系统指令来保护代码破坏攻击，随着硬件的更新与发展,ISR技术已经废弃；ASLR随机化代码和数据的存储位置来防御控制流劫持攻击，如果payload(指恶意代码中执行恶意操作的部分）在虚拟内存空间的地址不是固定的，攻击者就无法转移控制流。ASLR也是目前用来保护劫持攻击运用最广泛的技术，然后ASLR的随机化是可预测的，尤其是32位机器，heap-spraying以及JIT-spraying技术可以多次填充payload使随机化失效；</p>
+<p>DSR将存储在内存中的数据形式，而不是存储位置，进行随机化。它为每个变量,包括指针，生成不同的key并进行加密操作，数据的每次读取/存储操作都多了个加解密过程。该方法在代码注入之前都要对指针进行静态分析，overhead较大，但保护比较健壮，能有效防止信息泄露，还能防御控制流劫持以及数据攻击。</p>
+<p><strong><em>Step 5: 控制流完整性（control-flow integrity,对应利用间接跳转指令 call/jump 引用指针，利用返回指令引用指针)以及数据流完整性(data-flow integrity，对应引用破坏后的数据变量).</em></strong></p>
+<p>控制流完整性包括动态返回完整性以及静态控制流图完整性。前文提到的栈粉碎性保护机制不能保护间接调转（call and jump)，不能防御直接修改破坏以及信息泄露，但开销小，兼容性好，所以运用比较广泛。影子栈技术能够解决栈粉碎性保护的信息泄露以及直接修改破坏问题，它把返回地址存入隔离的影子栈中，当函数返回时，对原有栈和影子栈两处保存的值做比较，已保证不被篡改。为了防御控制流劫持，不但要保护返回值，还要保护间接跳转，静态控制流图完整性的方式标记所有的call,jump，并将其标记信息存储在特殊的影子内存中或直接放进代码里; 数据流完整性在数据被使用前，通过检查read指令检测数据是否被破坏。它使用静态points-to分析构建一个全局的可达定义集合（reaching definition sets)，保证数据变量最近一次被写是通过程序中的写指令写入的，而不是攻击者可控制的写入。有关reaching definition sets的定义可参考 <a href="https://en.wikipedia.org/wiki/Reaching_definition" target="_blank" rel="external">wikipedia page on Reaching definition</a>.</p>
+<p><strong><em>Step 6: 不可写数据策略(Non-executable data,对应执行注入的shellcode).</em></strong><br>Non-executable data 保护栈、堆之类的内存页面不可执行，只需要设置内存页面的执行位即可。实际上Non-executable data策略与代码完整性结合就是W⊕X机制。</p>
+<p>每个攻击过程对应的防御机制都已讲完。横向来看，所有攻击模型的每个步骤都有多个防御方法；纵向来看，每种攻击在不同的实施阶段也有不同的防御方法，如控制流劫持攻击，从Step1-6分别有，内存安全性机制（step 1-2),代码指针完整性(step 3),ASLR(step 4), 控制流完整性（step 5）以及不可写数据策略（step 6)不同的防御机制。要阻止某种攻击或多种攻击，需要结合多种防御机制，每种机制也都有其优势与弱点。评判防御机制的性质，可从以下方面去衡量，保护强度、误报率、漏报率、性能开销、内存开销、兼容性，是否模块化等。</p>
+<p>至此，内存持久战系列文章就到这里了，水平有限，很多不到位的地方欢迎补充修正。 回顾一下，最后用下面这张图总结，就清晰明了了。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memorywar.png" alt="memorywar"></p>
+<h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p><a href="http://www.drdobbs.com/security/anatomy-of-a-stack-smashing-attack-and-h/240001832?pgno=1" target="_blank" rel="external">Anatomy of a Stack Smashing Attack and How GCC Prevents It
+</a></p>
+<p><a href="https://www.blackhat.com/presentations/bh-usa-08/Shacham/BH_US_08_Shacham_Return_Oriented_Programming.pdf" target="_blank" rel="external">Return-oriented Programming: Exploitation without Code Injection</a>.</p>
+<p><a href="https://en.wikipedia.org/wiki/Reference_monitor" target="_blank" rel="external">wikipedia page on reference monior</a></p>
+<p><a href="https://www.cs.virginia.edu/~weimer/p/p477-necula.pdf" target="_blank" rel="external">CCured</a></p>
+<p><a href="https://nebelwelt.net/publications/files/13Oakland.pdf" target="_blank" rel="external">S&amp;P’13 Eternal War in Memory </a></p>
+<hr>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>作者[新浪微博：<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo&amp;is_all=1" target="_blank" rel="external">@diting0x</a>] </p>
+<p>如转载本文请注明出处:<a href="http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/</a></p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/blog/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/blog/tags/System/" rel="tag">#System</a>
+          
+            <a href="/blog/tags/Attack/" rel="tag">#Attack</a>
+          
+            <a href="/blog/tags/Memory/" rel="tag">#Memory</a>
+          
+            <a href="/blog/tags/Defense/" rel="tag">#Defense</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/blog/2016/02/20/memory-classification/" rel="next" title="Memory page classificatition">
+                <i class="fa fa-chevron-left"></i> Memory page classificatition
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/blog/2016/03/07/rootkit-tutorial/" rel="prev" title="A Comprehensive Tutorial of Rootkit">
+                A Comprehensive Tutorial of Rootkit <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/02/23/memorywar-defense/"
+           data-title="内存持久战-防御机制" data-url="http://yoursite.com/blog/blog/blog/2016/02/23/memorywar-defense/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/blog/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#广泛部署的防御机制"><span class="nav-number">1.</span> <span class="nav-text">广泛部署的防御机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#防御机制Step-by-step"><span class="nav-number">2.</span> <span class="nav-text">防御机制Step-by-step</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#References"><span class="nav-number">3.</span> <span class="nav-text">References</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

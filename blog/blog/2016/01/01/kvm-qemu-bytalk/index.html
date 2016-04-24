@@ -1,0 +1,776 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Virtualization,KVM,QEMU," />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="KVM/Qemu选择与部署
+KVM/Qemu原理概览">
+<meta property="og:type" content="article">
+<meta property="og:title" content="KVM/Qemu虚拟机简介">
+<meta property="og:url" content="http://yoursite.com/blog/blog/2016/01/01/kvm-qemu-bytalk/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="KVM/Qemu选择与部署
+KVM/Qemu原理概览">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/kvm-qemu.png">
+<meta property="og:updated_time" content="2016-04-21T20:51:19.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="KVM/Qemu虚拟机简介">
+<meta name="twitter:description" content="KVM/Qemu选择与部署
+KVM/Qemu原理概览">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/kvm-qemu.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> KVM/Qemu虚拟机简介 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/blog/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/blog/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/blog/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/blog/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                KVM/Qemu虚拟机简介
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-01-01T16:05:23-05:00" content="2016-01-01">
+              2016-01-01
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/virtualization/" itemprop="url" rel="index">
+                    <span itemprop="name">virtualization</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/blog/2016/01/01/kvm-qemu-bytalk/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/01/01/kvm-qemu-bytalk/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<ul>
+<li>KVM/Qemu选择与部署</li>
+<li>KVM/Qemu原理概览</li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h2 id="KVM-Qemu选择与部署"><a href="#KVM-Qemu选择与部署" class="headerlink" title="KVM/Qemu选择与部署"></a>KVM/Qemu选择与部署</h2><p>KVM作为虚拟机监控器VMM，分为两部分，分别是运行于kernel模式的KVM内核模块（kvm-kmod)和运行于user模式的Qemu模块。KVM的具体实现下文会作简单介绍。先来看kvm-kmod部分，linux kernel从2.6版本开始便开始集成了KVM模块，如果你只想简单的使用KVM，只需简单编译和配置内核即可使用KVM的一切特性，这里不作介绍，如果你想基于KVM做开发，还是老老实实去<a href="http://sourceforge.net/projects/kvm/files/" target="_blank" rel="external">kvm官网</a>下载，自己源码安装吧，在选择KVM版本之前，可以打开任意一个版本例如kvm-kmod-3.8里面的configure文件，可看到以下代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"># minimum is 2.6.x</span><br><span class="line">min_kernel_version=24</span><br><span class="line"># maximum is 3.x</span><br><span class="line">max_kernel_version=8</span><br><span class="line">kernel_version=`echo $kernel_version_str | sed &apos;s/\([0-9]*\)\.[0-9]*\.[0-9]*.*/\1/&apos;`</span><br><span class="line">kernel_patchlevel=`echo $kernel_version_str | sed &apos;s/[0-9]*\.\([0-9]*\)\.[0-9]*.*/\1/&apos;`</span><br><span class="line">kernel_sublevel=`echo $kernel_version_str | sed &apos;s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/&apos;`</span><br><span class="line">if [ ! -n &quot;$force_build&quot; ]; then</span><br><span class="line">	if [ $kernel_version -eq 2 ] &amp;&amp; [ $kernel_sublevel -lt $min_kernel_version ]; then</span><br><span class="line">		echo</span><br><span class="line">		echo &quot;Error: kernel is too old for this kvm-kmod release.&quot;</span><br><span class="line">		echo</span><br><span class="line">		exit 1</span><br><span class="line">	elif [ $kernel_version -eq 3 ] &amp;&amp; [ $kernel_patchlevel -gt $max_kernel_version ]; then</span><br><span class="line">		echo</span><br><span class="line">		echo &quot;Error: kernel is more recent than KVM modules delivered with this release.&quot;</span><br><span class="line">		echo &quot;You probably want to use the KVM support that is already part of your kernel.&quot;</span><br><span class="line">		echo</span><br><span class="line">		exit 1</span><br><span class="line">	fi</span><br><span class="line">fi</span><br></pre></td></tr></table></figure></p>
+<p>这段代码仔细看看，就不难看出kvm-kmod版本的每个数字和kernel版本号都是有关联的，kvm-kmod毕竟是一个内核模块，必须去适应内核，大家如果在安装kvm-kmod时出现kernel is too old 或者kernel is more recent等错误就应该静下来好好看看这段代码了。下载后匹配的kvm-kmod后，安装很简单，只需要执行<code>./configure
+make $$ make install</code>即可</p>
+<p>安装之后，有两个模块<code>kvm.ko kvm-intel.ko</code>便会生成在./kvm/x86文件夹中，执行<code>insmod kvm.ko kvm-intel.ko</code> 或者<code>modprobe kvm.ko kvm-intel.ko</code>，便成功将kvm模块加载到内核了，<br>如果期间出现错误，可执行<code>lsmod | grep kvm</code> 看kvm是否成功加载，或执行<code>dmesg | grep kvm</code>查看具体执行信息。<br>这里强调，kvm-kmod是内核的一个模块，可随时加载随时删除，因此基于kvm的开发，修改kvm的源码之后，编译与运行起来都很方便。</p>
+<p>qemu-kvm是为兼容kvm基于qemu模拟器开发出来的一个分支版本，安装qemu-kvm之前，检查是否有以下依赖包： <code>linux-kernel-headers zlib1g-dev libglib2.0-dev</code>，如果没有<code>apt-get install</code>一下。<br>之后,执行：</p>
+<pre><code>./configure --prefix=/usr/local/kvm 
+make &amp;&amp; make install
+</code></pre><p>即可，qemu-kvm便会安装到/usr/local/kvm路径下，安装成功后，会在此路径的/bin文件夹下出现qemu-img, qemu-system-x86_64等二进制文件,自己也可以选择将这些二进制文件拷贝到根目录下的/bin文件夹中，这样在执行这些二进制文件的时候就不用加前缀/usr/local/kvm/bin了。<br>执行：</p>
+<pre><code>/usr/local/kvm/bin/qemu-img create -f qcow2 imgname.img 10G 
+</code></pre><p>创建一个qcow2格式的空虚拟机img文件<br>执行： </p>
+<pre><code>/usr/local/kvm/bin/qemu-system-x86_64 -hda imgname.img -m 1024 -vnc :1 -cdrom imgname.iso -boot d     
+</code></pre><p>将imgname.iso系统安装到imgname.img中<br>之后利用xvnc4viewer等vnc软件连接虚拟机完成安装过程，安装完后，执行:</p>
+<pre><code>/usr/local/kvm/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -monitor stdio  
+</code></pre><p>登陆到虚拟机。具体细节可自行摸索。</p>
+<h2 id="KVM-Qemu原理概览"><a href="#KVM-Qemu原理概览" class="headerlink" title="KVM/Qemu原理概览"></a>KVM/Qemu原理概览</h2><p>说说kvm与qemu的关系，借用实验室某大神给的一张图：</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/kvm-qemu.png" alt="kvm-qemu"></p>
+<p>可以看到，这里有三种模式，第一是客户机执行时所处的Guest模式，也就是虚拟化技术VMX中的非Root模式；第二是KVM运行的Kernel模式，即VMX中的Root模式，此时特权级为0；第三是Qemu运行的User模式，处于VMX Root模式中的特权级3.有关VMX技术，以及非Root模式如何通过VM Exit进入到Root模式，Root模式如何通过VM Entry进入到非Root模式，可参考Intel系统编程手册。</p>
+<p>简单说说Qemu所在的User模式如何与KVM所在的kernel模式交互，虚拟化中的VT-x技术的支持，使得KVM可以虚拟出多个虚拟处理器VCPU, 而这些VCPU对应每一个Qemu线程，VCPU的创建、初始化、运行以及退出都是在Qemu线程的上下文中进行，这些过程都是通过Qemu向KVM发送一个I/O通道管理函数ioctl来完成，以qemu-kvm-1.1.2为例，qemu-kvm中首先会在<code>./linux-header/linux/kvm.h</code>注册相应的ioctl,如<code>#define KVM_GET_REGS              _IOR(KVMIO,  0x81, struct kvm_regs)</code>，各参数含义可以具体去了解ioctl的实现方式，之后调用<code>kvm_vcpu_ioctl(env,KVM_GET_REGS,&amp;regs)</code>（有些也会调用kvm_vm_ioctl），KVM-Kmod中也会注册相应的ioctl，之后真正执行时会调用KVM_Kmod的相应函数，一般会在<code>kvm_main.c</code>文件中定义。如果想自定义自己的函数，需要分别在qemu-kvm与kvm-kmod注册相应的ioctl，只要编号不重复即可，注册后再调用自己定义的函数。</p>
+<p>备注：Qemu 线程以 ioctl 的方式向 KVM 内核模块发出指 示,后者执行 VM entry 操作,将处理器由 kernel 模式切换到 Guest 模式,中止宿主机软件, 转而运行客户软件。注意,宿主机软件被中止时,正处于 Qemu 线程上下文,且正在执行 ioctl 系统调用的 kernel 模式处理程序。客户软件在运行过程中,如发生异常或外部中断等事件, 或执行 I/O 操作,可能导致 VM exit,将处理器状态由 Guest 模式切换回 Kernel 模式。KVM 内核模块检查发生 VM exit 的原因,如果 VM exit 由于 I/O 操作导致,则执行系统调用返回操 作,将 I/O 操作交给处于 User 模式的 Qemu 线程来处理,Qemu 线程在处理完 I/O 操作后再 次执行 ioctl,指示 KVM 切换处理器到 Guest 模式,恢复客户软件的运行;如果 VM exit 由于 其它原因导致,则由 KVM 内核模块负责处理,并在处理后切换处理器到 Guest 模式,恢复 客户机的运行。</p>
+<p>完</p>
+<hr>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>转载本文请注明出处:<a href="http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/</a></p>
+<p>作者[新浪微博:<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo&amp;is_all=1" target="_blank" rel="external">@diting0x</a>]</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/blog/tags/Virtualization/" rel="tag">#Virtualization</a>
+          
+            <a href="/blog/tags/KVM/" rel="tag">#KVM</a>
+          
+            <a href="/blog/tags/QEMU/" rel="tag">#QEMU</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" rel="next" title="PIN for Dynamic Binary Instrumentation">
+                <i class="fa fa-chevron-left"></i> PIN for Dynamic Binary Instrumentation
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/blog/2016/01/02/highavailability-migration/" rel="prev" title="云平台高可用之虚拟机迁移">
+                云平台高可用之虚拟机迁移 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/01/01/kvm-qemu-bytalk/"
+           data-title="KVM/Qemu虚拟机简介" data-url="http://yoursite.com/blog/blog/blog/2016/01/01/kvm-qemu-bytalk/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/blog/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#KVM-Qemu选择与部署"><span class="nav-number">1.</span> <span class="nav-text">KVM/Qemu选择与部署</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#KVM-Qemu原理概览"><span class="nav-number">2.</span> <span class="nav-text">KVM/Qemu原理概览</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

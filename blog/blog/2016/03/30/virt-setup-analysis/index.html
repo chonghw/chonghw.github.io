@@ -1,0 +1,967 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Virtualization,KVM,QEMU,Security,Binary,Libvmi,Volatility," />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
+
+
+0x00 全文环境 
+0x01 虚拟机创建KVM/QEMU 
+0x02 虚拟机管理Libvirt
+0x03 虚拟机监控Libvmi
+0x04 虚拟机监控Volatility">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Comprehensive Virtualized Enviroment Setup and Analysis">
+<meta property="og:url" content="http://yoursite.com/blog/blog/2016/03/30/virt-setup-analysis/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
+
+
+0x00 全文环境 
+0x01 虚拟机创建KVM/QEMU 
+0x02 虚拟机管理Libvirt
+0x03 虚拟机监控Libvmi
+0x04 虚拟机监控Volatility">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png">
+<meta property="og:updated_time" content="2016-04-23T20:24:09.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A Comprehensive Virtualized Enviroment Setup and Analysis">
+<meta name="twitter:description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
+
+
+0x00 全文环境 
+0x01 虚拟机创建KVM/QEMU 
+0x02 虚拟机管理Libvirt
+0x03 虚拟机监控Libvmi
+0x04 虚拟机监控Volatility">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> A Comprehensive Virtualized Enviroment Setup and Analysis | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/blog/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/blog/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/blog/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/blog/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                A Comprehensive Virtualized Enviroment Setup and Analysis
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-03-30T22:17:12-04:00" content="2016-03-30">
+              2016-03-30
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/virtualization/" itemprop="url" rel="index">
+                    <span itemprop="name">virtualization</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/blog/2016/03/30/virt-setup-analysis/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/03/30/virt-setup-analysis/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。</p>
+<blockquote>
+<ul>
+<li>0x00 全文环境 </li>
+<li>0x01 虚拟机创建KVM/QEMU </li>
+<li>0x02 虚拟机管理Libvirt</li>
+<li>0x03 虚拟机监控Libvmi</li>
+<li>0x04 虚拟机监控Volatility</li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h3 id="0x00-全文环境"><a href="#0x00-全文环境" class="headerlink" title="0x00 全文环境"></a>0x00 全文环境</h3><p>Ubuntu12.04 + Kvm-kmod-3.8 + Qemu-kvm-1.1.2+ Libvirt 1.3.2 + Libvmi + Volatility </p>
+<h3 id="Ox01-虚拟机创建KVM-QEMU"><a href="#Ox01-虚拟机创建KVM-QEMU" class="headerlink" title="Ox01 虚拟机创建KVM/QEMU"></a>Ox01 虚拟机创建KVM/QEMU</h3><p>Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。<br>另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。</p>
+<p>可执行：</p>
+<pre><code>modprobe kvm 
+modprobe kvm_intel 
+</code></pre><p>开启内核自带的kvm</p>
+<p>关于源码安装kvm-kmod以及qemu-kvm的详细过程可参考 <a href="http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/" target="_blank" rel="external">上一篇</a> 文章。kvm-kmod安装成功后，运行lsmod | grep kvm， 会显示两个module:</p>
+<pre><code>kvm_intel             137721  3 
+kvm                   415549  1 kvm_intel
+</code></pre><p>qemu-kvm安装成功后会在/your-confiure-location/bin/qemu-system-x86_64等可执行文件。</p>
+<p>安装完KVM/QEMU后，创建虚拟机的时候，虚拟机的网络方式是比较关心的问题，KVM/QEMU有两种网络配置方式。</p>
+<p>其一，用户模式（User Networking): 即NAT方式，也是默认的网络模式。让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机。既然无法访问客户机，那宿主机与客户机该如何传输文件呢？默认的，客户机得到的ip空间为10.0.2.0/24，宿主机提供了ip为10.0.2.2的地址让虚拟机访问。可以ssh到宿主机(10.0.2.2)，用scp来拷贝文件。</p>
+<p>其二，桥接模式（Bridge Networking): 这种模式允许客户机就像一台独立的主机一样拥有网络。这种方式要比用户网络复杂一些，但是设置好后客户机与互联网，客户机与主机之间的通信都很容易。桥接网络需要网卡支持，一般的有线网卡都支持，绝大部分的无线网卡都不支持。</p>
+<p>NAT方式是KVM/QEMU提供的默认方式，要设置桥接模式，首先在宿主机上安装桥接相关的包，</p>
+<pre><code>apt-get install bridge-utils. 
+</code></pre><p>修改/etc/network/interfaces</p>
+<pre><code>auto lo
+iface lo inet loopback
+auto eth0
+iface eth0 inet manual
+auto br0
+iface br0 inet dhcp
+   bridge_ports eth0
+   bridge_stp off
+   bridge_fd 9
+   bridge_hello 2
+   bridge_maxwait 0
+</code></pre><p>执行</p>
+<pre><code>/etc/init.d/networking restart
+</code></pre><p>配置好后，可运行brctl show命令，会显示：</p>
+<pre><code>bridge name      bridge id              STP enabled interfaces
+br0              8000.68f728eddb0d      no          eth0
+                                              vnet0
+</code></pre><p>之后在创建虚拟机的时候可添加-net nic -net tap参数，如</p>
+<pre><code>/usr/local/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -net nic -net tap -monitor stdio    
+</code></pre><p>之后创建的虚拟机便工作在网桥模式中。</p>
+<h3 id="0x02-虚拟机管理Libvirt"><a href="#0x02-虚拟机管理Libvirt" class="headerlink" title="0x02 虚拟机管理Libvirt"></a>0x02 虚拟机管理Libvirt</h3><p>除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png" alt="libvirt-internal"></p>
+<p>详细介绍可参考：<a href="http://libvirt.org/internals.html" target="_blank" rel="external">libvirt internals</a></p>
+<p>安装libvirt: </p>
+<p>先安装libvirt所依赖的包</p>
+<pre><code>apt-get install libnl-dev libxml2 libxml2-dev  libpciaccess-dev libyajl-dev libdevmapper-dev libgnutls-dev
+</code></pre><p>如出现以下错误，都可以检查上述这些包是否安装好</p>
+<pre><code>error: Could not find libxml2 anywhere
+
+error: You must install the GnuTLS library in order to compile and run libvirt
+
+error: You must install device-mapper-devel/libdevmapper &gt;= 1.0.0 to compile libvirt
+
+error: libnl-devel &gt;= 1.1 is required for macvtap support
+</code></pre><p>下载 libvirt1.3.2.tar.gz</p>
+<pre><code>tar xvf libvirt1.3.2.tar.gz
+./configure
+make &amp;&amp; make install
+</code></pre><p>安装完成后，执行ldconfig同步链接库，否则会出现以下错误：</p>
+<pre><code>virsh: error while loading shared libraries: libvirt.so.0: cannot open shared object file: No such file or directory
+</code></pre><p>执行检查libvirt安装成功</p>
+<pre><code>which libvirtd
+libvirtd –version
+which virsh
+virsh –version
+</code></pre><p>若出现此类错误：</p>
+<pre><code>error: Failed to reconnect to the hypervisor
+error: no valid connection
+error: Failed to connect socket to &apos;/usr/local/var/run/libvirt/libvirt-sock&apos;: No such file or directory
+</code></pre><p>则很有可能是libvirtd进程没有开启，这时需要手动开启libvirtd,执行libvirtd -d 即可。(libvirtd具体参数可参考：<a href="http://linux.die.net/man/8/libvirtd" target="_blank" rel="external">libvirtd manual</a> ）</p>
+<p>另外注意，libvirt从1.3版本后增加了virtlogd特性，需要执行virtlogd -d手动开启virtlogd进程（virtlogd具体参数可参看：<a href="https://www.mankier.com/8/virtlogd" target="_blank" rel="external">virtlogd manual</a> ）. 否则会出现以下错误：</p>
+<pre><code>error: Failed to connect socket to &apos;/usr/local/var/run/libvirt/virtlogd-sock&apos;: No such file or directory
+</code></pre><p>安装好libvirt后，便可配置好xml文件，用virsh来管理。具体virsh命令这里不做介绍，可参考其中一个配置文件：</p>
+<pre><code>&lt;domain type=&apos;kvm&apos;&gt;
+&lt;name&gt;ubuntudemo&lt;/name&gt;&lt;!--虚拟机名称--&gt;
+&lt;memory&gt;1048576&lt;/memory&gt;&lt;!--最大内存，单位KB--&gt;
+&lt;currentMemory&gt;1048576&lt;/currentMemory&gt;&lt;!--可用内存，单位k--&gt;
+&lt;uuid&gt;87d5b3d2-3618-4a59-9efb-aa869ff34999&lt;/uuid&gt;
+
+&lt;vcpu&gt;1&lt;/vcpu&gt;&lt;!--虚拟cpu个数--&gt;
+&lt;os&gt;
+    &lt;type arch=&apos;x86_64&apos;,machine=&apos;pc&apos;&gt;hvm&lt;/type&gt;
+    &lt;boot dev=&apos;hd&apos;/&gt;&lt;!--光盘启动--&gt;
+&lt;/os&gt;
+&lt;features&gt;
+    &lt;acpi/&gt;
+    &lt;apic/&gt;
+    &lt;pae/&gt;
+&lt;/features&gt;
+&lt;clock offset=&apos;localtime&apos;/&gt;
+&lt;on_poweroff&gt;destroy&lt;/on_poweroff&gt;
+&lt;on_reboot&gt;restart&lt;/on_reboot&gt;
+&lt;on_crash&gt;destroy&lt;/on_crash&gt;
+&lt;devices&gt;
+    &lt;emulator&gt;/usr/bin/qemu&lt;/emulator&gt; &lt;!--先创建好软链接   ln -s /use/local/qemukvm1.1.2/bin/qemu-system-x86_64 /usr/bin/qemu--&gt;
+    &lt;disk type=&apos;file&apos; device=&apos;disk&apos;&gt;
+        &lt;driver name=&apos;qemu&apos; type=&apos;qcow2&apos;/&gt;
+        &lt;source file=&apos;/home/os.img/server12041.img&apos;/&gt;&lt;!--目的镜像路径--&gt;
+        &lt;target dev=&apos;vda&apos; bus=&apos;virtio&apos;/&gt;
+    &lt;/disk&gt;
+
+    &lt;interface type=&apos;bridge&apos;&gt;&lt;!--虚拟机网络连接方式--&gt;
+        &lt;source bridge=&apos;br0&apos;/&gt;&lt;!--当前主机网桥的名称--&gt;
+        &lt;mac address=&quot;00:16:3e:5d:aa:a8&quot;/&gt;&lt;!--为虚拟机分配mac地址，务必唯一，否则dhcp获得同样ip,引起冲突--&gt;
+    &lt;/interface&gt;
+    &lt;input type=&apos;mouse&apos; bus=&apos;ps2&apos;/&gt;
+    &lt;!--vnc方式登录，端口号自动分配，自动加1，可以通过virsh vncdisplay ubuntudemo来查询（实际端口为显示结果+5900）--&gt; 
+    &lt;graphics type=&apos;vnc&apos; port=&apos;-1&apos; autoport=&apos;yes&apos; listen=&apos;0.0.0.0&apos; keymap=&apos;en-us&apos;/&gt;
+&lt;/devices&gt;
+</code></pre><p></p>
+<h3 id="0x03-虚拟机监控Libvmi"><a href="#0x03-虚拟机监控Libvmi" class="headerlink" title="0x03 虚拟机监控Libvmi"></a>0x03 虚拟机监控Libvmi</h3><p>Libvmi是一套能从底层二进制信息重构虚拟机上层语义的C语言API。由于hypervisor(VMM)获取的全是客户机的二进制比特，用户为了从外部（比如宿主机)监控客户机的行为需要理解客户机上层的语义，比如客户机正在运行的进程列表、模块列表等信息，这种二进制到上层语义之间的gap称之为语义鸿沟（semantic gap)，从外部监控客户机的行为称之为虚拟机自省（VM Introspection）。 Libvmi提供的API，能够读取物理内存、虚拟内存、符号表（System.map）、暂停/打开虚拟机、接收内存与寄存器事件的通知等，让用户能很方便的构建插件，来读取进程列表、模块列表等信息（大部分linux原生监控工具都可以通过libvmi来构建). </p>
+<p>Libvmi目前支持Intel,AMD64以及ARM系统结构，支持的虚拟机平台包括XEN与KVM/QEMU，支持的被监控系统类型包括windows和linux. Libvmi从Xenaccess发展而来，要了解其详细原理，可参考论文<a href="https://www.acsac.org/2007/papers/138.pdf" target="_blank" rel="external">Secure and Flexible Monitoring of Virtual Machines</a>以及官方主页<a href="http://libvmi.com/" target="_blank" rel="external">libvmi</a>.</p>
+<p>安装libvmi:</p>
+<p>先安装其依赖的包，注，这里针对KVM/QEMU，关于XEN依赖的包，会有所不同，可参考<a href="http://libvmi.com/docs/gcode-install.html" target="_blank" rel="external">libvmi-installation</a></p>
+<pre><code>apt-get install automake autoconf
+apt-get install libtool
+apt-get install flex bison
+apt-get install check
+</code></pre><p>下载libvmi-0.10.1.tar.gz</p>
+<pre><code>tar xvf libvmi-0.10.1.tar.gz
+</code></pre><p>安装    </p>
+<pre><code>cd libvmi-0.10.1
+./autogen.sh
+./congfigure
+make 
+make install
+ldconfig
+</code></pre><p>libvmi提供了很多plugin examples在/libvmi/examples文件夹中，<br>要运行其中的plugin（比如process-list，列举客户机中进程信息，类似linux的原生ls命令), 首先要找出客户机符号表中的一些偏移信息. libvmi提供了获取偏移信息的工具在/libvmi/tools/linux-offset-finder/ 文件夹中，将其拷贝到虚拟机中，make编译，生成了一个内核模块findoffset.ko，执行insmod findoffset.ko将其插入内核中，<br> 再执行dmesg 将得到的偏移信息，如：</p>
+<pre><code>ostype = &quot;Linux&quot;;
+sysmap = &quot;/boot/System.map-3.2.0-29-generic&quot;;
+linux_name = 0x470;
+linux_tasks = 0x248;
+linux_mm=0x280;
+linux_pid=0x2bc;
+linux_pgd=0x58;
+</code></pre><p>写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。这些偏移信息实际上是通过读取客户机的System.map文件获取的。</p>
+<p>之后运行</p>
+<pre><code>/libvmi/examples/process-list ubuntudemo 
+</code></pre><p>这里ubuntudemo是创建的虚拟机名字。以下是列出的部分信息：</p>
+<pre><code>Process listing for VM ubuntudemo (id=3)
+Next list entry is at: ffff88003d638248
+[    0] swapper/0 (struct addr:ffffffff81c0d020)
+[    1] init (struct addr:ffff88003d638000)
+[    2] kthreadd (struct addr:ffff88003d639700)
+[    3] ksoftirqd/0 (struct addr:ffff88003d63ae00)
+[    6] migration/0 (struct addr:ffff88003d658000)
+[    7] watchdog/0 (struct addr:ffff88003d659700)
+[    8] cpuset (struct addr:ffff88003d65ae00)
+[    9] khelper (struct addr:ffff88003d65c500)
+[   10] kdevtmpfs (struct addr:ffff88003d65dc00)
+[   11] netns (struct addr:ffff88003d698000)
+[   12] sync_supers (struct addr:ffff88003d699700)
+</code></pre><p>Libvmi提供的plugins有限，用户可根据需要编写，也可利用取证工具volatlity做更高层次语义的分析。Libvmi支持python绑定，提供了与volatility绑定的接口，具体可见下文。</p>
+<h3 id="0x04-虚拟机监控Volatility"><a href="#0x04-虚拟机监控Volatility" class="headerlink" title="0x04 虚拟机监控Volatility"></a>0x04 虚拟机监控Volatility</h3><p>Volatility是一个用python编写的内存分析工具，与libvmi（利用sysystem.map符号表信息)不同的是，volatility利用可执行文件elf中的调试信息（dwarf格式）以及system.map符号表信息来获取更丰富的变量和函数语义。其支持windows， linux以及mac。 文中以Linux为例。</p>
+<p>Get Started:</p>
+<p>下载volatility包</p>
+<pre><code>git clone https://github.com/volatilityfoundation/volatility.git
+</code></pre><p>创建Linux profile</p>
+<p>profile是个zip文件，包含内核数据结构以及调试信息，也就是dwarf文件（volatility称之为vtypes)与system.map的压缩包。</p>
+<p>volatility提供了一个内核模块在/volatility/tools/linux文件夹下来获取vtypes信息，将文件夹内容拷贝到要分析的客户机中，编译make，生成module.dwarf文件。在此之前请确保客户机中以及安装dwarfdump (apt-get install dwarfdump）。之后执行 head module.dwarf，会显示以下内容:</p>
+<pre><code>.debug_info
+
+&lt;0&gt;&lt;0+11&gt;&lt;DW_TAG_compile_unit&gt; DW_AT_producer&lt;GNU C 4.6.3&gt; DW_AT_language&lt;DW_LANG_C89&gt;.....
+
+&lt;1&gt;&lt;45&gt;&lt;DW_TAG_typedef&gt; DW_AT_name&lt;__s8&gt; DW_AT_decl_file&lt;1 include/asm-generic/int-ll64.h&gt;.....
+</code></pre><p>生成</p>
+<p>接着将module.dwarf文件以及/boot/System.map-3.2.0-99-generic 文件（不同系统文件名不同）压缩成一个zip文件，如Ubuntu1204.zip。执行：</p>
+<pre><code>zip volatility/volatility/plugins/overlays/linux/Ubuntu1204.zip volatility/tools/linux/module.dwarf /boot/System.map-3.2.0-99-generic
+</code></pre><p>使用profile</p>
+<pre><code>python vol.py --info | grep Linux 
+</code></pre><p> 这时会显示之前创建的profile名，Linuxubuntu1204x64.</p>
+<pre><code>LinuxUbuntu1204x64    - A Profile for Linux Ubuntu1204 x64 &lt;=== This is the one we just created
+</code></pre><p>绑定libvmi的python接口</p>
+<p>在./volatility/plugins/addrspaces 有针对不同内存快照的物理地址空间，如vmware.py,lime.py，crash.py等。libvmi则提供了pyvmi接口，在/libvmi/tools/pyvmi文件夹中有个pyvmiaddressspace.py文件可供volatility使用，（若需要自己编写python程序，则需要build pyvmi，build过程可参见其中的README文件，若出现编译错误，请确保安装 apt-get install build-essentials, apt-get install python2.7-dev).<br>将pyvmiaddressspace.py文件拷贝至./volatility/plugins/addrespaces文件夹中便可以利用volatility的plugins来分析虚拟机的内存了。以linux_pslist plugin为例，执行：</p>
+<pre><code>python vol.py -l vmi://ubuntudemo --profile=Linuxubuntu1204x64 linux_pslist  
+</code></pre><p>若出现distorm3（反编译库)相关错误，请确保已经安装distorm3</p>
+<pre><code>apt-get install python-pip
+pip install distorm3
+</code></pre><p>绑定pyvmi接口后，volatility所有的plugins都可以用来分析虚拟机内存。 </p>
+<p>完</p>
+<hr>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>如转载本文请注明出处: <a href="http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/</a></p>
+<p>作者[新浪微博：<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo&amp;is_all=1" target="_blank" rel="external">@diting0x</a>] </p>
+<hr>
+<h3 id="0x0A-References"><a href="#0x0A-References" class="headerlink" title="0x0A References"></a>0x0A References</h3><p><a href="http://libvmi.com/" target="_blank" rel="external">Libvmi</a></p>
+<p><a href="http://libvirt.org/" target="_blank" rel="external">Libvirt</a></p>
+<p><a href="https://github.com/volatilityfoundation/volatility/wiki" target="_blank" rel="external">Volatility wiki</a></p>
+<p><a href="https://www.acsac.org/2007/papers/138.pdf" target="_blank" rel="external">Secure and Flexible Monitoring of Virtual Machines</a></p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/blog/tags/Virtualization/" rel="tag">#Virtualization</a>
+          
+            <a href="/blog/tags/KVM/" rel="tag">#KVM</a>
+          
+            <a href="/blog/tags/QEMU/" rel="tag">#QEMU</a>
+          
+            <a href="/blog/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/blog/tags/Binary/" rel="tag">#Binary</a>
+          
+            <a href="/blog/tags/Libvmi/" rel="tag">#Libvmi</a>
+          
+            <a href="/blog/tags/Volatility/" rel="tag">#Volatility</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/blog/2016/03/07/rootkit-tutorial/" rel="next" title="A Comprehensive Tutorial of Rootkit">
+                <i class="fa fa-chevron-left"></i> A Comprehensive Tutorial of Rootkit
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/blog/2016/04/02/kbeast-analysis-detection/" rel="prev" title="kbeast Analysis and Detection">
+                kbeast Analysis and Detection <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/03/30/virt-setup-analysis/"
+           data-title="A Comprehensive Virtualized Enviroment Setup and Analysis" data-url="http://yoursite.com/blog/blog/blog/2016/03/30/virt-setup-analysis/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/blog/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x00-全文环境"><span class="nav-number">1.</span> <span class="nav-text">0x00 全文环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Ox01-虚拟机创建KVM-QEMU"><span class="nav-number">2.</span> <span class="nav-text">Ox01 虚拟机创建KVM/QEMU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x02-虚拟机管理Libvirt"><span class="nav-number">3.</span> <span class="nav-text">0x02 虚拟机管理Libvirt</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x03-虚拟机监控Libvmi"><span class="nav-number">4.</span> <span class="nav-text">0x03 虚拟机监控Libvmi</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x04-虚拟机监控Volatility"><span class="nav-number">5.</span> <span class="nav-text">0x04 虚拟机监控Volatility</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x0A-References"><span class="nav-number">6.</span> <span class="nav-text">0x0A References</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

