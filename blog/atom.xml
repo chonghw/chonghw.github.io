@@ -667,9 +667,9 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     
       <category term="Attack" scheme="http://yoursite.com/blog/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/blog/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/blog/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/blog/tags/Rootkit/"/>
     
   </entry>
   
@@ -896,15 +896,15 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/blog/categories/virtualization/"/>
     
     
-      <category term="Security" scheme="http://yoursite.com/blog/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/blog/tags/Binary/"/>
-    
       <category term="Virtualization" scheme="http://yoursite.com/blog/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/blog/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/blog/tags/QEMU/"/>
+    
+      <category term="Security" scheme="http://yoursite.com/blog/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/blog/tags/Binary/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/blog/tags/Libvmi/"/>
     
@@ -1090,9 +1090,9 @@ pip install distorm3
     
       <category term="Attack" scheme="http://yoursite.com/blog/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/blog/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/blog/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/blog/tags/Rootkit/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/blog/tags/Kernel/"/>
     
