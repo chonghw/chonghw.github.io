@@ -1,0 +1,801 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Security,System,Attack,Memory," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章内存持久战-攻击模型，内存持久战-防御机制做好铺垫。
+
+
+IEEE Security&amp;amp;Pri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存持久战-内存安全性">
+<meta property="og:url" content="http://yoursite.com/blog/2016/02/17/memory-safety/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章内存持久战-攻击模型，内存持久战-防御机制做好铺垫。
+
+
+IEEE Security&amp;amp;Pri">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memory-safety3.jpg">
+<meta property="og:updated_time" content="2016-04-21T20:53:49.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="内存持久战-内存安全性">
+<meta name="twitter:description" content="C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章内存持久战-攻击模型，内存持久战-防御机制做好铺垫。
+
+
+IEEE Security&amp;amp;Pri">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memory-safety3.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 内存持久战-内存安全性 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archieves" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                内存持久战-内存安全性
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-02-17T20:07:28-05:00" content="2016-02-17">
+              2016-02-17
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/security/" itemprop="url" rel="index">
+                    <span itemprop="name">security</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/02/17/memory-safety/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/02/17/memory-safety/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章<a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/" target="_blank" rel="external">内存持久战-攻击模型</a>，<a href="">内存持久战-防御机制</a>做好铺垫。</p>
+<blockquote>
+<ul>
+<li>IEEE Security&amp;Privacy’13</li>
+<li>不访问未定义的内存</li>
+<li>无限间距</li>
+<li>Pointers as capabilities</li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h3 id="IEEE-Security-amp-Privacy’13"><a href="#IEEE-Security-amp-Privacy’13" class="headerlink" title="IEEE Security&amp;Privacy’13"></a>IEEE Security&amp;Privacy’13</h3><p>发表在IEEE Security&amp;Privacy’13的一篇SoK(Systematization of Knowledge)文章，<a href="https://nebelwelt.net/publications/files/13Oakland.pdf" target="_blank" rel="external">Eternal War in Memory </a>，阐述了一种定义内存安全的通用方法。<br><strong><em>Definition 1:</em></strong> 文中提到，一个程序的执行，只要不会出现以下内存访问错误，就是内存安全的：</p>
+<ul>
+<li>1.缓冲区溢出</li>
+<li>2.引用空指针</li>
+<li>3.释放后使用（use after free）</li>
+<li>4.使用未初始化内存</li>
+<li>5.非法释放已经释放过的指针或未分配的指针</li>
+</ul>
+<p>维基百科 <a href="https://en.wikipedia.org/wiki/Memory_safety" target="_blank" rel="external">wikipedia page on memory safety</a> 也有类似的定义。从定义来看，排除这些错误是内存安全本身的定义所导向的，而并非内存安全性的本质。那么，如何将这些错误统一起来？</p>
+<h3 id="不访问未定义的内存"><a href="#不访问未定义的内存" class="headerlink" title="不访问未定义的内存"></a>不访问未定义的内存</h3><p>只有当程序访问未定义的内存时才会产生内存错误，这块内存是在程序中没有具体分配的，例如，<em>heap</em> 的一部分（通过<em>malloc</em>)，<em>stack</em>(作为局部变量或者函数参数），又或者是静态数据区域（作为全局变量). <a href="http://www.cs.berkeley.edu/~necula/" target="_blank" rel="external">George Necula</a> 在他的<em>CCured</em>项目中（旨在为C程序实施内存安全性）提到，一个内存安全的程序从来不会去访问未定义的内存。我们可以假设，内存可以无限的大，大到内存地址从不会复用(reused).如此一来，被释放的内存（可以调用<em>free</em> 或者从函数返回的时候<em>pop</em>）从不会被重新分配，并且会永久的保持未定义状态。</p>
+<p><strong><em>Definition 2:</em></strong> 不访问未定义的内存就是内存安全的。<br>这种定义明显排除了<em>error 2</em> 和 <em>error 3</em>. 如果将<em>allocated</em> 的定义包括<em>initialized</em>，又可以排除<em>error 4</em>. 如果假设<em>free</em>只能在定义过的内存指针中调用，那又可以排除<em>error 5</em>. </p>
+<p>不幸的是，<em>Definition 2</em> 并未排除缓冲区溢出错误，也就是<em>error 1</em>。 来看一个例子，假定一个标准<em>stack</em> 布局， 在此定义下，<em>program 1</em> 的执行会被认为是内存安全的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/* Program 1 */</span><br><span class="line">int x;</span><br><span class="line">int buf[4];</span><br><span class="line">buf[5] =3; /*overwrite*/</span><br></pre></td></tr></table></figure>
+<p><em>Definition 2</em> 允许 <em>Program 1</em> 通过是因为此程序是在合法分配的内存中写数据，甚至写的数据类型也是正确的。但实际上问题在于，数组<em>buf</em> 的溢出将数据写进了变量<em>x</em> 中, 显然这是内存不安全的。</p>
+<h3 id="无限间距"><a href="#无限间距" class="headerlink" title="无限间距"></a>无限间距</h3><p>将 <em>Definition 2</em> 延伸， <em>Program 1</em> 被看作是内存不安全的。只要加上这个假设： 内存区域分配的间距是无限大的。</p>
+<p><em>Buf</em> 和 <em>x</em> 的分配间距无限大，<em>buf[5]</em> 将会访问 <em>buf</em> 区域的边界外部。边界外部是个未定义的内存区域，按照上述定义，就会产生错误。<em>heap</em> ,静态数据区域对溢出的处理方式类似。</p>
+<p>尽管 <em>Definition 2</em> 是个很接近让人满意的定义，但事实并未如此。来看 <em>Program 1</em> 的变形 <em>Program 2</em>，也是一种缓冲区溢出, <em>Definition 2</em>  仍然会允许 <em>Program 2</em> 执行。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/*Program 2 */</span><br><span class="line">struct foo &#123;</span><br><span class="line">   int buf[4];</span><br><span class="line">   int x;</span><br><span class="line">   &#125;;</span><br><span class="line">struct foo *pf -malloc(sizeof(struct foo));</span><br><span class="line">pf-&gt;buf[5] =3;/*overwrite pf-&gt;x*/</span><br></pre></td></tr></table></figure>
+<p>这里，缓冲区溢出发生在 <em>object</em> 的内部。我们仍然可以类似的在域间引入无限间距的概念来排除缓存溢出的错误。这并未太背离现实，C标准允许编译器决定不同域的间距。另一方面，程序语言把结构体当做一个单独的<em>object</em> (从 <em>malloc</em> 返回的单独指针). 许多程序会把一个结构体映射到另一个结构体，或者会确定好一种间距方案。许多编译器都支持这些操作，但是否可以有一种更好的定义不依赖于这些？</p>
+<h3 id="Pointers-as-capabilities"><a href="#Pointers-as-capabilities" class="headerlink" title="Pointers as capabilities"></a>Pointers as capabilities</h3><p>从 <em>Definition 2</em> 中，了解到许多概念，比如，定义的（分配的），未定义的（从没有分配的或者分配后回收的),我们假设分配后回收的内存不会再复用。如此一来，只要访问未定义的内存，就会违背内存安全性。</p>
+<p><strong><em>Definition 3:</em></strong> 我们引入这么一个概念, Pointers as capabilities. 也就是说，允许指针的持有者访问一定区域中的内存。一个指针由三个元素组成<em>（p,b,e)</em>: <em>b</em> 定义有效的区域，<em>e</em> 定义边界，<em>p</em> 代表指针本身。 程序只能操作<em>p</em>，<em>b</em> 和<em>e</em> ,这样做只是为了定义一次执行是否是内存安全的。</p>
+<p>举个例子，看下面的<em>Program 3</em>以及对应的内存效果图：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/* Program 3 */</span><br><span class="line">struct foo &#123;</span><br><span class="line">  int x;</span><br><span class="line">  int y;</span><br><span class="line">  char *pc;</span><br><span class="line">&#125;;</span><br><span class="line">struct foo *pf = malloc(...);</span><br><span class="line">pf-&gt;x = 5;</span><br><span class="line">pf-&gt;y = 256;</span><br><span class="line">pf-&gt;pc = &quot;before&quot;;</span><br><span class="line">pf-&gt;pc += 3;</span><br><span class="line">int *px = &amp;pf-&gt;x;</span><br></pre></td></tr></table></figure>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memory-safety3.jpg" alt="memory-safety3"></p>
+<p>重点关注代码的最后两行。<em>Program 3</em> 允许指针运算来新建一个新的指针，但只能当新指针落在b到e之间才能被解引用。从代码中看到，增加 <em>\</em>pc<em>的</em>p<em> ,新指针仍然落在</em>b<em> 和</em>e<em> 之间，所以执行</em>*(pf-&gt;pc)<em> 是合法有效的。但如果执行 </em>pf-&gt;pc+=10<em> , </em>*(pf-&gt;pc)<em> 将会违背内存安全性，尽管</em>pf-&gt;pc<em> 有可能碰巧就落在定义的内存区域中（这块内存区域可能分配给了其它</em>object*).</p>
+<p>最后一行代码创建一个新的指针<em>px</em> 指向<em>pf</em> 指针的第一个域，将边界缩小到其中的一个域中。这就排除了 <em>Program 2</em> 带来的内存溢出问题。加入我们保留<em>pf</em>整个的边界，此程序可能会利用<em>px</em>溢出到结构体中的其它域中。</p>
+<p>Capability是无法伪造的，就像我们并不能伪造一个指针映射到整形数据中。非法映射可以是直接的（<em>e.g. p=(int \</em>)5<em> ） 也可以是间接的，比如将含有整形数据的结构体映射到含有指针的结构体中（</em>e.g. p=(int **)pf<em> ), 将</em>Program 3<em> 中结构体中的第一个整形数据域映射成指针。我们的定义简单的将映射看作是空操作。只有有效的指针才能被解引用，一个指针的capabilities在它创建的时候就已经确定了。 我们的定义中允许 </em>Program 4* 的执行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">/* Program 4 */</span><br><span class="line">int x;</span><br><span class="line">int *p = &amp;x;</span><br><span class="line">int y = (int)p;</span><br><span class="line">int *q = (int *)y</span><br><span class="line">*q = 5;</span><br></pre></td></tr></table></figure>
+<p><em>p</em> 指针初始化得<em>b</em> 和<em>e</em> 一直会保持不变，尽管之后<em>p</em> 被转化成整形y, 因此当<em>y</em> 被转回为<em>q</em> 并被解引用的时候，指针依然存在。从另一方面来看，如果在<em>Program 3</em> 的最后加上 <em>p=(int \</em>*)pf<em> , 紧接着 </em>*p=malloc(sizeof(int))<em>， 之后的操作 </em>**p<em>以及</em>printf(“%d\n”,pf-&gt;x)* 都是合法的。也就是说，一块内存区域一开始存储了整形数据，之后也可将整形数据修改为指向整形数据的指针，然后解引用指针，这样操作是安全的，但反过来却不行。</p>
+<p>在某种意义上来说，基于capability定义的内存安全性是一种类型安全形式（type safety)。这里只有两种类型：指针类型和非指针类型。这种定义保证了 1) 指针只在定义了合法内存区域的安全模式下被创建. 2) 指针只有在它们是指向分配给它们的内存区域的情况下被解引用. 3) 那块内存区域仍然是定义过的。这种定义排除了上述所有的五种错误。</p>
+<p>注：本文主要意译 PL Enthusiast 上的一篇文章： <a href="http://www.pl-enthusiast.net/2014/07/21/memory-safety/" target="_blank" rel="external">What is memory safety</a> </p>
+<h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p><a href="http://www.pl-enthusiast.net/2014/07/21/memory-safety/" target="_blank" rel="external">What is memory safety</a></p>
+<p><a href="https://nebelwelt.net/publications/files/13Oakland.pdf" target="_blank" rel="external">S&amp;P’13 Eternal War in Memory </a></p>
+<hr>
+<h2 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h2><p>作者[新浪微博：<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo&amp;is_all=1" target="_blank" rel="external">@diting0x</a>]</p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>转载本文请注明出处以及<a href="http://www.pl-enthusiast.net/2014/07/21/memory-safety/" target="_blank" rel="external">What is memory safety</a> 出处<br>原文地址: <a href="http://www.chongh.wiki/blog/2016/02/17/memory-safety/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/02/17/memory-safety/</a></p>
+<p>另，感谢<a href="https://nebelwelt.net/publications/files/13Oakland.pdf" target="_blank" rel="external">S&amp;P’13 Eternal War in Memory </a>的作者 <a href="https://nebelwelt.net" target="_blank" rel="external">Mathis Payer教授</a> 的某些答疑，感谢好友 <a href="http://www.yebangyu.org/" target="_blank" rel="external">叶邦宇</a> 指出的一些勘误。</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/tags/System/" rel="tag">#System</a>
+          
+            <a href="/tags/Attack/" rel="tag">#Attack</a>
+          
+            <a href="/tags/Memory/" rel="tag">#Memory</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/01/08/baiduculture/" rel="next" title="我的百度过“度”期">
+                <i class="fa fa-chevron-left"></i> 我的百度过“度”期
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2016/02/18/memorywar-attack/" rel="prev" title="内存持久战-攻击模型">
+                内存持久战-攻击模型 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/02/17/memory-safety/"
+           data-title="内存持久战-内存安全性" data-url="http://yoursite.com/blog/2016/02/17/memory-safety/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#IEEE-Security-amp-Privacy’13"><span class="nav-number">1.</span> <span class="nav-text">IEEE Security&Privacy’13</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不访问未定义的内存"><span class="nav-number">2.</span> <span class="nav-text">不访问未定义的内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#无限间距"><span class="nav-number">3.</span> <span class="nav-text">无限间距</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pointers-as-capabilities"><span class="nav-number">4.</span> <span class="nav-text">Pointers as capabilities</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#References"><span class="nav-number">5.</span> <span class="nav-text">References</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Acknowledgement"><span class="nav-number"></span> <span class="nav-text">Acknowledgement</span></a></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

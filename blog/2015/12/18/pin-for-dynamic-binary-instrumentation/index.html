@@ -1,0 +1,879 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Security,Binary,Instrumentation," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本文旨在让大家大致了解动态二进制代码注入技术：PIN。
+
+
+什么是注入（Instrumentation)
+PIN初探
+PIN框架
+Pintools Example
+
+
+什么是注入（Instrumentation)每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PIN for Dynamic Binary Instrumentation">
+<meta property="og:url" content="http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="本文旨在让大家大致了解动态二进制代码注入技术：PIN。
+
+
+什么是注入（Instrumentation)
+PIN初探
+PIN框架
+Pintools Example
+
+
+什么是注入（Instrumentation)每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在">
+<meta property="og:updated_time" content="2016-04-21T20:50:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PIN for Dynamic Binary Instrumentation">
+<meta name="twitter:description" content="本文旨在让大家大致了解动态二进制代码注入技术：PIN。
+
+
+什么是注入（Instrumentation)
+PIN初探
+PIN框架
+Pintools Example
+
+
+什么是注入（Instrumentation)每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> PIN for Dynamic Binary Instrumentation | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archieves" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                PIN for Dynamic Binary Instrumentation
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2015-12-18T18:39:46-05:00" content="2015-12-18">
+              2015-12-18
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/BinaryCode/" itemprop="url" rel="index">
+                    <span itemprop="name">BinaryCode</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文旨在让大家大致了解动态二进制代码注入技术：PIN。</p>
+<blockquote>
+<ul>
+<li>什么是注入（Instrumentation)</li>
+<li>PIN初探</li>
+<li>PIN框架</li>
+<li>Pintools Example</li>
+</ul>
+</blockquote>
+<h2 id="什么是注入（Instrumentation"><a href="#什么是注入（Instrumentation" class="headerlink" title="什么是注入（Instrumentation)"></a>什么是注入（Instrumentation)</h2><p>每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在你的程序中插入额外的代码来分析程序的运行时信息就称为注入技术。但就广义来说，在源代码中注入代码也可称之为注入，只是为了区分，注入技术一般特指对象为可执行二进制文件。</p>
+<a id="more"></a>
+<p>进一步说明，注入一般又分为静态二进制注入（Static Binary Instrumentation) 与动态二进制注入 （Dynamic Binary Instrumentation). 看定义可知，SBI技术工作在程序运行前，DBI则工作在运行过程中。相比SBI，DBI技术有以下优势：</p>
+<ul>
+<li>不需要重新编译、重新链接</li>
+<li>在运行时发现代码</li>
+<li>能处理动态产生的代码</li>
+<li>能附加到正在运行时的进程中</li>
+</ul>
+<p>目前，研究较多的都属DBI技术，前文提到，DBI的工作方式有点类似编译器，只不过分析例程（analysis routine)是可编程化的。DBI技术广泛应用在程序分析中，如逆向工程（reverse engineering), 程序调试（program debug)， 恶意代码分析（malware analysis)等。</p>
+<h2 id="Pin初探"><a href="#Pin初探" class="headerlink" title="Pin初探"></a>Pin初探</h2><p>对DBI技术有个大致了解之后，进入本文主题,  Pin是Intel 与University of Colorado合作研究出的一款用来动态分析二进制程序的注入工具，发表在系统顶会PLDI’2005,有兴趣的可以读读这篇文章，其它DBI技术还有Valgrind, DYNAMORIO, QEMU.</p>
+<p>开门见山，首先来看一段代码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">    counter++;</span><br><span class="line">             sub  $0xff, %edx</span><br><span class="line">    counter++;</span><br><span class="line">             cmp  %esi, %edx</span><br><span class="line">    counter++;</span><br><span class="line">             jle &lt;L1&gt;</span><br><span class="line">    counter++;</span><br><span class="line">             mov  $0x1, %edi</span><br><span class="line">    counter++;</span><br><span class="line">             add  $0x10, %eax</span><br><span class="line">```             </span><br><span class="line"></span><br><span class="line">这段代码很简单，只是在每条指令前加了一个计数器</span><br><span class="line">那么如果使用PIN, 该如何实现？ 看下面代码：</span><br><span class="line"></span><br><span class="line">``` C</span><br><span class="line">#include &lt;iostream&gt;</span><br><span class="line">#include &quot;pin.h&quot;</span><br><span class="line"></span><br><span class="line">UINT64 icount = 0;</span><br><span class="line"></span><br><span class="line">void docount() &#123; icount++; &#125;</span><br><span class="line">    </span><br><span class="line">void Instruction(INS ins, void *v) </span><br><span class="line">&#123;</span><br><span class="line">    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void Fini(INT32 code, void *v) </span><br><span class="line">&#123; std::cerr &lt;&lt; &quot;Count &quot; &lt;&lt; icount &lt;&lt; endl; &#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, char * argv[])</span><br><span class="line">&#123;</span><br><span class="line">    PIN_Init(argc, argv);</span><br><span class="line">    INS_AddInstrumentFunction(Instruction, 0);</span><br><span class="line">    PIN_AddFiniFunction(Fini, 0);</span><br><span class="line">    PIN_StartProgram();</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>现在对这段实现代码一一解释：<br><code>void docount() {icount+;}</code> 用户可自定义<code>docount()</code> 函数，PIN称之为分析例程 （Analysis routine),先对这个概念保持一点印象。再看void Instruction（）函数，PIN 称之为注入例程（Instrumentation routine), 关注其中两个参数，<code>IPOINT_BEFORE</code> 表示在每条指令之前执行，<code>（AFUNPTR)docount</code>便是要注入的分析例程。<code>main()</code> 函数调用<code>INS_AddInstrumentFunction（Instruction,0)</code>,便会触发注入例程以及分析例程，这些参数都可以根据自己需求修改。<br>只需这么几行简单的代码，PIN便能帮你分析正在运行的二进制文件执行过的指令条数了。这么简单？ PIN只能做这些吗？ 当然不是！ 下文再介绍一些PIN的框架以及使用过程。</p>
+<h2 id="PIN框架"><a href="#PIN框架" class="headerlink" title="PIN框架"></a>PIN框架</h2><p>可以把PIN理解为实时编译器（just in time complier).只不过输入进PIN的不是二进制代码，而是可执行的二进制文件，PIN能拦截可执行文件的第一条指令，然后从这条指令开始产生新的代码序列，之后将控制权交给产生的代码序列，此刻用户就有机会注入自己的代码，这个过程就是Instrumentation.<br>如果你只想使用PIN来分析自己的二进制代码，内部实现原理 (可阅读PLDI’2005)大可不必关心，关注的应该是PIN为用户提供的上层接口，使用这个接口来编写自己的Pintools. 版权原因，本文也不会深入去介绍PIN是如何实现的。</p>
+<p>下面就来聊聊这个Pintools. Pintools实际上就是用户要实现的Instrumentation过程，可以把Pintools想象成能修改内部PIN的代码产生过程的插件（Plugins),PIN官网会提供一些sample教你怎么写Pintools,大部分还得靠用户自己去写。<br>总的来说，instrumentation包括两个部分：</p>
+<ul>
+<li>第一，决定在哪注入代码，注入什么代码的一种机制</li>
+<li>第二，在注入点要执行的代码</li>
+</ul>
+<p>第一个部分被称之为 <strong>instrumentation routine</strong>,第二个部分被称之为 <strong>analysis routine</strong>. Pintools会向PIN注册一个注入回调函数，如上文提到的<code>INS_AddInstrumentFunction（）</code>，该函数会代表instrumentation routine观察要产生的代码，分析代码的静态属性，来决定是否以及在哪里调用analysis routine. Analysis routine再收集被分析程序的数据。</p>
+<p>注意，前文中的例子对每条指令分析，带来的开销太大，因此，PIN提供不同的粒度对程序进行分析，供用户根据不同需求选择：</p>
+<ul>
+<li>Instruction</li>
+<li>Basic block: 包含一些指令序列，终止于控制流改变指令;单入口单出口。</li>
+<li>Trace:包含一些Basic block序列，终止于无条件控制流改变指令；单入口多出口。 </li>
+</ul>
+<h2 id="Pintools-example"><a href="#Pintools-example" class="headerlink" title="Pintools example"></a>Pintools example</h2><p>最后，以一个Pintools 的完整例子结束本文</p>
+<pre><code class="C++"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span>
+<span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fstream&gt;</span></span>
+<span class="meta">#<span class="meta-keyword">include</span> <span class="string">"pin.H"</span></span>
+
+ofstream OutFile;
+
+<span class="comment">// The running count of instructions is kept here</span>
+<span class="comment">// make it static to help the compiler optimize docount</span>
+<span class="keyword">static</span> UINT64 icount = <span class="number">0</span>;
+
+<span class="comment">// This function is called before every instruction is      executed</span>
+<span class="function">VOID <span class="title">docount</span><span class="params">()</span> </span>{ icount++; }
+
+<span class="comment">// Pin calls this function every time a new instruction     is encountered</span>
+<span class="function">VOID <span class="title">Instruction</span><span class="params">(INS ins, VOID *v)</span>
+</span>{
+    <span class="comment">// Insert a call to docount before every            instruction, no arguments are passed</span>
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);
+}
+
+KNOB&lt;<span class="built_in">string</span>&gt; KnobOutputFile(KNOB_MODE_WRITEONCE, <span class="string">"pintool"</span>,
+<span class="string">"o"</span>, <span class="string">"inscount.out"</span>, <span class="string">"specify output file name"</span>);
+
+<span class="comment">// This function is called when the application exits</span>
+<span class="function">VOID <span class="title">Fini</span><span class="params">(INT32 code, VOID *v)</span>
+</span>{
+    <span class="comment">// Write to a file since cout and cerr maybe closed     by the application</span>
+  OutFile.setf(ios::showbase);
+  OutFile &lt;&lt; <span class="string">"Count "</span> &lt;&lt; icount &lt;&lt; <span class="built_in">endl</span>;
+  OutFile.close();
+}
+
+<span class="comment">/* =====================================================     ================ */</span>
+<span class="comment">/* Print Help Message                                                        */</span>
+<span class="comment">/* =====================================================     ================ */</span>
+
+<span class="function">INT32 <span class="title">Usage</span><span class="params">()</span>
+</span>{
+   <span class="built_in">cerr</span> &lt;&lt; <span class="string">"This tool counts the number of dynamic          instructions executed"</span> &lt;&lt; <span class="built_in">endl</span>;
+   <span class="built_in">cerr</span> &lt;&lt; <span class="built_in">endl</span> &lt;&lt; KNOB_BASE::StringKnobSummary() &lt;&lt;      <span class="built_in">endl</span>;
+    return <span class="number">-1</span>;
+}
+
+<span class="comment">/* =====================================================     ================ */</span>
+<span class="comment">/* Main                                                                      */</span>
+<span class="comment">/* =====================================================     ================ */</span>
+<span class="comment">/*   argc, argv are the entire command line: pin -t      &lt;toolname&gt; -- ...    */</span>
+<span class="comment">/* =====================================================     ================ */</span>
+
+<span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> * argv[])</span>
+</span>{
+   <span class="comment">// Initialize pin</span>
+   <span class="keyword">if</span> (PIN_Init(argc, argv)) return Usage();
+
+   OutFile.open(KnobOutputFile.Value().c_str());
+
+  <span class="comment">// Register Instruction to be called to instrument      instructions</span>
+    INS_AddInstrumentFunction(Instruction, <span class="number">0</span>);
+
+   <span class="comment">// Register Fini to be called when the application      exits</span>
+    PIN_AddFiniFunction(Fini, <span class="number">0</span>);
+
+    <span class="comment">// Start the program, never returns</span>
+    PIN_StartProgram();
+
+    return <span class="number">0</span>;
+}
+</code></pre>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="http://www.cs.virginia.edu/kim/docs/pldi05.pdf" target="_blank" rel="external">PLDI’2005</a></p>
+<p><a href="https://software.intel.com/sites/landingpage/pintool/docs/65163/Pin/html/" target="_blank" rel="external">PIN User Manual</a></p>
+<p><a href="https://software.intel.com/en-us/articles/pin-a-dynamic-binary-instrumentation-tool" target="_blank" rel="external">PIN Intel Tutorials</a></p>
+<p>If you are interested in concurrent programming, please donot hesitate to touch <a href="http://yebangyu.org" target="_blank" rel="external">my friend’s blog</a> </p>
+<hr>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>转载此文请注明出处:<a href="http://www.chongh.wiki/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" target="_blank" rel="external">http://www.chongh.wiki/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/</a></p>
+<p>作者 [新浪微博：<a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo&amp;is_all=1" target="_blank" rel="external">@diting0x</a>]</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechat512.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/tags/Binary/" rel="tag">#Binary</a>
+          
+            <a href="/tags/Instrumentation/" rel="tag">#Instrumentation</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2015/12/16/octopress-tutorial/" rel="next" title="像黑客一样写博客: Octopress + Github Pages">
+                <i class="fa fa-chevron-left"></i> 像黑客一样写博客: Octopress + Github Pages
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2016/01/01/kvm-qemu-bytalk/" rel="prev" title="KVM/Qemu虚拟机简介">
+                KVM/Qemu虚拟机简介 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2015/12/18/pin-for-dynamic-binary-instrumentation/"
+           data-title="PIN for Dynamic Binary Instrumentation" data-url="http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">27</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/diting0x" target="_blank" title="知乎">
+                  
+                  知乎
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.douban.com/people/diting0x/" target="_blank" title="豆瓣">
+                  
+                  豆瓣
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="" target="_blank" title="github">
+                  
+                  github
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://diting0x.lofter.com/" target="_blank" title="lofter">
+                  
+                  lofter
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是注入（Instrumentation"><span class="nav-number">1.</span> <span class="nav-text">什么是注入（Instrumentation)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pin初探"><span class="nav-number">2.</span> <span class="nav-text">Pin初探</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PIN框架"><span class="nav-number">3.</span> <span class="nav-text">PIN框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pintools-example"><span class="nav-number">4.</span> <span class="nav-text">Pintools example</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
