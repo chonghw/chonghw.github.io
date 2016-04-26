@@ -88,22 +88,21 @@
     <link href="http://yoursite.com/blog/2016/04/08/linux-syscalls/"/>
     <id>http://yoursite.com/blog/2016/04/08/linux-syscalls/</id>
     <published>2016-04-08T21:08:08.000Z</published>
-    <updated>2016-04-23T20:08:03.000Z</updated>
+    <updated>2016-04-26T17:37:48.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
 &lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
 &lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;/li&gt;
+&lt;li&gt;准备知识&lt;ul&gt;
+&lt;li&gt;硬件与软件&lt;/li&gt;
+&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
+&lt;li&gt;中断&lt;/li&gt;
+&lt;li&gt;特殊模块寄存器&lt;/li&gt;
+&lt;li&gt;编写汇编代码触发系统调用不是个好主意&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;pre&gt;&lt;code&gt;+ 硬件与软件
-+ 用户程序，内核与CPU特权级
-+ 中断
-+ 特殊模块寄存器
-+ 编写汇编代码触发系统调用不是个好主意
-&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;ul&gt;
 &lt;li&gt;传统系统调用&lt;ul&gt;
 &lt;li&gt;自己写汇编代码使用传统系统调用&lt;/li&gt;
@@ -519,9 +518,12 @@ $ echo $?
 &lt;ul&gt;
 &lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
 &lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
+&lt;li&gt;准备知识&lt;ul&gt;
+&lt;li&gt;硬件与软件&lt;/li&gt;
+&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
+&lt;li&gt;中断&lt;/li&gt;
+&lt;li&gt;特殊模块寄存器&lt;/li&gt;
+&lt;li&gt;编写汇编代码触发系统调用不是个好主意
     
     </summary>
     
