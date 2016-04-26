@@ -64,7 +64,7 @@
 <link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Security,System,Attack,Memory," />
+  <meta name="keywords" content="Security,Memory,System,Attack," />
 
 
 
@@ -90,7 +90,7 @@
 <meta property="og:description" content="内存破坏是计算机安全中亘古不变的话题。内存破坏也被看作是top three危险的软件错误。像C/C++这种底层语言很容易引来这些bugs. 这些程序语言无法对内存安全性的保证，以至于让一些攻击者利用内存bugs改变程序行为或甚至控制整个控制流（control-flow).  要了解什么是内存安全性，可参考上一篇文章：内存持久战-内存安全性.  然而，一种最显而易见的解决方案就是避免这些容易引起内存">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/hijack-bound.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/hijack-dangling.png">
-<meta property="og:updated_time" content="2016-04-21T20:54:33.000Z">
+<meta property="og:updated_time" content="2016-04-26T00:17:05.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="内存持久战-攻击模型">
 <meta name="twitter:description" content="内存破坏是计算机安全中亘古不变的话题。内存破坏也被看作是top three危险的软件错误。像C/C++这种底层语言很容易引来这些bugs. 这些程序语言无法对内存安全性的保证，以至于让一些攻击者利用内存bugs改变程序行为或甚至控制整个控制流（control-flow).  要了解什么是内存安全性，可参考上一篇文章：内存持久战-内存安全性.  然而，一种最显而易见的解决方案就是避免这些容易引起内存">
@@ -363,7 +363,7 @@
 <p><strong><em>Step 6: 执行恶意代码</em></strong>。包括重用现有的函数/gadgets以及执行注入的shellcode(control-flow hijack).至此，control-flow hijack过程已全部完成。</p>
 <p>最后看两张图，分别是control-flow hijack利用越界指针与悬挂指针劫持控制流的完整过程：</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/hijack-bound.png" alt="hijack-bound"><br><img src="http://7xppf1.com1.z0.glb.clouddn.com/hijack-dangling.png" alt="hijack-dangling"></p>
-<p>既然谈论的是持久战，针对内存破坏相关攻击的防御措施将在下一篇文章<a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/" target="_blank" rel="external">内存持久战-防御机制</a>详细介绍。</p>
+<p>既然谈论的是持久战，针对内存破坏相关攻击的防御措施将在下一篇文章<a href="http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/" target="_blank" rel="external">内存持久战-防御机制</a>详细介绍。</p>
 <h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p><a href="https://nebelwelt.net/publications/files/13Oakland.pdf" target="_blank" rel="external">S&amp;P’13 Eternal War in Memory </a></p>
 <hr>
 <h2 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h2><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
@@ -407,11 +407,11 @@
           
             <a href="/tags/Security/" rel="tag">#Security</a>
           
+            <a href="/tags/Memory/" rel="tag">#Memory</a>
+          
             <a href="/tags/System/" rel="tag">#System</a>
           
             <a href="/tags/Attack/" rel="tag">#Attack</a>
-          
-            <a href="/tags/Memory/" rel="tag">#Memory</a>
           
         </div>
       
@@ -519,7 +519,7 @@
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">28</span>
+                <span class="site-state-item-count">27</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
