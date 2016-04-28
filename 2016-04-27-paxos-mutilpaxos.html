@@ -64,7 +64,7 @@
 <link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Distributed,Algorithm," />
+  <meta name="keywords" content=",," />
 
 
 
@@ -83,12 +83,13 @@
 
 
 <meta name="description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
-<meta property="og:type" content="article">
+<meta name="keywords">
+<meta property="og:type" content="website">
 <meta property="og:title" content="Paxos/Mutil-paxos 算法">
-<meta property="og:url" content="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/index.html">
+<meta property="og:url" content="http://yoursite.com/2016-04-27-paxos-mutilpaxos.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
-<meta property="og:updated_time" content="2016-04-28T02:10:47.000Z">
+<meta property="og:updated_time" content="2016-04-28T02:58:06.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Paxos/Mutil-paxos 算法">
 <meta name="twitter:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
@@ -109,7 +110,13 @@
   };
 </script>
 
-  <title> Paxos/Mutil-paxos 算法 | Diting0x </title>
+  <title>
+  
+
+  
+    Paxos/Mutil-paxos 算法 | Diting0x
+  
+</title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
@@ -136,7 +143,7 @@
     
   
 
-  <div class="container one-collumn sidebar-position-left page-post-detail ">
+  <div class="container one-collumn sidebar-position-left  ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -256,92 +263,8 @@
 
   <div id="posts" class="posts-expand">
     
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
     
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                Paxos/Mutil-paxos 算法
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-04-27T20:48:54-04:00" content="2016-04-27">
-              2016-04-27
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index">
-                    <span itemprop="name">Algorithm</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2016/04/27/paxos-mutilpaxos/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/04/27/paxos-mutilpaxos/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        <p>在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。</p>
+      <p>在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。</p>
 <a id="more"></a> 
 <p>那时我参与的项目太酷了- 我们组一步步完成了从quorum KVS到分布式锁管理，又实现了Multi-paxos算法作为我们最终提交的项目。这篇博客，我会从普通的Paxos算法说起。</p>
 <p>简单来说，Paxos是将一组节点在单个值上达成一致的协议(严格来说，是指一个协议簇，这是 <a href="https://en.wikipedia.org/wiki/Paxos_\(computer_science" target="_blank" rel="external">维基百科</a> 上的说法)</p>
@@ -374,74 +297,7 @@
 <p>本文地址：<a href="http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/</a></p>
 <p>作者 [ 新浪微博: <a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a> &amp;&amp; <a href="http://weibo.com/u/2765244861?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@睡眼惺忪的小叶先生</a> ]</p>
 
-      
-    </div>
     
-    <div>
-      
-        
-      
-    </div>
-
-    <div>
-      
-        
-<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
-  <div>攒点碎银娶媳妇</div>
-  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
-    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
-  </button>
-  <div id="QR" style="display: none;">
-    
-      <div id="wechat" style="display: inline-block">
-        <img id="wechat_qr" src="/images/wechatnone.JPG" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
-        <p>微信打赏</p>
-      </div>
-    
-    
-  </div>
-</div>
-
-      
-    </div>
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/Distributed/" rel="tag">#Distributed</a>
-          
-            <a href="/tags/Algorithm/" rel="tag">#Algorithm</a>
-          
-        </div>
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/blog/2016/04/26/shikongnote1/" rel="next" title="新生物文明与蜂群思维">
-                <i class="fa fa-chevron-left"></i> 新生物文明与蜂群思维
-              </a>
-            
-          </div>
-
-          <div class="post-nav-prev post-nav-item">
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </article>
-
-
-
-    <div class="post-spread">
-      
-    </div>
   </div>
 
 
@@ -452,8 +308,8 @@
           
   <div class="comments" id="comments">
     
-      <div class="ds-thread" data-thread-key="blog/2016/04/27/paxos-mutilpaxos/"
-           data-title="Paxos/Mutil-paxos 算法" data-url="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/">
+      <div class="ds-thread" data-thread-key="2016-04-27-paxos-mutilpaxos.html"
+           data-title="Paxos/Mutil-paxos 算法" data-url="http://yoursite.com/2016-04-27-paxos-mutilpaxos.html">
       </div>
     
   </div>
@@ -477,17 +333,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <section class="site-overview sidebar-panel ">
+      <section class="site-overview sidebar-panel  sidebar-panel-active ">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/images/avatar.jpg"
@@ -498,7 +345,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/">
-              <span class="site-state-item-count">18</span>
+              <span class="site-state-item-count">17</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -575,17 +422,6 @@
 
       </section>
 
-      
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-            
-              
-            
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Paxos算法为什么重要？"><span class="nav-number">1.</span> <span class="nav-text">Paxos算法为什么重要？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Paxos-算法"><span class="nav-number">2.</span> <span class="nav-text">Paxos 算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#准备阶段"><span class="nav-number">2.1.</span> <span class="nav-text">准备阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#批准阶段"><span class="nav-number">2.2.</span> <span class="nav-text">批准阶段</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Mutil-Paxos-算法"><span class="nav-number">3.</span> <span class="nav-text">Mutil-Paxos 算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它考虑"><span class="nav-number">4.</span> <span class="nav-text">其它考虑</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#永久存储"><span class="nav-number">4.1.</span> <span class="nav-text">永久存储</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#唯一的提案编号-n"><span class="nav-number">4.2.</span> <span class="nav-text">唯一的提案编号 n</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">6.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
-            
-          </div>
-        </section>
       
 
     </div>
@@ -687,10 +523,6 @@
   
 
   
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
-
-
 
   
 
