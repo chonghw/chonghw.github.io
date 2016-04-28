@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-04-28T00:51:11.000Z</updated>
+  <updated>2016-04-28T00:52:46.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/"/>
     <id>http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/</id>
     <published>2016-04-28T00:48:54.000Z</published>
-    <updated>2016-04-28T00:51:11.000Z</updated>
+    <updated>2016-04-28T00:52:46.000Z</updated>
     
     <content type="html">&lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt; 
@@ -52,7 +52,7 @@
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
 &lt;p&gt;原英文地址：&lt;a href=&quot;http://amberonrails.com/paxosmulti-paxos-algorithm/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://amberonrails.com/paxosmulti-paxos-algorithm/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;本文地址：&lt;/p&gt;
+&lt;p&gt;本文地址：&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt; ]&lt;/p&gt;
 </content>
     
