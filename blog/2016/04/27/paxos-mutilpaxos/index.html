@@ -88,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
-<meta property="og:updated_time" content="2016-04-28T01:00:26.000Z">
+<meta property="og:updated_time" content="2016-04-28T01:16:02.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Paxos/Mutil-paxos 算法">
 <meta name="twitter:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
@@ -348,10 +348,10 @@
 <h3 id="Paxos算法为什么重要？"><a href="#Paxos算法为什么重要？" class="headerlink" title="Paxos算法为什么重要？"></a>Paxos算法为什么重要？</h3><p>如果有个固定的的master节点，master节点就可以自己决策并提案值，让其它节点跟着使用这个值就行，那Paxos算法就没有任何用武之地了。倘若决策者的选举失败（有时就会这样），有两个节点提案值呢？</p>
 <p>Paxos算法能保证在所有提案的值中选出一个唯一的值。当你想在分布式系统中的一系列值中做决策时，或者说，在这一系列的值中决策出一致的顺序，Paxos算法就派上用场了。</p>
 <p>像<a href="https://ayende.com/blog/4496/paxos-enlightment" target="_blank" rel="external">Ayende Rahien</a>描述的那样，如果这些值是指一些事件，那在一个集群中所有的机器都能保持相同的状态或者状态的子集。</p>
-<h3 id="Paxos-算法"><a href="#Paxos-算法" class="headerlink" title="Paxos 算法"></a>Paxos 算法</h3><p>Paxos算法分两个阶段进行，准备阶段与批准阶段。</p>
+<h3 id="Paxos-算法"><a href="#Paxos-算法" class="headerlink" title="Paxos 算法"></a>Paxos 算法</h3><p>Paxos算法分两个阶段进行，准备阶段(Prepare phase)与批准阶段(Accept phase)。</p>
 <p>声明：下面章节的一些用词部分来源于Leslie Lamport的论文： <a href="http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-%20simple.pdf" target="_blank" rel="external">Paxo Made Simple</a>.</p>
-<h4 id="准备阶段"><a href="#准备阶段" class="headerlink" title="准备阶段"></a>准备阶段</h4><p>在准备阶段，提案者选出一个提案编号 <code>n</code> (此编号比提案者之前发送出的任何一个 编号都要大，也与任何其他提案者的编号 不同，将在下面详细讨论)，然后发送一个 <code>PREPARE</code> 请求给批准者的多数派。</p>
-<p>对批准者来说，如果收到的 <code>PREPARE</code> 请求中的提案编号 <code>n</code> 比它之前收到的任何提案编号都要大，就会响应一个“承诺”  (promise)，指出之后不会接收任何一个比这个提案编号要小的编号,以及已经收到过的最大提案编号(如果有的话).</p>
+<h4 id="准备阶段"><a href="#准备阶段" class="headerlink" title="准备阶段"></a>准备阶段</h4><p>在准备阶段，提案者<code>(proposor)</code>选出一个提案编号 <code>n</code> (此编号比提案者之前发送出的任何一个 编号都要大，也与任何其他提案者的编号 不同，将在下面详细讨论)，然后发送一个 <code>PREPARE</code> 请求给批准者的多数派。</p>
+<p>对批准者<code>(acceptor)&#39;来说，如果收到的</code>PREPARE<code>请求中的提案编号</code>n` 比它之前收到的任何提案编号都要大，就会响应一个“承诺”  (promise)，指出之后不会接收任何一个比这个提案编号要小的编号,以及已经收到过的最大提案编号(如果有的话).</p>
 <p>开始听起来有点困惑了？</p>
 <p>在真正理解前我也读了好几遍，也许再看看下面的伪代码会有所帮助。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta"># Proposer</span></span><br><span class="line"><span class="keyword">for</span> acceptor in acceptors</span><br><span class="line">  send :prepare_req, next_n()</span><br><span class="line"></span><br><span class="line"><span class="meta"># Acceptor</span></span><br><span class="line"><span class="keyword">if</span> (req.n &gt; highest_proposed_n)</span><br><span class="line">  highest_proposed_n = req.n</span><br><span class="line">  reply :prepare_resp, &#123;</span><br><span class="line">    :n =&gt; highest_acc.n,</span><br><span class="line">    :value =&gt; highest_acc.value</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
