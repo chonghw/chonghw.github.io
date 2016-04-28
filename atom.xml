@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-04-26T16:59:08.000Z</updated>
+  <updated>2016-04-28T03:02:58.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,62 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Paxos/Mutil-paxos 算法</title>
+    <link href="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/"/>
+    <id>http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/</id>
+    <published>2016-04-28T00:48:54.000Z</published>
+    <updated>2016-04-28T03:02:58.000Z</updated>
+    
+    <content type="html">&lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt; 
+&lt;p&gt;那时我参与的项目太酷了- 我们组一步步完成了从quorum KVS到分布式锁管理，又实现了Multi-paxos算法作为我们最终提交的项目。这篇博客，我会从普通的Paxos算法说起。&lt;/p&gt;
+&lt;p&gt;简单来说，Paxos是将一组节点在单个值上达成一致的协议(严格来说，是指一个协议簇，这是 &lt;a href=&quot;https://en.wikipedia.org/wiki/Paxos_\(computer_science&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;维基百科&lt;/a&gt; 上的说法)&lt;/p&gt;
+&lt;h3 id=&quot;Paxos算法为什么重要？&quot;&gt;&lt;a href=&quot;#Paxos算法为什么重要？&quot; class=&quot;headerlink&quot; title=&quot;Paxos算法为什么重要？&quot;&gt;&lt;/a&gt;Paxos算法为什么重要？&lt;/h3&gt;&lt;p&gt;如果有个固定的的master节点，master节点就可以自己决策并提案值，让其它节点跟着使用这个值就行，那Paxos算法就没有任何用武之地了。倘若决策者的选举失败（有时就会这样），有两个节点提案值呢？&lt;/p&gt;
+&lt;p&gt;Paxos算法能保证在所有提案的值中选出一个唯一的值。当你想在分布式系统中的一系列值中做决策时，或者说，在这一系列的值中决策出一致的顺序，Paxos算法就派上用场了。&lt;/p&gt;
+&lt;p&gt;像&lt;a href=&quot;https://ayende.com/blog/4496/paxos-enlightment&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Ayende Rahien&lt;/a&gt;描述的那样，如果这些值是指一些事件，那在一个集群中所有的机器都能保持相同的状态或者状态的子集。&lt;/p&gt;
+&lt;h3 id=&quot;Paxos-算法&quot;&gt;&lt;a href=&quot;#Paxos-算法&quot; class=&quot;headerlink&quot; title=&quot;Paxos 算法&quot;&gt;&lt;/a&gt;Paxos 算法&lt;/h3&gt;&lt;p&gt;Paxos算法分两个阶段进行，准备阶段(Prepare phase)与批准阶段(Accept phase)。&lt;/p&gt;
+&lt;p&gt;声明：下面章节的一些用词部分来源于Leslie Lamport的论文： &lt;a href=&quot;http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-%20simple.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Paxo Made Simple&lt;/a&gt;.&lt;/p&gt;
+&lt;h4 id=&quot;准备阶段&quot;&gt;&lt;a href=&quot;#准备阶段&quot; class=&quot;headerlink&quot; title=&quot;准备阶段&quot;&gt;&lt;/a&gt;准备阶段&lt;/h4&gt;&lt;p&gt;在准备阶段，提案者(proposor)选出一个提案编号 &lt;code&gt;n&lt;/code&gt; (此编号比提案者之前发送出的任何一个 编号都要大，也与任何其他提案者的编号 不同，将在下面详细讨论)，然后发送一个 &lt;code&gt;PREPARE&lt;/code&gt; 请求给批准者的多数派。&lt;/p&gt;
+&lt;p&gt;对批准者(acceptor)来说，如果收到的 &lt;code&gt;PREPARE&lt;/code&gt; 请求中的提案编号 &lt;code&gt;n&lt;/code&gt; 比它之前收到的任何提案编号都要大，就会响应一个“承诺”  (promise)，指出之后不会接收任何一个比这个提案编号要小的编号,以及已经收到过的最大提案编号(如果有的话).&lt;/p&gt;
+&lt;p&gt;开始听起来有点困惑了？&lt;/p&gt;
+&lt;p&gt;在真正理解前我也读了好几遍，再看看下面的伪代码也许会有所帮助。&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;# Proposer&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; acceptor in acceptors&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  send :prepare_req, next_n()&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;# Acceptor&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (req.n &amp;gt; highest_proposed_n)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  highest_proposed_n = req.n&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  reply :prepare_resp, &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    :n =&amp;gt; highest_acc.n,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    :value =&amp;gt; highest_acc.value&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;h4 id=&quot;批准阶段&quot;&gt;&lt;a href=&quot;#批准阶段&quot; class=&quot;headerlink&quot; title=&quot;批准阶段&quot;&gt;&lt;/a&gt;批准阶段&lt;/h4&gt;&lt;p&gt;当提案者收到批准者中多数派对 &lt;code&gt;PREPARE&lt;/code&gt; 请求的响应后，给批准者发送一个含有值 &lt;code&gt;v&lt;/code&gt; 的 &lt;code&gt;ACCEPT&lt;/code&gt; 信号，&lt;code&gt;v&lt;/code&gt; 是收到的响应中最高提案编号中的值，当响应中没有任何批准的值时，&lt;code&gt;v&lt;/code&gt; 可以是任意值。&lt;/p&gt;
+&lt;p&gt;当批准者收到 &lt;code&gt;ACCEPT&lt;/code&gt; 请求时，总会接收这个请求，除非它已经在准备阶段承诺过不再接收任何请求。&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;# Proposer&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; acceptor in acceptors&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  send :accept_req, responses.argmax &amp;#123; |i| i.n &amp;#125;.value &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;# Acceptor&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (req.n &amp;gt;= highest_proposed_n)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  highest_acc = &amp;#123;:n =&amp;gt; req.n, :value =&amp;gt; req.value&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  reply :accept_resp&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;h3 id=&quot;Mutil-Paxos-算法&quot;&gt;&lt;a href=&quot;#Mutil-Paxos-算法&quot; class=&quot;headerlink&quot; title=&quot;Mutil-Paxos 算法&quot;&gt;&lt;/a&gt;Mutil-Paxos 算法&lt;/h3&gt;&lt;p&gt;上面所讲的是 Paxos 算法。那 Multi-paxos 算法是如何工作的呢？&lt;/p&gt;
+&lt;p&gt;前面提到，Paxos 算法最主要的应用在于，能让许多参与者在一系列列数值中做出决策。当Paxos算法结束运行一轮后，会生成一个提案值 &lt;code&gt;v&lt;/code&gt; ，要决策出一系列的提案值来，最简单的方法就是多次运行 Paxos 算法，对不对？&lt;/p&gt;
+&lt;p&gt;实际上这种情况可以对 Paxos 算法进行优化： 设定一个固定的决策者，可以用来跳过准备阶段。假定这种决策关系能够保持”粘性”，就没必要继续发出提案编号—第一个被发送的提案号始终不会被覆盖，因为这时只有一个决策者。&lt;/p&gt;
+&lt;p&gt;因此，我们只需要运行一次准备阶段就够了。在 Paxos 算法接下来的几轮中，我们只需要发送 &lt;code&gt;ACCEPT&lt;/code&gt; 消息，附带一个在原始 &lt;code&gt;PREPARE&lt;/code&gt; 请求中用过的提案编号 &lt;code&gt;n&lt;/code&gt; ,和一个额外的参数来表示我们正在运行的轮数序列号。最坏的情况不过是决策关系不是固定的(或者说不是唯一的),这时我们也不必担心，因为算法会自动降级到普通的Paxos算法中(每一轮过程中都有准备阶段和批准阶段）。好酷！&lt;/p&gt;
+&lt;h3 id=&quot;其它考虑&quot;&gt;&lt;a href=&quot;#其它考虑&quot; class=&quot;headerlink&quot; title=&quot;其它考虑&quot;&gt;&lt;/a&gt;其它考虑&lt;/h3&gt;&lt;h4 id=&quot;永久存储&quot;&gt;&lt;a href=&quot;#永久存储&quot; class=&quot;headerlink&quot; title=&quot;永久存储&quot;&gt;&lt;/a&gt;永久存储&lt;/h4&gt;&lt;p&gt;系统必须保证一些数据能永久存储，以防能从失效中恢复。&lt;br&gt;尤其是，批准者需要记住它们承诺过要响应哪个 &lt;code&gt;PREPARE&lt;/code&gt; 请求以及它们响应过的 &lt;code&gt;ACCEPT&lt;/code&gt; 请求，这样做是为了决策出要承诺哪个提案并能传递一些必要的信息反馈给此提案。&lt;/p&gt;
+&lt;h4 id=&quot;唯一的提案编号-n&quot;&gt;&lt;a href=&quot;#唯一的提案编号-n&quot; class=&quot;headerlink&quot; title=&quot;唯一的提案编号 n&quot;&gt;&lt;/a&gt;唯一的提案编号 &lt;code&gt;n&lt;/code&gt;&lt;/h4&gt;&lt;p&gt;为了能让算法正常工作，每个提案者必须递增地增加提案编号 &lt;code&gt;n&lt;/code&gt;，&lt;code&gt;n&lt;/code&gt; 必须不同于其它任何提案者的编号.&lt;/p&gt;
+&lt;p&gt;为了满足这个条件，我们为每个提案者分配一个互斥的数值集合，并让它们只能从自己的集合中选取编号（比如说，给每个节点分配一个单独的素数，它们可以选择素数的不同倍数作为一个集合）&lt;/p&gt;
+&lt;p&gt;或者，我们也可以设定参与者成员的静态属性，为每个节点分配一个从0到 &lt;code&gt;k&lt;/code&gt; 之间的唯一数值&lt;code&gt;i&lt;/code&gt;，&lt;code&gt;k&lt;/code&gt; 是参与者的总数，&lt;code&gt;n=i+(k*轮数)&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;结论&quot;&gt;&lt;a href=&quot;#结论&quot; class=&quot;headerlink&quot; title=&quot;结论&quot;&gt;&lt;/a&gt;结论&lt;/h3&gt;&lt;p&gt;长话短说: Paxos 算法的目标是能让集群中的机器在一个提案值上最终达到统一（或者更有用的情况是，能为一系列数值决策出一致的顺序）。Multi-paxos 算法是对连续许多轮执行 Paxos 算法的一种优化，如果你设定了一个决策者，就可以跳过其中的一个阶段。&lt;/p&gt;
+&lt;p&gt;希望这篇博客能对你有用。我不是这个领域的专家，所以希望能听到更多的评论与修正。&lt;/p&gt;
+&lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
+&lt;p&gt;原英文地址：&lt;a href=&quot;http://amberonrails.com/paxosmulti-paxos-algorithm/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://amberonrails.com/paxosmulti-paxos-algorithm/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文地址：&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;作者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt; &amp;amp;&amp;amp; &lt;a href=&quot;http://weibo.com/u/2765244861?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@睡眼惺忪的小叶先生&lt;/a&gt; ]&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Algorithm" scheme="http://yoursite.com/categories/Algorithm/"/>
+    
+    
+      <category term="Distributed" scheme="http://yoursite.com/tags/Distributed/"/>
+    
+      <category term="Algorithm" scheme="http://yoursite.com/tags/Algorithm/"/>
+    
+  </entry>
   
   <entry>
     <title>新生物文明与蜂群思维</title>

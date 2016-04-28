@@ -64,7 +64,7 @@
 <link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="Distributed,Algorithm," />
 
 
 
@@ -82,19 +82,16 @@
 
 
 
-<meta name="description" content="新生物文明
-机器，正在生物化；而生物，正在工程化。这种趋势正验证着某些古老的隐喻–将机器比喻为生物，将生物比喻为机器。哪些比喻由来已久，古老到第一台机器诞生之时。如今，哪些久远的隐喻不再只是诗意的遐想，它们正在变为现实–一种积极有益的现实。">
+<meta name="description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="新生物文明与蜂群思维">
-<meta property="og:url" content="http://yoursite.com/blog/2016/04/26/shikongnote1/index.html">
+<meta property="og:title" content="Paxos/Mutil-paxos 算法">
+<meta property="og:url" content="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="新生物文明
-机器，正在生物化；而生物，正在工程化。这种趋势正验证着某些古老的隐喻–将机器比喻为生物，将生物比喻为机器。哪些比喻由来已久，古老到第一台机器诞生之时。如今，哪些久远的隐喻不再只是诗意的遐想，它们正在变为现实–一种积极有益的现实。">
-<meta property="og:updated_time" content="2016-04-26T16:59:08.000Z">
+<meta property="og:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
+<meta property="og:updated_time" content="2016-04-28T03:02:58.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="新生物文明与蜂群思维">
-<meta name="twitter:description" content="新生物文明
-机器，正在生物化；而生物，正在工程化。这种趋势正验证着某些古老的隐喻–将机器比喻为生物，将生物比喻为机器。哪些比喻由来已久，古老到第一台机器诞生之时。如今，哪些久远的隐喻不再只是诗意的遐想，它们正在变为现实–一种积极有益的现实。">
+<meta name="twitter:title" content="Paxos/Mutil-paxos 算法">
+<meta name="twitter:description" content="在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。">
 
 
 
@@ -112,7 +109,7 @@
   };
 </script>
 
-  <title> 新生物文明与蜂群思维 | Diting0x </title>
+  <title> Paxos/Mutil-paxos 算法 | Diting0x </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
@@ -278,7 +275,7 @@
             
             
               
-                新生物文明与蜂群思维
+                Paxos/Mutil-paxos 算法
               
             
           </h1>
@@ -290,8 +287,8 @@
               <i class="fa fa-calendar-o"></i>
             </span>
             <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-04-26T12:56:01-04:00" content="2016-04-26">
-              2016-04-26
+            <time itemprop="dateCreated" datetime="2016-04-27T20:48:54-04:00" content="2016-04-27">
+              2016-04-27
             </time>
           </span>
 
@@ -304,8 +301,8 @@
               <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/Misc/" itemprop="url" rel="index">
-                    <span itemprop="name">Misc</span>
+                  <a href="/categories/Algorithm/" itemprop="url" rel="index">
+                    <span itemprop="name">Algorithm</span>
                   </a>
                 </span>
 
@@ -320,8 +317,8 @@
             
               <span class="post-comments-count">
                 &nbsp; | &nbsp;
-                <a href="/blog/2016/04/26/shikongnote1/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/04/26/shikongnote1/" itemprop="commentsCount"></span>
+                <a href="/blog/2016/04/27/paxos-mutilpaxos/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/04/27/paxos-mutilpaxos/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -344,21 +341,38 @@
       
 
       
-        <p>新生物文明</p>
-<p>机器，正在生物化；而生物，正在工程化。<br>这种趋势正验证着某些古老的隐喻–将机器比喻为生物，将生物比喻为机器。哪些比喻由来已久，古老到第一台机器诞生之时。如今，哪些久远的隐喻不再只是诗意的遐想，它们正在变为现实–一种积极有益的现实。</p>
-<a id="more"></a>
-<p>由于我们自己创造的这个世界变得过于负责，我们不得不求助于自然世界以了解管理它的方法。这也就意味着，想要保证一切正常运转，我们最终制造出来的环境越机械化，可能越需要生物化。我们的未来是技术性的，但这并不意味着未来世界一定会是灰色冰冷的钢铁世界。相反，我们的技术所引导的未来，朝向的正是一种新生物文明。</p>
-<p>生物逻辑的胜利</p>
-<p>[机械]与[生命]这两个词的含义在不断延生，直到某一天，所有结构复杂的东西都被看作是机器，而所有能够自维持的机器都被看作是有生命的。</p>
-<p>学会向我们的创造物低头</p>
-<p>人造世界就像天然世界一样，很快就会具有自制力、适应力以及创造力，也随之失去我们的控制。但在我看来，这却是个最美妙的结局。</p>
-<p>蜂群思维  </p>
-<p>蜂群是彻底的母权制，而且是姐妹关系：除了少数无用的雄峰，所有的蜜蜂都是雌性姐妹。蜂群曾经如同日蚀一样神秘、一样深不可测。</p>
-<p>蜂群的灵魂在哪里，它在何处主流？<br>这里由谁统治，由谁发布命令，由谁遇见未来？</p>
-<p>这是一个白痴的选举大厅，由白痴选举白痴，其产生的效果却极为惊人。这是民主制度的精髓，是彻底的分布式管理。</p>
-<p>活系统的普遍规律：底层及的存在无法推断出高层级的负载型。不管是计算机还是大脑，也不管事哪一种方法–数学、物理或哲学–如果不实际运行它，就无法解释融于个体部分的涌现模式。只有实际存在的蜂群才能解释单个蜜蜂体内是否融合着蜂群特性。</p>
-<p>记忆是高度重建的。在记忆中进行抽取，需要从数目庞大的事件中挑选出什么是重要的，什么是不重要的，强调重要的东西，忽略不重要的东西。这种选择的过程实际上就是感知。</p>
-<p>-摘录自《失控》</p>
+        <p>在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。</p>
+<a id="more"></a> 
+<p>那时我参与的项目太酷了- 我们组一步步完成了从quorum KVS到分布式锁管理，又实现了Multi-paxos算法作为我们最终提交的项目。这篇博客，我会从普通的Paxos算法说起。</p>
+<p>简单来说，Paxos是将一组节点在单个值上达成一致的协议(严格来说，是指一个协议簇，这是 <a href="https://en.wikipedia.org/wiki/Paxos_\(computer_science" target="_blank" rel="external">维基百科</a> 上的说法)</p>
+<h3 id="Paxos算法为什么重要？"><a href="#Paxos算法为什么重要？" class="headerlink" title="Paxos算法为什么重要？"></a>Paxos算法为什么重要？</h3><p>如果有个固定的的master节点，master节点就可以自己决策并提案值，让其它节点跟着使用这个值就行，那Paxos算法就没有任何用武之地了。倘若决策者的选举失败（有时就会这样），有两个节点提案值呢？</p>
+<p>Paxos算法能保证在所有提案的值中选出一个唯一的值。当你想在分布式系统中的一系列值中做决策时，或者说，在这一系列的值中决策出一致的顺序，Paxos算法就派上用场了。</p>
+<p>像<a href="https://ayende.com/blog/4496/paxos-enlightment" target="_blank" rel="external">Ayende Rahien</a>描述的那样，如果这些值是指一些事件，那在一个集群中所有的机器都能保持相同的状态或者状态的子集。</p>
+<h3 id="Paxos-算法"><a href="#Paxos-算法" class="headerlink" title="Paxos 算法"></a>Paxos 算法</h3><p>Paxos算法分两个阶段进行，准备阶段(Prepare phase)与批准阶段(Accept phase)。</p>
+<p>声明：下面章节的一些用词部分来源于Leslie Lamport的论文： <a href="http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-%20simple.pdf" target="_blank" rel="external">Paxo Made Simple</a>.</p>
+<h4 id="准备阶段"><a href="#准备阶段" class="headerlink" title="准备阶段"></a>准备阶段</h4><p>在准备阶段，提案者(proposor)选出一个提案编号 <code>n</code> (此编号比提案者之前发送出的任何一个 编号都要大，也与任何其他提案者的编号 不同，将在下面详细讨论)，然后发送一个 <code>PREPARE</code> 请求给批准者的多数派。</p>
+<p>对批准者(acceptor)来说，如果收到的 <code>PREPARE</code> 请求中的提案编号 <code>n</code> 比它之前收到的任何提案编号都要大，就会响应一个“承诺”  (promise)，指出之后不会接收任何一个比这个提案编号要小的编号,以及已经收到过的最大提案编号(如果有的话).</p>
+<p>开始听起来有点困惑了？</p>
+<p>在真正理解前我也读了好几遍，再看看下面的伪代码也许会有所帮助。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta"># Proposer</span></span><br><span class="line"><span class="keyword">for</span> acceptor in acceptors</span><br><span class="line">  send :prepare_req, next_n()</span><br><span class="line"></span><br><span class="line"><span class="meta"># Acceptor</span></span><br><span class="line"><span class="keyword">if</span> (req.n &gt; highest_proposed_n)</span><br><span class="line">  highest_proposed_n = req.n</span><br><span class="line">  reply :prepare_resp, &#123;</span><br><span class="line">    :n =&gt; highest_acc.n,</span><br><span class="line">    :value =&gt; highest_acc.value</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="批准阶段"><a href="#批准阶段" class="headerlink" title="批准阶段"></a>批准阶段</h4><p>当提案者收到批准者中多数派对 <code>PREPARE</code> 请求的响应后，给批准者发送一个含有值 <code>v</code> 的 <code>ACCEPT</code> 信号，<code>v</code> 是收到的响应中最高提案编号中的值，当响应中没有任何批准的值时，<code>v</code> 可以是任意值。</p>
+<p>当批准者收到 <code>ACCEPT</code> 请求时，总会接收这个请求，除非它已经在准备阶段承诺过不再接收任何请求。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta"># Proposer</span></span><br><span class="line"><span class="keyword">for</span> acceptor in acceptors</span><br><span class="line">  send :accept_req, responses.argmax &#123; |i| i.n &#125;.value &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta"># Acceptor</span></span><br><span class="line"><span class="keyword">if</span> (req.n &gt;= highest_proposed_n)</span><br><span class="line">  highest_acc = &#123;:n =&gt; req.n, :value =&gt; req.value&#125;</span><br><span class="line">  reply :accept_resp</span><br></pre></td></tr></table></figure>
+<h3 id="Mutil-Paxos-算法"><a href="#Mutil-Paxos-算法" class="headerlink" title="Mutil-Paxos 算法"></a>Mutil-Paxos 算法</h3><p>上面所讲的是 Paxos 算法。那 Multi-paxos 算法是如何工作的呢？</p>
+<p>前面提到，Paxos 算法最主要的应用在于，能让许多参与者在一系列列数值中做出决策。当Paxos算法结束运行一轮后，会生成一个提案值 <code>v</code> ，要决策出一系列的提案值来，最简单的方法就是多次运行 Paxos 算法，对不对？</p>
+<p>实际上这种情况可以对 Paxos 算法进行优化： 设定一个固定的决策者，可以用来跳过准备阶段。假定这种决策关系能够保持”粘性”，就没必要继续发出提案编号—第一个被发送的提案号始终不会被覆盖，因为这时只有一个决策者。</p>
+<p>因此，我们只需要运行一次准备阶段就够了。在 Paxos 算法接下来的几轮中，我们只需要发送 <code>ACCEPT</code> 消息，附带一个在原始 <code>PREPARE</code> 请求中用过的提案编号 <code>n</code> ,和一个额外的参数来表示我们正在运行的轮数序列号。最坏的情况不过是决策关系不是固定的(或者说不是唯一的),这时我们也不必担心，因为算法会自动降级到普通的Paxos算法中(每一轮过程中都有准备阶段和批准阶段）。好酷！</p>
+<h3 id="其它考虑"><a href="#其它考虑" class="headerlink" title="其它考虑"></a>其它考虑</h3><h4 id="永久存储"><a href="#永久存储" class="headerlink" title="永久存储"></a>永久存储</h4><p>系统必须保证一些数据能永久存储，以防能从失效中恢复。<br>尤其是，批准者需要记住它们承诺过要响应哪个 <code>PREPARE</code> 请求以及它们响应过的 <code>ACCEPT</code> 请求，这样做是为了决策出要承诺哪个提案并能传递一些必要的信息反馈给此提案。</p>
+<h4 id="唯一的提案编号-n"><a href="#唯一的提案编号-n" class="headerlink" title="唯一的提案编号 n"></a>唯一的提案编号 <code>n</code></h4><p>为了能让算法正常工作，每个提案者必须递增地增加提案编号 <code>n</code>，<code>n</code> 必须不同于其它任何提案者的编号.</p>
+<p>为了满足这个条件，我们为每个提案者分配一个互斥的数值集合，并让它们只能从自己的集合中选取编号（比如说，给每个节点分配一个单独的素数，它们可以选择素数的不同倍数作为一个集合）</p>
+<p>或者，我们也可以设定参与者成员的静态属性，为每个节点分配一个从0到 <code>k</code> 之间的唯一数值<code>i</code>，<code>k</code> 是参与者的总数，<code>n=i+(k*轮数)</code>.</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>长话短说: Paxos 算法的目标是能让集群中的机器在一个提案值上最终达到统一（或者更有用的情况是，能为一系列数值决策出一致的顺序）。Multi-paxos 算法是对连续许多轮执行 Paxos 算法的一种优化，如果你设定了一个决策者，就可以跳过其中的一个阶段。</p>
+<p>希望这篇博客能对你有用。我不是这个领域的专家，所以希望能听到更多的评论与修正。</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>译文，仅为学习使用，未经博主同意，请勿转载。</p>
+<p>原英文地址：<a href="http://amberonrails.com/paxosmulti-paxos-algorithm/" target="_blank" rel="external">http://amberonrails.com/paxosmulti-paxos-algorithm/</a></p>
+<p>本文地址：<a href="http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/</a></p>
+<p>作者 [ 新浪微博: <a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a> &amp;&amp; <a href="http://weibo.com/u/2765244861?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@睡眼惺忪的小叶先生</a> ]</p>
 
       
     </div>
@@ -393,22 +407,26 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/Distributed/" rel="tag">#Distributed</a>
+          
+            <a href="/tags/Algorithm/" rel="tag">#Algorithm</a>
+          
+        </div>
+      
 
       
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/blog/2016/04/22/wurenqu/" rel="next" title="电影无人区的思考">
-                <i class="fa fa-chevron-left"></i> 电影无人区的思考
+              <a href="/blog/2016/04/26/shikongnote1/" rel="next" title="新生物文明与蜂群思维">
+                <i class="fa fa-chevron-left"></i> 新生物文明与蜂群思维
               </a>
             
           </div>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/blog/2016/04/27/paxos-mutilpaxos/" rel="prev" title="Paxos/Mutil-paxos 算法">
-                Paxos/Mutil-paxos 算法 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -434,8 +452,8 @@
           
   <div class="comments" id="comments">
     
-      <div class="ds-thread" data-thread-key="blog/2016/04/26/shikongnote1/"
-           data-title="新生物文明与蜂群思维" data-url="http://yoursite.com/blog/2016/04/26/shikongnote1/">
+      <div class="ds-thread" data-thread-key="blog/2016/04/27/paxos-mutilpaxos/"
+           data-title="Paxos/Mutil-paxos 算法" data-url="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/">
       </div>
     
   </div>
@@ -564,7 +582,7 @@
               
             
             
-              <p class="post-toc-empty">此文章未包含目录</p>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Paxos算法为什么重要？"><span class="nav-number">1.</span> <span class="nav-text">Paxos算法为什么重要？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Paxos-算法"><span class="nav-number">2.</span> <span class="nav-text">Paxos 算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#准备阶段"><span class="nav-number">2.1.</span> <span class="nav-text">准备阶段</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#批准阶段"><span class="nav-number">2.2.</span> <span class="nav-text">批准阶段</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Mutil-Paxos-算法"><span class="nav-number">3.</span> <span class="nav-text">Mutil-Paxos 算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它考虑"><span class="nav-number">4.</span> <span class="nav-text">其它考虑</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#永久存储"><span class="nav-number">4.1.</span> <span class="nav-text">永久存储</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#唯一的提案编号-n"><span class="nav-number">4.2.</span> <span class="nav-text">唯一的提案编号 n</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">6.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
             
           </div>
         </section>
