@@ -88,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/blog/2016/04/28/understand-paxos1/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="我第一次听说Paxos算法是在2004年，">
-<meta property="og:updated_time" content="2016-04-30T04:30:31.000Z">
+<meta property="og:updated_time" content="2016-04-30T16:13:49.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Paxos算法(一)">
 <meta name="twitter:description" content="我第一次听说Paxos算法是在2004年，">
@@ -377,11 +377,10 @@
 <ul>
 <li>每 X 秒运行一次决策者选举算法，以便让所有节点知道哪个节点拥有决策权</li>
 <li>当决策者收到一个添加日志条目 <code>ITEM</code> 的请求时，会选取下一个闲置的索引<code>INDEX</code>，然后达成一个共识：将<code>（INDEX,ITEM)</code>添加到日志中</li>
-<li><p>在达成这样一个共识的过程中：将<code>（INDEX,ITEM)</code>添加到日志中。所有的节点都会参与投票，最终同意条目 <code>ITEM</code> 被添加到日志中并赋予索引 <code>INDEX</code></p>
-<p>  [译者注:这里说的投票过程在Synod算法中实现]</p>
-</li>
+<li>在达成这样一个共识的过程中：将<code>（INDEX,ITEM)</code>添加到日志中。所有的节点都会参与投票，最终同意条目 <code>ITEM</code> 被添加到日志中并赋予索引 <code>INDEX</code></li>
 </ul>
-<p>决策者选举算法意味着选取的具有决策权的节点是每个节点都认可同意的。目前有许多决策者选举算法，Paxos算法并没有具体化该使用哪一个。一个简单的方法就是将每个节点都赋予一个ID，然后将它们的ID广播给每个节点，拥有最高值ID的节点就是决策者。</p>
+<pre><code>[译者注:这里说的投票过程在Synod算法中实现]
+</code></pre><p>决策者选举算法意味着选取的具有决策权的节点是每个节点都认可同意的。目前有许多决策者选举算法，Paxos算法并没有具体化该使用哪一个。一个简单的方法就是将每个节点都赋予一个ID，然后将它们的ID广播给每个节点，拥有最高值ID的节点就是决策者。</p>
 <p>存在这种可能性(e.g.,在网络分离时)会选出不止一个决策者。举个例子，在上述的决策者选举算法中，如果拥有最高ID值的节点的信息丢失了，最高和第二高ID的节点就有可能都被选举为决策者。在有不止一个决策者的情况下，Synod算法(共识算法)也能确保为每个日志记录最多选出一个条目。我会在下一篇博客中详细讲述Synod算法。现在就已经能足够说明，当两个不同决策者在<code>(INDEX,ITEM1)</code>和<code>(INDEX,ITEM2)</code>上要达成共识时---同一个索引中含有两个不同的条目---其中只有一个能被选出。</p>
 <p>我们先离开一会，来聊一聊管理日志的问题：假定只有一个决策者，当决策者被选出时，它会检查整个日志然后看看里面是否有“空隙”（hole). e.g.，日志记录中的值还没有达成共识。举个例子，索引“17”中有个空隙. 这时，决策者会运行Synod算法，初始化(17,EMPTY). 根据Synod算法，它要么是在<code>(17,EMPTY)</code>,要么是在<code>(17,VALUE)</code>（VALUE是之前提案的值)上达成共识。无论如何，两种情况下，空隙都填满了。</p>
 <p>当不再有空隙时，决策者就可以开始处理写操作了：对于每个添加条目到日志中的请求，决策者会运行共识算法，初始化<code>(INDEX,ITEM)</code>,<code>INDEX</code>是下一个可用的索引，<code>ITEM</code> 是要被写进日志的条目。注意，决策者能同时添加多个条目到日志中，也包括添加条目来填补空隙的情况。<br>只要存在唯一的决策者，条目都会被添加到日志中。如果有多个决策者，这个算法可能会停止，直到下一次只出现一个决策者的时候。</p>
