@@ -59,10 +59,10 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos2/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos2/</id>
     <published>2016-04-28T15:58:58.000Z</published>
-    <updated>2016-04-30T03:25:27.000Z</updated>
+    <updated>2016-04-30T03:29:07.000Z</updated>
     
     <content type="html">&lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
-&lt;p&gt;&amp;lt;！–more –&amp;gt;&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;h3 id=&quot;背景知识&quot;&gt;&lt;a href=&quot;#背景知识&quot; class=&quot;headerlink&quot; title=&quot;背景知识&quot;&gt;&lt;/a&gt;背景知识&lt;/h3&gt;&lt;p&gt;在开始之前做以下声明：这篇博客描述的Paxos算法是来源于原论文中的最基本的形式。当然也有许多基于Paxos的相关优化算法，但我觉得聊那些优化算法会扰乱我们对整个算法的理解。&lt;/p&gt;
 &lt;p&gt;Synod算法是Paxos的核心。针对每个日志索引，Synod算法都会单独执行一次，e.g.，为获取日志中的第一个条目执行一次，又为日志中的第二个条目执行第二次，如此往复。多个Synod算法可以并发执行而不会相互影响各自的结果。在下文中，术语”Synod实例”表示： 针对一个特定的索引，Synod算法的一次执行。&lt;/p&gt;
 &lt;p&gt;简单地说，Synod算法是一种共识算法，用来保证：a)所有参与的节点都有相同的输出值，b)输出值是由一些节点投票选出的结果(而不是任意的值),c)如果能保证足够的节点正常地相互通信，算法最终能正常结束。算法这样构造，以便让所有的节点都能提案一个值，其动态性保证了那些提案的值中只有一个能被选出。然而，也存在这种情况：不同的时间不同的节点会提案出许多值，导致算法永远在执行，无法结束。为了加快Synod算法的结束，我们可以限制节点只能把值提案给Paxos算法的决策者。当只有一个决策者的时候，算法很快就能结束运行了。当然，算法的建立之初是为了能支持任意节点都能提案值，尽管会有多个决策者，达成共识的输出值最终仍然会保持一致性。&lt;/p&gt;
@@ -126,7 +126,7 @@
     
     <summary type="html">
     
-      &lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos
+      &lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
     
     </summary>
     
