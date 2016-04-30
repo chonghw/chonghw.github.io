@@ -223,7 +223,7 @@
     <link href="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/"/>
     <id>http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/</id>
     <published>2016-04-28T00:48:54.000Z</published>
-    <updated>2016-04-30T03:35:59.000Z</updated>
+    <updated>2016-04-30T04:27:15.000Z</updated>
     
     <content type="html">&lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt; 
@@ -255,6 +255,7 @@
 &lt;p&gt;或者，我们也可以设定参与者成员的静态属性，为每个节点分配一个从0到 &lt;code&gt;k&lt;/code&gt; 之间的唯一数值&lt;code&gt;i&lt;/code&gt;，&lt;code&gt;k&lt;/code&gt; 是参与者的总数，&lt;code&gt;n=i+(k*轮数)&lt;/code&gt;.&lt;/p&gt;
 &lt;h3 id=&quot;结论&quot;&gt;&lt;a href=&quot;#结论&quot; class=&quot;headerlink&quot; title=&quot;结论&quot;&gt;&lt;/a&gt;结论&lt;/h3&gt;&lt;p&gt;长话短说: Paxos 算法的目标是能让集群中的机器在一个提案值上最终达到统一（或者更有用的情况是，能为一系列数值决策出一致的顺序）。Multi-paxos 算法是对连续许多轮执行 Paxos 算法的一种优化，如果你设定了一个决策者，就可以跳过其中的一个阶段。&lt;/p&gt;
 &lt;p&gt;希望这篇博客能对你有用。我不是这个领域的专家，所以希望能听到更多的评论与修正。&lt;/p&gt;
+&lt;p&gt;若有兴趣，可继续阅读&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;下一篇&lt;/a&gt;&lt;/p&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;注：[特别重要]&lt;/p&gt;
 &lt;p&gt;[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助&lt;/p&gt;
 &lt;p&gt;译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]&lt;/p&gt;
