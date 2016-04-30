@@ -88,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/blog/2016/04/28/understand-paxos2/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
-<meta property="og:updated_time" content="2016-04-30T03:29:07.000Z">
+<meta property="og:updated_time" content="2016-04-30T03:30:03.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Paxos算法(二)">
 <meta name="twitter:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
@@ -362,8 +362,7 @@
 </code></pre><p><code>lastTried</code>和<code>maxBallot</code>背后的考虑很简单–为了确保管理节点和参与节点讨论的是同一个选举。管理节点标记<code>lastTried</code>的选举编号并验证它接收到的每一条信息，以确保它标记的的确就是这次选举。另一方面，每个参与的节点标记它参与过的最高优先级的选举编号<code>maxBallot</code>，只有它们正在参与此次选举的时候才会给管理节点回复信息。正常执行过程中，一旦一个选举被初始化，所有节点的<code>maxBallot</code>变量值都和管理者的<code>lastTried</code>变量值相等。</p>
 <pre><code>[译者注：这里会有点绕，在看下文之前一定要先理解这几个变量的含义]
 </code></pre><p>为了简洁，下面的描述假设当管理者给每个节点发送信息的时候，也会给自己发送信息(当然也会回复自己)；这样对整个算法的描述和理解会变得更加简单。</p>
-<pre><code>[译者注： ]
-</code></pre><ul>
+<ul>
 <li><p>初始化</p>
 <ul>
 <li>管理节点为选举选取编号n，<code>n&gt;lastTried</code>， 接着设置<code>lastTried=n</code>,然后给每个节点发送<code>NextBallot(n)</code>.</li>
