@@ -59,7 +59,7 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos2/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos2/</id>
     <published>2016-04-28T15:58:58.000Z</published>
-    <updated>2016-04-30T03:33:32.000Z</updated>
+    <updated>2016-04-30T03:34:51.000Z</updated>
     
     <content type="html">&lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -114,8 +114,8 @@
 &lt;p&gt;由于多个选举可能并发执行的原因，可能会带来相互干扰的问题，进而引发竞争条件导致选举的无限循环。然而，如果Paxos算法只有一个决策者，那在Synod的每个实例中，只有一个节点管理选举过程时，就能确保每次执行一次选举，进而能避免竞争条件和无限循环。&lt;/p&gt;
 &lt;h3 id=&quot;Related-papers&quot;&gt;&lt;a href=&quot;#Related-papers&quot; class=&quot;headerlink&quot; title=&quot;Related papers&quot;&gt;&lt;/a&gt;Related papers&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf?tduid=(dd7507dc5da69f82517b43f2b4f6d1a2&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;The Part-Time Parliament, Lamport&lt;/a&gt;(256380)(2459594)(TnL5HPStwNw-cQHoEYux98mXntql_ljIyw)())&lt;/p&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;注：[特别重要]&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助
-    译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助&lt;/p&gt;
+&lt;p&gt;译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]&lt;/p&gt;
 &lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
 &lt;p&gt;原文地址：&lt;a href=&quot;https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/&lt;/a&gt;&lt;/p&gt;
@@ -143,7 +143,7 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos1/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos1/</id>
     <published>2016-04-28T05:31:00.000Z</published>
-    <updated>2016-04-30T03:23:59.000Z</updated>
+    <updated>2016-04-30T03:35:25.000Z</updated>
     
     <content type="html">&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;我第一次听说Paxos算法是在2004年，那时我还在读本科，修了一门分布式算法的课程。在过去的几年里，Paxos算法被提出过许多次，主要应用在可扩展存储系统中的健壮性实施上。我对此总是充满敬畏之心，“简直难以置信的复杂，Paxos算法，当心!”. 我决定再读一遍原论文，试着去解释Paxos算法做了些什么以及又是如何做到的。简单地说，Paxos解决了这样一个问题：可恢复的复制不断增长的条目。&lt;/p&gt;
@@ -193,9 +193,9 @@
 &lt;p&gt;总之，如果相比 AP, 你更喜欢 CP 的话 (&lt;a href=&quot;https://en.wikipedia.org/wiki/CAP_theorem&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;CAP定理&lt;/a&gt; ），Paxos算法对你来说是一个非常好的解决方案。&lt;/p&gt;
 &lt;h3 id=&quot;Related-papers&quot;&gt;&lt;a href=&quot;#Related-papers&quot; class=&quot;headerlink&quot; title=&quot;Related papers&quot;&gt;&lt;/a&gt;Related papers&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf?tduid=\(dd7507dc5da69f82517b43f2b4f6d1a2\&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;The Part-Time Parliament, Lamport&lt;/a&gt;(256380)(2459594)(TnL5HPStwNw-LkhlnevB9dnJgzTQ4MgOnQ)())&lt;br&gt;&lt;a href=&quot;http://www.cs.utexas.edu/users/lorenzo/corsi/cs380d/past/03F/notes/paxos-simple.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Paxos Made Simple, Lamport&lt;/a&gt;&lt;/p&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;注:[特别重要]&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助
-译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助&lt;/p&gt;
+&lt;p&gt;译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
 &lt;p&gt;原文地址：&lt;a href=&quot;https://distributedthoughts.wordpress.com/2013/09/22/understanding-paxos-part-1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://distributedthoughts.wordpress.com/2013/09/22/understanding-paxos-part-1/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&lt;/a&gt;&lt;/p&gt;
@@ -223,7 +223,7 @@
     <link href="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/"/>
     <id>http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/</id>
     <published>2016-04-28T00:48:54.000Z</published>
-    <updated>2016-04-30T03:20:00.000Z</updated>
+    <updated>2016-04-30T03:35:59.000Z</updated>
     
     <content type="html">&lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt; 
@@ -256,9 +256,9 @@
 &lt;h3 id=&quot;结论&quot;&gt;&lt;a href=&quot;#结论&quot; class=&quot;headerlink&quot; title=&quot;结论&quot;&gt;&lt;/a&gt;结论&lt;/h3&gt;&lt;p&gt;长话短说: Paxos 算法的目标是能让集群中的机器在一个提案值上最终达到统一（或者更有用的情况是，能为一系列数值决策出一致的顺序）。Multi-paxos 算法是对连续许多轮执行 Paxos 算法的一种优化，如果你设定了一个决策者，就可以跳过其中的一个阶段。&lt;/p&gt;
 &lt;p&gt;希望这篇博客能对你有用。我不是这个领域的专家，所以希望能听到更多的评论与修正。&lt;/p&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;注：[特别重要]&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助
-译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助&lt;/p&gt;
+&lt;p&gt;译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
 &lt;p&gt;原英文地址：&lt;a href=&quot;http://amberonrails.com/paxosmulti-paxos-algorithm/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://amberonrails.com/paxosmulti-paxos-algorithm/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&lt;/a&gt;&lt;/p&gt;
