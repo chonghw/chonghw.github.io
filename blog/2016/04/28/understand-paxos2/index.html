@@ -88,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/blog/2016/04/28/understand-paxos2/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
-<meta property="og:updated_time" content="2016-04-30T03:32:08.000Z">
+<meta property="og:updated_time" content="2016-04-30T03:33:32.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解Paxos算法(二)">
 <meta name="twitter:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
@@ -394,9 +394,9 @@
 <p>由于多个选举可能并发执行的原因，可能会带来相互干扰的问题，进而引发竞争条件导致选举的无限循环。然而，如果Paxos算法只有一个决策者，那在Synod的每个实例中，只有一个节点管理选举过程时，就能确保每次执行一次选举，进而能避免竞争条件和无限循环。</p>
 <h3 id="Related-papers"><a href="#Related-papers" class="headerlink" title="Related papers"></a>Related papers</h3><p><a href="http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf?tduid=(dd7507dc5da69f82517b43f2b4f6d1a2" target="_blank" rel="external">The Part-Time Parliament, Lamport</a>(256380)(2459594)(TnL5HPStwNw-cQHoEYux98mXntql_ljIyw)())</p>
 <h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>注：[特别重要]</p>
-<pre><code>Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助
-译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出
-</code></pre><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p><code>Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助
+    译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出</code></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
 <p>译文，仅为学习使用，未经博主同意，请勿转载。</p>
 <p>原文地址：<a href="https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/" target="_blank" rel="external">https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/</a></p>
 <p>本文地址： <a href="http://www.chongh.wiki/blog/2016/04/28/understand-paxos2/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/28/understand-paxos2/</a></p>
