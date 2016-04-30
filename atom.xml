@@ -59,7 +59,7 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos2/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos2/</id>
     <published>2016-04-28T15:58:58.000Z</published>
-    <updated>2016-04-30T03:30:03.000Z</updated>
+    <updated>2016-04-30T03:31:14.000Z</updated>
     
     <content type="html">&lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -120,7 +120,7 @@
 &lt;p&gt;译文，仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
 &lt;p&gt;原文地址：&lt;a href=&quot;https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/27/paxos-mutilpaxos/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;译者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt; ，感谢好友&lt;a href=&quot;http://weibo.com/u/2765244861?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@睡眼惺忪的小叶先生&lt;/a&gt;与我几次激烈的讨论，对本文很有帮助&lt;/p&gt;
+&lt;p&gt;译者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;] ，感谢好友&lt;a href=&quot;http://weibo.com/u/2765244861?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@睡眼惺忪的小叶先生&lt;/a&gt;与我几次激烈的讨论，对本文很有帮助&lt;/p&gt;
 </content>
     
     <summary type="html">
