@@ -59,7 +59,7 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos2/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos2/</id>
     <published>2016-04-28T15:58:58.000Z</published>
-    <updated>2016-04-30T03:34:51.000Z</updated>
+    <updated>2016-04-30T03:37:11.000Z</updated>
     
     <content type="html">&lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -143,12 +143,13 @@
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos1/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos1/</id>
     <published>2016-04-28T05:31:00.000Z</published>
-    <updated>2016-04-30T03:35:25.000Z</updated>
+    <updated>2016-04-30T03:38:13.000Z</updated>
     
-    <content type="html">&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;p&gt;我第一次听说Paxos算法是在2004年，那时我还在读本科，修了一门分布式算法的课程。在过去的几年里，Paxos算法被提出过许多次，主要应用在可扩展存储系统中的健壮性实施上。我对此总是充满敬畏之心，“简直难以置信的复杂，Paxos算法，当心!”. 我决定再读一遍原论文，试着去解释Paxos算法做了些什么以及又是如何做到的。简单地说，Paxos解决了这样一个问题：可恢复的复制不断增长的条目。&lt;/p&gt;
-&lt;p&gt;[译者注：这里的条目一般指日志中&lt;code&gt;ITEM&lt;/code&gt;]&lt;/p&gt;
-&lt;h3 id=&quot;背景知识&quot;&gt;&lt;a href=&quot;#背景知识&quot; class=&quot;headerlink&quot; title=&quot;背景知识&quot;&gt;&lt;/a&gt;背景知识&lt;/h3&gt;&lt;p&gt;Paxos算法原论文中介绍了Paxos（帕克西）岛屿中的立法议会问题。帕克西岛议会在一个音响效果非常差劲的大厅举办，所以立法者们都通过信差传递信息。由于立法者和信差都是商人的缘故，他们随时都有可能离开议会房间。每位立法者能提议一个法案，如果法案通过，就会被记录在每位立法者的笔记本上。每个通过的法案都有一个索引，e.g.，”137:每吨橄榄收取5%的税”，也就是说#137法案的内容是：“每吨橄榄收取5%的税”。&lt;/p&gt;
+    <content type="html">&lt;p&gt;我第一次听说Paxos算法是在2004年，&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;那时我还在读本科，修了一门分布式算法的课程。在过去的几年里，Paxos算法被提出过许多次，主要应用在可扩展存储系统中的健壮性实施上。我对此总是充满敬畏之心，“简直难以置信的复杂，Paxos算法，当心!”. 我决定再读一遍原论文，试着去解释Paxos算法做了些什么以及又是如何做到的。简单地说，Paxos解决了这样一个问题：可恢复的复制不断增长的条目。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[译者注：这里的条目一般指日志中`ITEM`]
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;背景知识&quot;&gt;&lt;a href=&quot;#背景知识&quot; class=&quot;headerlink&quot; title=&quot;背景知识&quot;&gt;&lt;/a&gt;背景知识&lt;/h3&gt;&lt;p&gt;Paxos算法原论文中介绍了Paxos（帕克西）岛屿中的立法议会问题。帕克西岛议会在一个音响效果非常差劲的大厅举办，所以立法者们都通过信差传递信息。由于立法者和信差都是商人的缘故，他们随时都有可能离开议会房间。每位立法者能提议一个法案，如果法案通过，就会被记录在每位立法者的笔记本上。每个通过的法案都有一个索引，e.g.，”137:每吨橄榄收取5%的税”，也就是说#137法案的内容是：“每吨橄榄收取5%的税”。&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;[译者注：商人都忙着挣钱呢,而立法者和信差离开会导致信息丢失或信息重复传递等问题]
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在帕克西岛屿议会的故事中隐藏着一个分布式日志(有时称作日报)能将节点失效以及信息丢失(立法者和信差离开房间)恢复的理论。 Paxos算法处理请求并将信息添加到日志中(法案通过).每个添加到日志中的法案都由一个有序增长的索引来标识(e.g.，条目A的索引是1，条目B的索引是2)。所有参与Paxos算法的节点最终都会知道每个条目都伴随一个索引被添加到每个立法者手上的笔记本中。&lt;/p&gt;
 &lt;p&gt;考虑一个可能的API形式化问题来理解Paxos算法：&lt;/p&gt;
@@ -204,8 +205,7 @@
     
     <summary type="html">
     
-      &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;p&gt;我第一次听说Paxos算法是在2004年，那时我还在读本科，修了一门分布式算法的课程。在过去的几年里，Paxos算法被提出过许多次，主要应用在可扩展存储系统中的健壮性实施上。我对此总是充满敬畏之心，“简直难以置信的复杂，Paxos算法，当
+      &lt;p&gt;我第一次听说Paxos算法是在2004年，&lt;/p&gt;
     
     </summary>
     
