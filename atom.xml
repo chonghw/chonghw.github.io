@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-03T22:04:47.000Z</updated>
+  <updated>2016-05-04T00:27:11.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,50 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>PVOPS 框架介绍</title>
+    <link href="http://yoursite.com/blog/2016/05/03/pvops/"/>
+    <id>http://yoursite.com/blog/2016/05/03/pvops/</id>
+    <published>2016-05-04T00:22:46.000Z</published>
+    <updated>2016-05-04T00:27:11.000Z</updated>
+    
+    <content type="html">&lt;p&gt;pvops是做什么的？ 简单地说，hook kernel.&lt;br&gt;利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。&lt;/p&gt;
+&lt;p&gt;pvops接口来源于Xen项目，初衷是建立一个类虚拟化(para-virtualized）内核来适应于不同的hypervisor，当然也包括适应于非虚拟化平台。&lt;/p&gt;
+&lt;p&gt;pvops将类虚拟化操作分成一系列结构：pv_time_ops,pv_cpu_ops,pv_mmu_ops,pv_lock_ops和pv_irq_ops。&lt;/p&gt;
+&lt;p&gt;举个例子，x86系统中利用’MOV CR3’指令来加载页表。pvops将其替换为一个间接跳转到pv_mmu_ops -&amp;gt; write_cr3函数。 每种虚拟化系统，包括本地x86平台，对这些函数都有自己的实现。 对于x86平台，这些函数的实现只是简单地对原始函数指令的封装。比如对于pv_mmu_ops -&amp;gt; write_cr3函数，x86平台的具体实现为native_write_cr3函数：&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;static inline void native_write_cr3(unsigned long val)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        asm volatile(&quot;mov %0,%%cr3&quot;: : &quot;r&quot; (val), &quot;m&quot; (__force_order));&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;pvops将本地底层的硬件指令通过pv_xxx_ops结构体替换为间接跳转函数。下面以pv_mmu_ops为例，详细分析其内部结构，pv_mmu_ops的定义为：(文中列出主要部分，完整定义，可参看&lt;a href=&quot;http://lxr.free-electrons.com/source/arch/x86/kernel/paravirt.c#L395&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;pv_mmu_ops结构定义&lt;/a&gt;）&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;40&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;41&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;42&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;43&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;44&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;45&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;46&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;47&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;48&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;49&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;50&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;51&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;52&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;53&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;54&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; pv_mmu_ops &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;long&lt;/span&gt; &lt;span class=&quot;params&quot;&gt;(*read_cr2)&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*write_cr2)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;long&lt;/span&gt; &lt;span class=&quot;params&quot;&gt;(*read_cr3)&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*write_cr3)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;comment&quot;&gt;/*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          * Hooks for intercepting the creation/use/destruction of an&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          * mm_struct.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*activate_mm)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *prev,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                             &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *next);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*dup_mmap)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *oldmm,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                          &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*exit_mmap)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;comment&quot;&gt;/* TLB operations */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*flush_tlb_user)(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*flush_tlb_kernel)(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*flush_tlb_single)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; addr);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*flush_tlb_others)(&lt;span class=&quot;keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; cpumask *cpus,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                                  &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                                  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; start,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                                  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; end);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;comment&quot;&gt;/* Hooks for allocating and freeing a pagetable top-level */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt;  (*pgd_alloc)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*pgd_free)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;pgd_t&lt;/span&gt; *pgd);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;comment&quot;&gt;/*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          * Hooks for allocating/releasing pagetable pages when they&#39;re&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          * attached to a pagetable&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*alloc_pte)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*alloc_pmd)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*alloc_pud)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*release_pte)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*release_pmd)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*release_pud)(&lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;comment&quot;&gt;/* Pagetable manipulation functions */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*set_pte)(&lt;span class=&quot;keyword&quot;&gt;pte_t&lt;/span&gt; *ptep, &lt;span class=&quot;keyword&quot;&gt;pte_t&lt;/span&gt; pteval);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*set_pte_at)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; addr,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                            &lt;span class=&quot;keyword&quot;&gt;pte_t&lt;/span&gt; *ptep, &lt;span class=&quot;keyword&quot;&gt;pte_t&lt;/span&gt; pteval);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*set_pmd)(&lt;span class=&quot;keyword&quot;&gt;pmd_t&lt;/span&gt; *pmdp, &lt;span class=&quot;keyword&quot;&gt;pmd_t&lt;/span&gt; pmdval);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*set_pmd_at)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; addr,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                            &lt;span class=&quot;keyword&quot;&gt;pmd_t&lt;/span&gt; *pmdp, &lt;span class=&quot;keyword&quot;&gt;pmd_t&lt;/span&gt; pmdval);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; (*pte_update)(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; addr,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                            &lt;span class=&quot;keyword&quot;&gt;pte_t&lt;/span&gt; *ptep);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;比如说你要在分配页表项的时候hook (&lt;em&gt;write_cr3)函数, 可以将(&lt;/em&gt;write_cr3)函数赋值为自己的自定义函数。 默认情况下，内核中pvops框架中提供的自定义函数如下： (完整可参看 &lt;a href=&quot;http://lxr.free-electrons.com/source/arch/x86/kernel/paravirt.c#L395&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;pv_mmu_ops函数定义&lt;/a&gt;&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; pv_mmu_ops pv_mmu_ops &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.read_cr2 = native_read_cr2,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.write_cr2 = native_write_cr2,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.read_cr3 = native_read_cr3,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.write_cr3 = native_write_cr3,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; .alloc_pte = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.alloc_pmd = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.alloc_pud = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.release_pte = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.release_pmd = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.release_pud = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.set_pte = native_set_pte,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.set_pte_at = native_set_pte_at,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.set_pmd = native_set_pmd,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.set_pmd_at = native_set_pmd_at,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;.pte_update = paravirt_nop,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;接着定义的函数会被传入到这里：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;inline&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;write_cr3&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; mm_struct *mm, &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; pfn)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; &lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         PVOP_VCALL2(pv_mmu_ops.write_cr3, mm, pfn);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;至于PVOP_VCALL2具体做了什么，可以不必去关心。&lt;/p&gt;
+&lt;p&gt;完&lt;/p&gt;
+&lt;h4 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h4&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载&lt;/p&gt;
+&lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/05/03/pvops/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/05/03/pvops/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;作者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;pvops是做什么的？ 简单地说，hook kernel.&lt;br&gt;利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。&lt;/p&gt;
+&lt;p&gt;pvops接口来源于Xen项目，初衷是建立
+    
+    </summary>
+    
+      <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
+    
+    
+      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
+    
+      <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
+    
+      <category term="Sytem" scheme="http://yoursite.com/tags/Sytem/"/>
+    
+  </entry>
   
   <entry>
     <title>深入理解Linux内存分配</title>
@@ -1263,15 +1307,15 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
     
     
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
+    
+      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
     
@@ -1519,11 +1563,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
       <category term="Defense" scheme="http://yoursite.com/tags/Defense/"/>
     
@@ -1638,11 +1682,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
@@ -1722,11 +1766,11 @@ pip install distorm3
     
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
+    
+      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
     
   </entry>
   
@@ -1890,153 +1934,6 @@ make &amp;amp;&amp;amp; make install
       <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>PIN for Dynamic Binary Instrumentation</title>
-    <link href="http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/"/>
-    <id>http://yoursite.com/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/</id>
-    <published>2015-12-18T23:39:46.000Z</published>
-    <updated>2016-04-21T20:50:26.000Z</updated>
-    
-    <content type="html">&lt;p&gt;本文旨在让大家大致了解动态二进制代码注入技术：PIN。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;什么是注入（Instrumentation)&lt;/li&gt;
-&lt;li&gt;PIN初探&lt;/li&gt;
-&lt;li&gt;PIN框架&lt;/li&gt;
-&lt;li&gt;Pintools Example&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;什么是注入（Instrumentation&quot;&gt;&lt;a href=&quot;#什么是注入（Instrumentation&quot; class=&quot;headerlink&quot; title=&quot;什么是注入（Instrumentation)&quot;&gt;&lt;/a&gt;什么是注入（Instrumentation)&lt;/h2&gt;&lt;p&gt;每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在你的程序中插入额外的代码来分析程序的运行时信息就称为注入技术。但就广义来说，在源代码中注入代码也可称之为注入，只是为了区分，注入技术一般特指对象为可执行二进制文件。&lt;/p&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;p&gt;进一步说明，注入一般又分为静态二进制注入（Static Binary Instrumentation) 与动态二进制注入 （Dynamic Binary Instrumentation). 看定义可知，SBI技术工作在程序运行前，DBI则工作在运行过程中。相比SBI，DBI技术有以下优势：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;不需要重新编译、重新链接&lt;/li&gt;
-&lt;li&gt;在运行时发现代码&lt;/li&gt;
-&lt;li&gt;能处理动态产生的代码&lt;/li&gt;
-&lt;li&gt;能附加到正在运行时的进程中&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;目前，研究较多的都属DBI技术，前文提到，DBI的工作方式有点类似编译器，只不过分析例程（analysis routine)是可编程化的。DBI技术广泛应用在程序分析中，如逆向工程（reverse engineering), 程序调试（program debug)， 恶意代码分析（malware analysis)等。&lt;/p&gt;
-&lt;h2 id=&quot;Pin初探&quot;&gt;&lt;a href=&quot;#Pin初探&quot; class=&quot;headerlink&quot; title=&quot;Pin初探&quot;&gt;&lt;/a&gt;Pin初探&lt;/h2&gt;&lt;p&gt;对DBI技术有个大致了解之后，进入本文主题,  Pin是Intel 与University of Colorado合作研究出的一款用来动态分析二进制程序的注入工具，发表在系统顶会PLDI’2005,有兴趣的可以读读这篇文章，其它DBI技术还有Valgrind, DYNAMORIO, QEMU.&lt;/p&gt;
-&lt;p&gt;开门见山，首先来看一段代码：&lt;br&gt;&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;    counter++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             sub  $0xff, %edx&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    counter++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             cmp  %esi, %edx&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    counter++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             jle &amp;lt;L1&amp;gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    counter++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             mov  $0x1, %edi&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    counter++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             add  $0x10, %eax&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;```             &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;这段代码很简单，只是在每条指令前加了一个计数器&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;那么如果使用PIN, 该如何实现？ 看下面代码：&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;``` C&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;#include &amp;lt;iostream&amp;gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;#include &amp;quot;pin.h&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;UINT64 icount = 0;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;void docount() &amp;#123; icount++; &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;void Instruction(INS ins, void *v) &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;void Fini(INT32 code, void *v) &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123; std::cerr &amp;lt;&amp;lt; &amp;quot;Count &amp;quot; &amp;lt;&amp;lt; icount &amp;lt;&amp;lt; endl; &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int main(int argc, char * argv[])&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    PIN_Init(argc, argv);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    INS_AddInstrumentFunction(Instruction, 0);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    PIN_AddFiniFunction(Fini, 0);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    PIN_StartProgram();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    return 0;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;&lt;/p&gt;
-&lt;p&gt;现在对这段实现代码一一解释：&lt;br&gt;&lt;code&gt;void docount() {icount+;}&lt;/code&gt; 用户可自定义&lt;code&gt;docount()&lt;/code&gt; 函数，PIN称之为分析例程 （Analysis routine),先对这个概念保持一点印象。再看void Instruction（）函数，PIN 称之为注入例程（Instrumentation routine), 关注其中两个参数，&lt;code&gt;IPOINT_BEFORE&lt;/code&gt; 表示在每条指令之前执行，&lt;code&gt;（AFUNPTR)docount&lt;/code&gt;便是要注入的分析例程。&lt;code&gt;main()&lt;/code&gt; 函数调用&lt;code&gt;INS_AddInstrumentFunction（Instruction,0)&lt;/code&gt;,便会触发注入例程以及分析例程，这些参数都可以根据自己需求修改。&lt;br&gt;只需这么几行简单的代码，PIN便能帮你分析正在运行的二进制文件执行过的指令条数了。这么简单？ PIN只能做这些吗？ 当然不是！ 下文再介绍一些PIN的框架以及使用过程。&lt;/p&gt;
-&lt;h2 id=&quot;PIN框架&quot;&gt;&lt;a href=&quot;#PIN框架&quot; class=&quot;headerlink&quot; title=&quot;PIN框架&quot;&gt;&lt;/a&gt;PIN框架&lt;/h2&gt;&lt;p&gt;可以把PIN理解为实时编译器（just in time complier).只不过输入进PIN的不是二进制代码，而是可执行的二进制文件，PIN能拦截可执行文件的第一条指令，然后从这条指令开始产生新的代码序列，之后将控制权交给产生的代码序列，此刻用户就有机会注入自己的代码，这个过程就是Instrumentation.&lt;br&gt;如果你只想使用PIN来分析自己的二进制代码，内部实现原理 (可阅读PLDI’2005)大可不必关心，关注的应该是PIN为用户提供的上层接口，使用这个接口来编写自己的Pintools. 版权原因，本文也不会深入去介绍PIN是如何实现的。&lt;/p&gt;
-&lt;p&gt;下面就来聊聊这个Pintools. Pintools实际上就是用户要实现的Instrumentation过程，可以把Pintools想象成能修改内部PIN的代码产生过程的插件（Plugins),PIN官网会提供一些sample教你怎么写Pintools,大部分还得靠用户自己去写。&lt;br&gt;总的来说，instrumentation包括两个部分：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;第一，决定在哪注入代码，注入什么代码的一种机制&lt;/li&gt;
-&lt;li&gt;第二，在注入点要执行的代码&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;第一个部分被称之为 &lt;strong&gt;instrumentation routine&lt;/strong&gt;,第二个部分被称之为 &lt;strong&gt;analysis routine&lt;/strong&gt;. Pintools会向PIN注册一个注入回调函数，如上文提到的&lt;code&gt;INS_AddInstrumentFunction（）&lt;/code&gt;，该函数会代表instrumentation routine观察要产生的代码，分析代码的静态属性，来决定是否以及在哪里调用analysis routine. Analysis routine再收集被分析程序的数据。&lt;/p&gt;
-&lt;p&gt;注意，前文中的例子对每条指令分析，带来的开销太大，因此，PIN提供不同的粒度对程序进行分析，供用户根据不同需求选择：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Instruction&lt;/li&gt;
-&lt;li&gt;Basic block: 包含一些指令序列，终止于控制流改变指令;单入口单出口。&lt;/li&gt;
-&lt;li&gt;Trace:包含一些Basic block序列，终止于无条件控制流改变指令；单入口多出口。 &lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&quot;Pintools-example&quot;&gt;&lt;a href=&quot;#Pintools-example&quot; class=&quot;headerlink&quot; title=&quot;Pintools example&quot;&gt;&lt;/a&gt;Pintools example&lt;/h2&gt;&lt;p&gt;最后，以一个Pintools 的完整例子结束本文&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;C++&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;meta-string&quot;&gt;&amp;lt;iostream&amp;gt;&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;meta-string&quot;&gt;&amp;lt;fstream&amp;gt;&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;&quot;pin.H&quot;&lt;/span&gt;&lt;/span&gt;
-
-ofstream OutFile;
-
-&lt;span class=&quot;comment&quot;&gt;// The running count of instructions is kept here&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;// make it static to help the compiler optimize docount&lt;/span&gt;
-&lt;span class=&quot;keyword&quot;&gt;static&lt;/span&gt; UINT64 icount = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;
-
-&lt;span class=&quot;comment&quot;&gt;// This function is called before every instruction is      executed&lt;/span&gt;
-&lt;span class=&quot;function&quot;&gt;VOID &lt;span class=&quot;title&quot;&gt;docount&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; &lt;/span&gt;{ icount++; }
-
-&lt;span class=&quot;comment&quot;&gt;// Pin calls this function every time a new instruction     is encountered&lt;/span&gt;
-&lt;span class=&quot;function&quot;&gt;VOID &lt;span class=&quot;title&quot;&gt;Instruction&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(INS ins, VOID *v)&lt;/span&gt;
-&lt;/span&gt;{
-    &lt;span class=&quot;comment&quot;&gt;// Insert a call to docount before every            instruction, no arguments are passed&lt;/span&gt;
-  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)docount, IARG_END);
-}
-
-KNOB&amp;lt;&lt;span class=&quot;built_in&quot;&gt;string&lt;/span&gt;&amp;gt; KnobOutputFile(KNOB_MODE_WRITEONCE, &lt;span class=&quot;string&quot;&gt;&quot;pintool&quot;&lt;/span&gt;,
-&lt;span class=&quot;string&quot;&gt;&quot;o&quot;&lt;/span&gt;, &lt;span class=&quot;string&quot;&gt;&quot;inscount.out&quot;&lt;/span&gt;, &lt;span class=&quot;string&quot;&gt;&quot;specify output file name&quot;&lt;/span&gt;);
-
-&lt;span class=&quot;comment&quot;&gt;// This function is called when the application exits&lt;/span&gt;
-&lt;span class=&quot;function&quot;&gt;VOID &lt;span class=&quot;title&quot;&gt;Fini&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(INT32 code, VOID *v)&lt;/span&gt;
-&lt;/span&gt;{
-    &lt;span class=&quot;comment&quot;&gt;// Write to a file since cout and cerr maybe closed     by the application&lt;/span&gt;
-  OutFile.setf(ios::showbase);
-  OutFile &amp;lt;&amp;lt; &lt;span class=&quot;string&quot;&gt;&quot;Count &quot;&lt;/span&gt; &amp;lt;&amp;lt; icount &amp;lt;&amp;lt; &lt;span class=&quot;built_in&quot;&gt;endl&lt;/span&gt;;
-  OutFile.close();
-}
-
-&lt;span class=&quot;comment&quot;&gt;/* =====================================================     ================ */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/* Print Help Message                                                        */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/* =====================================================     ================ */&lt;/span&gt;
-
-&lt;span class=&quot;function&quot;&gt;INT32 &lt;span class=&quot;title&quot;&gt;Usage&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt;
-&lt;/span&gt;{
-   &lt;span class=&quot;built_in&quot;&gt;cerr&lt;/span&gt; &amp;lt;&amp;lt; &lt;span class=&quot;string&quot;&gt;&quot;This tool counts the number of dynamic          instructions executed&quot;&lt;/span&gt; &amp;lt;&amp;lt; &lt;span class=&quot;built_in&quot;&gt;endl&lt;/span&gt;;
-   &lt;span class=&quot;built_in&quot;&gt;cerr&lt;/span&gt; &amp;lt;&amp;lt; &lt;span class=&quot;built_in&quot;&gt;endl&lt;/span&gt; &amp;lt;&amp;lt; KNOB_BASE::StringKnobSummary() &amp;lt;&amp;lt;      &lt;span class=&quot;built_in&quot;&gt;endl&lt;/span&gt;;
-    return &lt;span class=&quot;number&quot;&gt;-1&lt;/span&gt;;
-}
-
-&lt;span class=&quot;comment&quot;&gt;/* =====================================================     ================ */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/* Main                                                                      */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/* =====================================================     ================ */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/*   argc, argv are the entire command line: pin -t      &amp;lt;toolname&amp;gt; -- ...    */&lt;/span&gt;
-&lt;span class=&quot;comment&quot;&gt;/* =====================================================     ================ */&lt;/span&gt;
-
-&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; argc, &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; * argv[])&lt;/span&gt;
-&lt;/span&gt;{
-   &lt;span class=&quot;comment&quot;&gt;// Initialize pin&lt;/span&gt;
-   &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (PIN_Init(argc, argv)) return Usage();
-
-   OutFile.open(KnobOutputFile.Value().c_str());
-
-  &lt;span class=&quot;comment&quot;&gt;// Register Instruction to be called to instrument      instructions&lt;/span&gt;
-    INS_AddInstrumentFunction(Instruction, &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;);
-
-   &lt;span class=&quot;comment&quot;&gt;// Register Fini to be called when the application      exits&lt;/span&gt;
-    PIN_AddFiniFunction(Fini, &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;);
-
-    &lt;span class=&quot;comment&quot;&gt;// Start the program, never returns&lt;/span&gt;
-    PIN_StartProgram();
-
-    return &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;
-}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;参考&quot;&gt;&lt;a href=&quot;#参考&quot; class=&quot;headerlink&quot; title=&quot;参考&quot;&gt;&lt;/a&gt;参考&lt;/h2&gt;&lt;p&gt;&lt;a href=&quot;http://www.cs.virginia.edu/kim/docs/pldi05.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;PLDI’2005&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://software.intel.com/sites/landingpage/pintool/docs/65163/Pin/html/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;PIN User Manual&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://software.intel.com/en-us/articles/pin-a-dynamic-binary-instrumentation-tool&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;PIN Intel Tutorials&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;If you are interested in concurrent programming, please donot hesitate to touch &lt;a href=&quot;http://yebangyu.org&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;my friend’s blog&lt;/a&gt; &lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;转载此文请注明出处:&lt;a href=&quot;http://www.chongh.wiki/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;作者 [新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;本文旨在让大家大致了解动态二进制代码注入技术：PIN。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;什么是注入（Instrumentation)&lt;/li&gt;
-&lt;li&gt;PIN初探&lt;/li&gt;
-&lt;li&gt;PIN框架&lt;/li&gt;
-&lt;li&gt;Pintools Example&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;什么是注入（Instrumentation&quot;&gt;&lt;a href=&quot;#什么是注入（Instrumentation&quot; class=&quot;headerlink&quot; title=&quot;什么是注入（Instrumentation)&quot;&gt;&lt;/a&gt;什么是注入（Instrumentation)&lt;/h2&gt;&lt;p&gt;每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在你的程序中插入额外的代码来分析程序的运行时信息就称为注入技术。但就广义来说，在源代码中注入代码也可称之为注入，只是为了区分，注入技术一般特指对象为可执行二进制文件。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="BinaryCode" scheme="http://yoursite.com/categories/BinaryCode/"/>
-    
-    
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
-      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
   </entry>
   
