@@ -82,22 +82,16 @@
 
 
 
-<meta name="description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。
-pvops接口来源于Xen项目，初衷是建立一个类虚拟化(para-virtualized）内核来适应于不同的hypervisor，当然也包括适应于非虚拟化平台。
-pvops将类虚拟化操作分成">
+<meta name="description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PVOPS 框架介绍">
 <meta property="og:url" content="http://yoursite.com/blog/2016/05/03/pvops/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。
-pvops接口来源于Xen项目，初衷是建立一个类虚拟化(para-virtualized）内核来适应于不同的hypervisor，当然也包括适应于非虚拟化平台。
-pvops将类虚拟化操作分成">
-<meta property="og:updated_time" content="2016-05-04T00:27:11.000Z">
+<meta property="og:description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。">
+<meta property="og:updated_time" content="2016-05-04T00:27:45.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PVOPS 框架介绍">
-<meta name="twitter:description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。
-pvops接口来源于Xen项目，初衷是建立一个类虚拟化(para-virtualized）内核来适应于不同的hypervisor，当然也包括适应于非虚拟化平台。
-pvops将类虚拟化操作分成">
+<meta name="twitter:description" content="pvops是做什么的？ 简单地说，hook kernel.利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。">
 
 
 
@@ -348,6 +342,7 @@ pvops将类虚拟化操作分成">
 
       
         <p>pvops是做什么的？ 简单地说，hook kernel.<br>利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。</p>
+<a id="more"></a>
 <p>pvops接口来源于Xen项目，初衷是建立一个类虚拟化(para-virtualized）内核来适应于不同的hypervisor，当然也包括适应于非虚拟化平台。</p>
 <p>pvops将类虚拟化操作分成一系列结构：pv_time_ops,pv_cpu_ops,pv_mmu_ops,pv_lock_ops和pv_irq_ops。</p>
 <p>举个例子，x86系统中利用’MOV CR3’指令来加载页表。pvops将其替换为一个间接跳转到pv_mmu_ops -&gt; write_cr3函数。 每种虚拟化系统，包括本地x86平台，对这些函数都有自己的实现。 对于x86平台，这些函数的实现只是简单地对原始函数指令的封装。比如对于pv_mmu_ops -&gt; write_cr3函数，x86平台的具体实现为native_write_cr3函数：</p>
