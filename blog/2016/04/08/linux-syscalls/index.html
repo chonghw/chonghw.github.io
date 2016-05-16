@@ -104,7 +104,7 @@
 编写汇编代码触发系统调用不是个好主意">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/idt.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/isr_stack.png">
-<meta property="og:updated_time" content="2016-04-26T17:37:48.000Z">
+<meta property="og:updated_time" content="2016-05-16T23:59:26.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux系统调用权威指南">
 <meta name="twitter:description" content="长话短说（Too long;Don’t read)
@@ -511,7 +511,7 @@ $ echo $?
 <p>该函数是用汇编实现的，定义在<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L426" target="_blank" rel="external"><code>arch/x86/ia32/ia32entry.S</code></a>中。该函数做了很多事情，但最重要的还是它触发了实际的系统调用：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ia32_do_call:</span><br><span class="line">        <span class="function">IA32_ARG_FIXUP</span><br><span class="line">        call *<span class="title">ia32_sys_call_table</span><span class="params">(,%rax,<span class="number">8</span>)</span> <span class="meta"># xxx: rip relative</span></span></span><br></pre></td></tr></table></figure>
 <p>注意到，<code>IA32_ARG_FIXUP</code> 是一个宏，做的是重新处理初始参数，以让当前的系统调用层能正确的理解这些参数。</p>
-<p><code>ia32_sys_call_table</code> 是<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L426" target="_blank" rel="external"><code>arch/x86/ia32/syscall_ia32.c</code></a>中定义的一张表。注意代码中的最后一行 <code>#include</code>. </p>
+<p><code>ia32_sys_call_table</code> 是<a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/syscall_ia32.c#L18-L25" target="_blank" rel="external"><code>arch/x86/ia32/syscall_ia32.c</code></a>中定义的一张表。注意代码中的最后一行 <code>#include</code>. </p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">sys_call_ptr_t</span> ia32_sys_call_table[__NR_ia32_syscall_max+<span class="number">1</span>] = &#123;</span><br><span class="line">        <span class="comment">/*</span><br><span class="line">         * Smells like a compiler bug -- it doesn't work</span><br><span class="line">         * when the &amp; below is removed.</span><br><span class="line">         */</span></span><br><span class="line">        [<span class="number">0</span> ... __NR_ia32_syscall_max] = &amp;compat_ni_syscall,</span><br><span class="line">#include &lt;<span class="keyword">asm</span>/syscalls_32.h&gt;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 <p>回想一下前面提到在 <a href="https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_32.tbl" target="_blank" rel="external"><code>arch/x86/syscalls/syscall_32.tbl</code></a> 中定义的系统调用表。</p>
 <p>一些脚本在编译的时候使用这张表生成<code>syscalls_32.h</code>头文件。头文件中由一些有效的C代码组成，就像上面一样，以<code>#include</code>的形式插入到<code>ia32_sys_call_table</code>中，里面含有系统调用号引用的函数地址。</p>
