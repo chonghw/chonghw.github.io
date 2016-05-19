@@ -920,7 +920,7 @@ $ echo $?
     <link href="http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/"/>
     <id>http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/</id>
     <published>2016-04-02T21:24:15.000Z</published>
-    <updated>2016-04-21T20:57:06.000Z</updated>
+    <updated>2016-05-19T13:41:44.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
@@ -976,7 +976,7 @@ sys_call_table [__NR_open] = h4x_open; //Don&amp;apos;t allow your file to be ov
 sys_call_table [__NR_kill] = h4x_kill; //Don&amp;apos;t allow your process to be killed
 sys_call_table [__NR_delete_module] = h4x_delete_module;
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;0X05-Kbeast-Detection-Using-Libvmi-and-Volatility&quot;&gt;&lt;a href=&quot;#0X05-Kbeast-Detection-Using-Libvmi-and-Volatility&quot; class=&quot;headerlink&quot; title=&quot;0X05 Kbeast Detection Using Libvmi and Volatility&quot;&gt;&lt;/a&gt;0X05 Kbeast Detection Using Libvmi and Volatility&lt;/h3&gt;&lt;p&gt;检测之前，先按照 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章搭好环境。&lt;/p&gt;
-&lt;p&gt;以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_chech_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。&lt;/p&gt;
+&lt;p&gt;以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_check_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_psaux | grep _h4x_bd
 
 Pid    Uid    Gid    Arguments 

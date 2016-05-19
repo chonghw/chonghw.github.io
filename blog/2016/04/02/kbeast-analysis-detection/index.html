@@ -98,7 +98,7 @@
 0X03 Kbeast 使用
 0X04 Kbeast 核心
 0X05 Kbeast Detection">
-<meta property="og:updated_time" content="2016-04-21T20:57:06.000Z">
+<meta property="og:updated_time" content="2016-05-19T13:41:44.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="kbeast Analysis and Detection">
 <meta name="twitter:description" content="0X00 全文环境
@@ -410,7 +410,7 @@ sys_call_table [__NR_open] = h4x_open; //Don&apos;t allow your file to be overwr
 sys_call_table [__NR_kill] = h4x_kill; //Don&apos;t allow your process to be killed
 sys_call_table [__NR_delete_module] = h4x_delete_module;
 </code></pre><h3 id="0X05-Kbeast-Detection-Using-Libvmi-and-Volatility"><a href="#0X05-Kbeast-Detection-Using-Libvmi-and-Volatility" class="headerlink" title="0X05 Kbeast Detection Using Libvmi and Volatility"></a>0X05 Kbeast Detection Using Libvmi and Volatility</h3><p>检测之前，先按照 <a href="http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/" target="_blank" rel="external">上一篇</a> 文章搭好环境。</p>
-<p>以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_chech_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。</p>
+<p>以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_check_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。</p>
 <pre><code>python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_psaux | grep _h4x_bd
 
 Pid    Uid    Gid    Arguments 
