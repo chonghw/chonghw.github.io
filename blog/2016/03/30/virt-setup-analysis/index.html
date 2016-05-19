@@ -103,7 +103,7 @@
 0x03 虚拟机监控Libvmi
 0x04 虚拟机监控Volatility">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png">
-<meta property="og:updated_time" content="2016-04-23T20:24:09.000Z">
+<meta property="og:updated_time" content="2016-05-19T13:17:49.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="A Comprehensive Virtualized Enviroment Setup and Analysis">
 <meta name="twitter:description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
@@ -506,7 +506,7 @@ linux_tasks = 0x248;
 linux_mm=0x280;
 linux_pid=0x2bc;
 linux_pgd=0x58;
-</code></pre><p>写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。这些偏移信息实际上是通过读取客户机的System.map文件获取的。</p>
+</code></pre><p>写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。另外，这里的sysmap路径是host主机的路径，需要把guest中的System.map文件拷贝到host主机上。(还发现一个问题，虚拟机的名字不能全以数字命名，比如120432,不然在读取libvmi.conf配置文件时会出错).</p>
 <p>之后运行</p>
 <pre><code>/libvmi/examples/process-list ubuntudemo 
 </code></pre><p>这里ubuntudemo是创建的虚拟机名字。以下是列出的部分信息：</p>

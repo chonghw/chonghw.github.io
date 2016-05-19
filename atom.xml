@@ -1091,7 +1091,7 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
     <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
     <published>2016-03-31T02:17:12.000Z</published>
-    <updated>2016-04-23T20:24:09.000Z</updated>
+    <updated>2016-05-19T13:17:49.000Z</updated>
     
     <content type="html">&lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
 &lt;blockquote&gt;
@@ -1235,7 +1235,7 @@ linux_tasks = 0x248;
 linux_mm=0x280;
 linux_pid=0x2bc;
 linux_pgd=0x58;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。这些偏移信息实际上是通过读取客户机的System.map文件获取的。&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。另外，这里的sysmap路径是host主机的路径，需要把guest中的System.map文件拷贝到host主机上。(还发现一个问题，虚拟机的名字不能全以数字命名，比如120432,不然在读取libvmi.conf配置文件时会出错).&lt;/p&gt;
 &lt;p&gt;之后运行&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;/libvmi/examples/process-list ubuntudemo 
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里ubuntudemo是创建的虚拟机名字。以下是列出的部分信息：&lt;/p&gt;
