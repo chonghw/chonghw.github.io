@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-25T18:49:35.000Z</updated>
+  <updated>2016-05-25T20:11:56.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/05/25/lib-compile-link/"/>
     <id>http://yoursite.com/blog/2016/05/25/lib-compile-link/</id>
     <published>2016-05-25T14:42:40.000Z</published>
-    <updated>2016-05-25T18:49:35.000Z</updated>
+    <updated>2016-05-25T20:11:56.000Z</updated>
     
     <content type="html">&lt;p&gt;当你在linux下写C/C++代码的时候，是不是会遇到许多编译链接的问题？ 时不时报个glibc,gcc，g++等相关的错误？ 很多时候都无从下手，而且比较混乱。 这也是编译链接过程中经常出现的问题。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -54,7 +54,7 @@ sudo update-alternatives --config gcc
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;数字优先级(如60，80)高的会被系统选择为默认的编译器,也可以执行第三条命令就是来手动配置系统的gcc,此处按照提示,选择4.8版本的即可。&lt;/p&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;仅为学习使用，未经博主同意，请勿转载&lt;/p&gt;
-&lt;p&gt;本文地址： &lt;a href=&quot;http://localhost:4000/blog/2016/05/25/lib-compile-link/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://localhost:4000/blog/2016/05/25/lib-compile-link/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/05/25/lib-compile-link/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/05/25/lib-compile-link/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者 &lt;a href=&quot;http://weibo.com/diting0x/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;新浪微博：@diting0x&lt;/a&gt;&lt;/p&gt;
 </content>
     
