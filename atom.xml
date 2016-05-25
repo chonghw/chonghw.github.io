@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-25T20:18:58.000Z</updated>
+  <updated>2016-05-25T20:20:15.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/05/25/sourceinsight-linux/"/>
     <id>http://yoursite.com/blog/2016/05/25/sourceinsight-linux/</id>
     <published>2016-05-25T20:12:34.000Z</published>
-    <updated>2016-05-25T20:18:58.000Z</updated>
+    <updated>2016-05-25T20:20:15.000Z</updated>
     
     <content type="html">&lt;p&gt;windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -78,7 +78,7 @@ endif
 &lt;p&gt;完。&lt;/p&gt;
 &lt;h3 id=&quot;Ackonwledgement&quot;&gt;&lt;a href=&quot;#Ackonwledgement&quot; class=&quot;headerlink&quot; title=&quot;Ackonwledgement&quot;&gt;&lt;/a&gt;Ackonwledgement&lt;/h3&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;仅为学习使用，未经博主同意，请勿转载&lt;/p&gt;
-&lt;p&gt;本文地址： &lt;a href=&quot;http://localhost:4000/blog/2016/05/25/lib-compile-link/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://localhost:4000/blog/2016/05/25/lib-compile-link/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/05/25/sourceinsight-linux/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/05/25/sourceinsight-linux/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者 &lt;a href=&quot;http://weibo.com/diting0x/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;新浪微博：@diting0x&lt;/a&gt;&lt;/p&gt;
 </content>
     
