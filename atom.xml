@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-25T20:11:56.000Z</updated>
+  <updated>2016-05-25T20:14:34.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,93 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Source Insight for Linux</title>
+    <link href="http://yoursite.com/blog/2016/05/25/sourceinsight-linux/"/>
+    <id>http://yoursite.com/blog/2016/05/25/sourceinsight-linux/</id>
+    <published>2016-05-25T20:12:34.000Z</published>
+    <updated>2016-05-25T20:14:34.000Z</updated>
+    
+    <content type="html">&lt;p&gt;windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。&lt;/p&gt;
+&lt;p&gt;&amp;lt;！– more–&amp;gt;&lt;/p&gt;
+&lt;p&gt;本文旨在将linux下的vim打造成windows下的source insight，甚至让开发者比在source insight下阅读源码更加有欲望。 个人现在基本上只用linux和mac系统， 一些必须用到windows的功能也可以通过虚拟机来完成。 至于Mac下sublime该如何配置，可以参考写的&lt;a href=&quot;&quot;&gt;下一篇&lt;/a&gt;文章。&lt;/p&gt;
+&lt;p&gt;函数、变量的定义以及函数在哪里被调用应该是阅读源码最关心的事情。首先，放一张图，如果你对图上的这种环境还感兴趣，可以继续阅读，不然，就跳过吧。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/vimtest.png&quot; alt=&quot;vimtest&quot;&gt;&lt;/p&gt;
+&lt;p&gt;ctags&lt;/p&gt;
+&lt;p&gt;干嘛用的？ 下面会用到。首先确保系统已经安装ctags, 以ubuntu系统为例&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install ctags
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;taglist&lt;/p&gt;
+&lt;p&gt;干什么？taglist插件是基于ctags的，需要用到ctags来生成tags文件，其效果实现的就是上图左上角窗口的功能，可以列出项目中的某文件中的函数以及变量。&lt;/p&gt;
+&lt;p&gt;怎么用？ 可以在&lt;a href=&quot;http://www.vim.org/scripts/script.php?script_id=273&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;此处&lt;/a&gt;下载taglist.vim插件，将其解压后的./plugin/taglist.vim拷贝到/usr/share/vim/vim73/plugin目录下，此处的/usr/share/vim/vim73是你系统上相应vim所在的路径。下文还要用到的SrcExpl,Trinity插件配置的方式类似。&lt;/p&gt;
+&lt;p&gt;SrcExpl&lt;br&gt;干什么？实现的是上图中最下方窗口的功能，显示函数或者变量的定义，可以把光标移到最下方窗口跳转到相应的定义处。&lt;/p&gt;
+&lt;p&gt;怎么用？ 在&lt;a href=&quot;http://www.vim.org/scripts/script.php?script_id=2179&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;此处&lt;/a&gt;下载SrcExp.viml插件，将其解压后的./plugin/srcexpl.vim拷贝至上述vim所在的路径的plugin文件夹中。&lt;/p&gt;
+&lt;p&gt;Trinity&lt;/p&gt;
+&lt;p&gt;干什么？里面有两个插件NERD_tree.vim以及trinity.vim。 NERD_tshang’wshangweree实现上图右上角功能，显示项目的文件树。trinity.vim用来管理taglist.vim,SrcEcpl.vim,NERD_tree.vim此三个插件，控制其快速开关。&lt;/p&gt;
+&lt;p&gt;上述利器弄好了之后，再稍作配置就可以实现函数、变量定义的跳转功能了，效果图和上图一模一样。&lt;/p&gt;
+&lt;p&gt;配置&lt;/p&gt;
+&lt;p&gt;修改/etc/vim/vimrc 文件，在末尾添加以下内容：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;quot; Open and close all the three plugins on the same time 
+nmap &amp;lt;F8&amp;gt;   :TrinityToggleAll&amp;lt;CR&amp;gt; 
+
+&amp;quot; Open and close the srcexpl.vim separately 
+nmap &amp;lt;F9&amp;gt;   :TrinityToggleSourceExplorer&amp;lt;CR&amp;gt; 
+
+&amp;quot; Open and close the taglist.vim separately 
+nmap &amp;lt;F10&amp;gt;  :TrinityToggleTagList&amp;lt;CR&amp;gt; 
+
+&amp;quot; Open and close the NERD_tree.vim separately 
+nmap &amp;lt;F11&amp;gt;  :TrinityToggleNERDTree&amp;lt;CR&amp;gt; 
+
+ set mouse=a
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置中的功能键是打开相应插件功能的快捷键，如，按F9就可以直接打开SrcExpl插件，实现最下方窗口个效果，set mouse =a，是以便用鼠标点击能相应窗口处，当然没有鼠标，双击触屏一样的效果，按空格键便可以返回之前位置。也可以查看SrcExpl作者的&lt;a href=&quot;https://github.com/wesleyche/SrcExpl&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;github&lt;/a&gt;了解更多内容。&lt;/p&gt;
+&lt;p&gt;配置了这些还不够，因为最基础的ctags还没有配置。&lt;br&gt;在你的项目文件夹中运行 ctags -R 会以递归的查找方式，在根目录下生成相应的tags文件，其中存放了各函数、变量的定义tags用来跳转。&lt;/p&gt;
+&lt;p&gt;当然基于上述的插件，只要将光标移到函数、变量处，最下方便会显示其定义，跟source insight效果一样。如果不想用到这些插件，使光标在函数、变量处，Ctrl + ]键也可以实现跳转，Ctrl+t用来返回之前位置。&lt;/p&gt;
+&lt;p&gt;好了，除了找到函数、变量的定义，还有一个重要的功能就是要找到函数的调用者，这时候cscope就要排上用场了，尽管cscope的功能可不仅仅能跳转到函数调用者上。&lt;/p&gt;
+&lt;p&gt;cscope&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install cscope
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在项目根目录下执行： cscope -Rbq, 在目录下生成了cscope.out,cscope.in.out,cscope.po.out文件&lt;br&gt;其中&lt;/p&gt;
+&lt;p&gt;-R ：递归处理子层目录&lt;br&gt;-b ：生成数据库后自动退出&lt;br&gt;-q ：生成cscope.in.out和cscope.po.out文件，加快cscope的索引速度&lt;/p&gt;
+&lt;p&gt;用vim打开源文件，输入 :cs add cscope.out,将数据库添加到源文件中，之后只要在源文件中输入：：cs find type yourfunction/yourvariable，就可以实现cscope的所有功能了。&lt;br&gt;其中的type包括：&lt;/p&gt;
+&lt;p&gt;0或者s —— 查找name在这个工程中出现的位置&lt;br&gt;1或者g —— 查找name的定义&lt;br&gt;2或者d —— 查找name调用的函数&lt;br&gt;3或者c —— 查找调用name的函数&lt;br&gt;4或者t —— 查找name字符串&lt;br&gt;6或者e —— 查找egrep匹配模式&lt;br&gt;7或者f —— 查找文件&lt;br&gt;8或者i —— 查找#include 文件名为name的文件&lt;/p&gt;
+&lt;p&gt;比如要找出函数调用关系，只要输入:cs find c yourfunction. &lt;/p&gt;
+&lt;p&gt;为了每次打开源文件时能自动将cscope.out文件自动加载，可以修改/etc/vim/vimrc文件&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;if has(&amp;quot;cscope&amp;quot;)
+   set csprg=/usr/local/bin/cscope
+   set csto=0
+   set cst
+   set csverb
+ if filereadable(&amp;quot;cscope.out&amp;quot;)
+    cs add cscope.out
+ elseif $CSCOPE_DB != &amp;quot;&amp;quot;
+    cs add $CSCOPE_DB
+ endif
+  set csverb
+endif
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;一个linux系统下完整的source insight环境就这样组装好了。&lt;/p&gt;
+&lt;p&gt;完。&lt;/p&gt;
+&lt;h3 id=&quot;Ackonwledgement&quot;&gt;&lt;a href=&quot;#Ackonwledgement&quot; class=&quot;headerlink&quot; title=&quot;Ackonwledgement&quot;&gt;&lt;/a&gt;Ackonwledgement&lt;/h3&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载&lt;/p&gt;
+&lt;p&gt;本文地址： &lt;a href=&quot;http://localhost:4000/blog/2016/05/25/lib-compile-link/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://localhost:4000/blog/2016/05/25/lib-compile-link/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;作者 &lt;a href=&quot;http://weibo.com/diting0x/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;新浪微博：@diting0x&lt;/a&gt;&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。&lt;/p&gt;
+&lt;p&gt;&amp;lt;！– more–&amp;gt;&lt;/p&gt;
+&lt;p&gt;本文旨在将linux下的vi
+    
+    </summary>
+    
+      <category term="Linux" scheme="http://yoursite.com/categories/Linux/"/>
+    
+    
+      <category term="Tool" scheme="http://yoursite.com/tags/Tool/"/>
+    
+      <category term="Linux" scheme="http://yoursite.com/tags/Linux/"/>
+    
+  </entry>
   
   <entry>
     <title>理清编译链接的那些事儿</title>
@@ -108,9 +195,9 @@ sudo update-alternatives --config gcc
       <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
     
     
-      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
-    
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
+    
+      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
@@ -1138,9 +1225,9 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
   </entry>
   
@@ -1367,15 +1454,15 @@ pip install distorm3
       <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
     
     
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
     
       <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
+    
+      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
     
@@ -1561,9 +1648,9 @@ pip install distorm3
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
+    
+      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -1831,107 +1918,6 @@ pip install distorm3
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>云平台高可用之虚拟机迁移</title>
-    <link href="http://yoursite.com/blog/2016/01/02/highavailability-migration/"/>
-    <id>http://yoursite.com/blog/2016/01/02/highavailability-migration/</id>
-    <published>2016-01-03T04:02:39.000Z</published>
-    <updated>2016-04-21T20:52:09.000Z</updated>
-    
-    <content type="html">&lt;p&gt;无序，直接看文章。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;什么是云平台高可用&lt;/li&gt;
-&lt;li&gt;虚拟机迁移主要算法&lt;/li&gt;
-&lt;li&gt;实现 Pre-copy&lt;/li&gt;
-&lt;li&gt;思考&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;什么是云平台高可用&quot;&gt;&lt;a href=&quot;#什么是云平台高可用&quot; class=&quot;headerlink&quot; title=&quot;什么是云平台高可用&quot;&gt;&lt;/a&gt;什么是云平台高可用&lt;/h2&gt;&lt;p&gt;云，一个再熟悉不过的词了。大家都看到了云计算的商业价值，于是乎各大IT公司都纷纷提出自己的云计算服务，有Amozon的EC2，微软的Azure,谷歌的Google AppEngine,腾讯云，百度云，阿里云等。说到Google AppEngine，相信许多用goagent翻墙党都用过这个东西，但估计大家都只忙着使用goagent，却忽略了AppEngine其中提供的云服务。如今，云无处不在，从当今主流产品看，云平台需要满足以下几个需求：&lt;/p&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;ul&gt;
-&lt;li&gt;第一，满足多用户的大规模并发访问，想想2015年的双十一，官方数据表明Taobao每秒钟要处理14万订单交易，平均每天也有七八千万访客（具体数据待我问阿里朋友）&lt;/li&gt;
-&lt;li&gt;第二，处理海量数据，14年，google平均每天要处理57.4亿次查询，处理的数据高达100PB；阿里云的大数据产品ODPS在6个小时内就能处理100PB的数据&lt;/li&gt;
-&lt;li&gt;第三，提供可持续的服务，如今云平台的用户如此之大，分秒级的停机时间将影响数百万用户，导致数十万美元损失，不管从用户角度还是公司本身角度来看，停机时间过长都是不可容忍的&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;针对需求一和需求二，当前云平台的解决方案大多是通过分布式协议及系统来组织管理大量的廉价设备，以提供良好的可扩展性，从而满足大量用户的高并发访问需求以及对海量数据的处理能力，这不在本文考虑范围之内，不多叙说。本文只针对第三个需求，提供可持续的服务，也就是云计算平台中常说的高可用性（high availability)。可用性的准确定义是，在需要的外部资源得到保证的前提下，系统在规定的条件和时间内处于可执行功能状态的能力，高可用则定义为用来保障系统可用性达到某一预定水平的系统设计和技术手段。目前，许多云服务提供商都声称自己的云平台能保证较高的可用性，但实际上，近年来云平台的失效事件频繁发生。具体事件，可搜索了解一下。&lt;/p&gt;
-&lt;p&gt;虚拟化技术是云计算平台的核心支撑技术，虚拟机的强隔离性有效解决了资源的共享使用问题，大大支撑了云计算平台的资源聚合、负载均衡、节能、可扩展等特性。为保证云平台的高可用性，基于虚拟机备份思想的技术应运而生，也是当前云平台为保证高可用性的最主要途径。虚拟机备份思想，主要包括三个方面：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;第一，快照回滚（snapshot&amp;amp;rollback)，将虚拟机备份状态保存在持久化存储系统中, 在虚拟机因上层软件或底层硬件故障失效后,可以加载备份状态并恢复到之前的运行 状态继续运行&lt;/li&gt;
-&lt;li&gt;第二，热备技术（hot-standby)，将虚拟机执行状态实时传输到目的端计算节点,在检测到源计算节点失效后,目的端的虚拟机状态可立刻恢复并持续提供任务&lt;/li&gt;
-&lt;li&gt;第三，虚拟机迁移（migration)，将虚拟机运行时状态从一台计算节点传输到另一台计算节点,保证虚拟机在源计算节点因失效或维护而停机时可以在目的端继续执行&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;本文旨在讲解虚拟机迁移技术&lt;/p&gt;
-&lt;h2 id=&quot;虚拟机迁移主要算法&quot;&gt;&lt;a href=&quot;#虚拟机迁移主要算法&quot; class=&quot;headerlink&quot; title=&quot;虚拟机迁移主要算法&quot;&gt;&lt;/a&gt;虚拟机迁移主要算法&lt;/h2&gt;&lt;p&gt;目前运用最广泛最原始的算法是预拷贝（pre-copy)算法和后拷贝（post-copy)算法，Pre-copy算法也被集成在主流虚拟机平台中如Xen,KVM,VMWare的官方源码中, Post-copy虽还没被各主流虚拟机平台集成，但个人实现起来也不是什么难事。 下面主要介绍这两种算法：&lt;/p&gt;
-&lt;p&gt;Pre-copy, 先引用顶会 &lt;a href=&quot;https://www.usenix.org/legacy/event/nsdi05/tech/full_papers/clark/clark.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;NSDI’05 Live Migration of Virtual Machines&lt;/a&gt; 论文中的一张图，描述了pre-copy算法的时间线&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/precopy-step.png&quot; alt=&quot;pre-copy steps&quot;&gt;&lt;br&gt;简而言之，大致思想就是先迭代的迁移整个内存的所有页面，迭代过程中，如果页面有更新，则再迁移更新过的页面，直到满足一个条件让迭代过程收敛（这个条件可以自己根据不同情况合理设置），最后再迁移剩余的页面、cpu、寄存器等状态以及外部设备。&lt;br&gt;贴一个基于Qemu/kvm 1.1.2的pre-copy算法主要代码：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;40&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;41&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;42&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;43&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;44&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;45&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;46&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;47&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;48&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;49&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;50&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;51&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;52&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;53&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;54&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;55&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;56&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;57&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;58&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;59&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;60&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;61&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;62&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;63&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;64&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;65&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;66&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;67&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;68&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;69&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;70&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;71&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;72&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;73&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;74&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;75&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;76&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;77&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;78&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;79&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;80&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;81&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;82&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;83&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;84&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;85&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;86&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;ram_save_live&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(QEMUFile *f, &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; stage, &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *opaque)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;ram_addr_t&lt;/span&gt; addr;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;uint64_t&lt;/span&gt; bytes_transferred_last;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;double&lt;/span&gt; bwidth = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;uint64_t&lt;/span&gt; expected_time = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; ret;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (stage &amp;lt; &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        memory_global_dirty_log_stop();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        return &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    memory_global_sync_dirty_bitmap(get_system_memory());&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (stage == &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        RAMBlock *block;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        bytes_transferred = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        last_block = &lt;span class=&quot;literal&quot;&gt;NULL&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        last_offset = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        sort_ram_list();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* Make sure all dirty bits are set */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        QLIST_FOREACH(block, &amp;amp;ram_list.blocks, next) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (addr = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;; addr &amp;lt; block-&amp;gt;length; addr += TARGET_PAGE_SIZE) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (!memory_region_get_dirty(block-&amp;gt;mr, addr, TARGET_PAGE_SIZE,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                                             DIRTY_MEMORY_MIGRATION)) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                    memory_region_set_dirty(block-&amp;gt;mr, addr, TARGET_PAGE_SIZE);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        memory_global_dirty_log_start();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        qemu_put_be64(f, ram_bytes_total() | RAM_SAVE_FLAG_MEM_SIZE);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        QLIST_FOREACH(block, &amp;amp;ram_list.blocks, next) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            qemu_put_byte(f, &lt;span class=&quot;built_in&quot;&gt;strlen&lt;/span&gt;(block-&amp;gt;idstr));&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            qemu_put_buffer(f, (&lt;span class=&quot;keyword&quot;&gt;uint8_t&lt;/span&gt; *)block-&amp;gt;idstr, &lt;span class=&quot;built_in&quot;&gt;strlen&lt;/span&gt;(block-&amp;gt;idstr));&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            qemu_put_be64(f, block-&amp;gt;length);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    bytes_transferred_last = bytes_transferred;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    bwidth = qemu_get_clock_ns(rt_clock);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt; ((ret = qemu_file_rate_limit(f)) == &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; bytes_sent;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        bytes_sent = ram_save_block(f);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        bytes_transferred += bytes_sent;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (bytes_sent == &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123; &lt;span class=&quot;comment&quot;&gt;/* no more blocks */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;break&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (ret &amp;lt; &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        return ret;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    bwidth = qemu_get_clock_ns(rt_clock) - bwidth;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    bwidth = (bytes_transferred - bytes_transferred_last) / bwidth;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;comment&quot;&gt;/* if we haven&#39;t transferred anything this round, force expected_time to a&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     * a very high value, but without crashing */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (bwidth == &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        bwidth = &lt;span class=&quot;number&quot;&gt;0.000001&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;comment&quot;&gt;/* try transferring iterative blocks of memory */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (stage == &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; bytes_sent;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* flush all remaining blocks regardless of rate limiting */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt; ((bytes_sent = ram_save_block(f)) != &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            bytes_transferred += bytes_sent;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        memory_global_dirty_log_stop();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    qemu_put_be64(f, RAM_SAVE_FLAG_EOS);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    return (stage == &lt;span class=&quot;number&quot;&gt;2&lt;/span&gt;) &amp;amp;&amp;amp; (expected_time &amp;lt;= migrate_max_downtime());&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;ul&gt;
-&lt;li&gt;第一阶段，（14-42），代码所有的内存被标记为脏页并初始化页面更新追踪机制&lt;/li&gt;
-&lt;li&gt;第二阶段，（47-55），如果页面被标记为脏页，则传输这些页面，页面脏位被重置，如果有程序修改页面，页面的脏位又可设置。一般来说，第二阶段是迭代过程最长的&lt;/li&gt;
-&lt;li&gt;第三阶段，（71-79），那些修改过的却还没有来得及被传输到目的端的页面可以用来计算停机时间，设置一个目标停机时间，当达到这个值的时候，停止第二阶段的迭代过程，进入第三阶段，这时源虚拟机被暂停，将剩余的页面、CPU等状态一同传输到目的端，目的端再重新恢复虚拟机。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;pre-copy总体来说能带来很小的停机时间，但不太适合写密集型的负载，写密集型负载会大量更新页面，使得迭代过程结束后的剩余页面增多，延长停机时间。&lt;/p&gt;
-&lt;p&gt;下面再来看看post-copy算法&lt;/p&gt;
-&lt;p&gt;Post-copy算法的思想是先暂停源虚拟机，把能保证一次正常运行的最小运行集（所有的CPU状态）传输到目的端，目的端恢复虚拟机的执行，若需要内存页，则产生页错误，主动从源虚拟机中获取。Post-copy能保证尽可能的做到个内存也最多只传输一次，避免pre-copy算法迭代过程中的重复传输；由于不断地从源端获取丢失页，不可避免地带来性能损失。&lt;a href=&quot;http://www.cs.binghamton.edu/~mhines/papers/vee2009.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;VEE’09 Post-Copy Based Live Virtual Machine Migration Using Adaptive Pre-Paging and Dynamic Self-Ballooning&lt;/a&gt; 利用了一种称之为&lt;code&gt;adaptive pre-paging&lt;/code&gt;的方法来减少页错误，&lt;code&gt;adaptive pre-paging&lt;/code&gt;能尽可能的预测出目的端下一个需要的页面，从而减少页面传输的次数。&lt;/p&gt;
-&lt;h2 id=&quot;实现-Pre-copy&quot;&gt;&lt;a href=&quot;#实现-Pre-copy&quot; class=&quot;headerlink&quot; title=&quot;实现 Pre-copy&quot;&gt;&lt;/a&gt;实现 Pre-copy&lt;/h2&gt;&lt;p&gt;这一章节主要讲述KVM/Qemu关于Pre-copy迁移算法的实现，基于qemu-kvm-1.1.2版本。首先看一下源码中的hmp-commands.hx文件内容：&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .name       = &amp;quot;migrate&amp;quot;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .args_type  = &amp;quot;detach:-d,blk:-b,inc:-i,uri:s&amp;quot;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .params     = &amp;quot;[-d] [-b] [-i] uri&amp;quot;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .help       = &amp;quot;migrate to URI (using -d to not wait for completion)&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;		      &amp;quot;\n\t\t\t -b for migration without shared storage with&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;		      &amp;quot; full copy of disk\n\t\t\t -i for migration without &amp;quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;		      &amp;quot;shared storage with incremental copy of disk &amp;quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;		      &amp;quot;(base image shared between src and destination)&amp;quot;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .mhandler.cmd = hmp_migrate,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;STEXI&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;@item migrate [-d] [-b] [-i] @var&amp;#123;uri&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;@findex migrate&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Migrate to @var&amp;#123;uri&amp;#125; (using -d to not wait for completion).&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	-b for migration with full copy of disk&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;	-i for migration with incremental copy of disk (base image is shared)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;ETEXI&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;每一个Qemu相关命令都需要在此文件中注册，如savevm,snapshot,migrate等，如果想自定义命令，亦是如此，关于如何修改KVM/Qemu源码，可以结合我的 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章.&lt;/p&gt;
-&lt;p&gt;Qemu-kvm利用&lt;code&gt;hmp-commands.hx&lt;/code&gt;这个文件保存相应的命令行参数以及常量，然后使用&lt;code&gt;hxtool&lt;/code&gt;工具产生对应的头文件&lt;code&gt;hmp-commands.h&lt;/code&gt;到&lt;code&gt;./x86_64-softmmu&lt;/code&gt;文件夹中，这个过程自动进行。注，STEXI与ETEXI之间的内容属于注释内容。从代码中可看到，与迁移命令migrate相对应的处理函数是&lt;code&gt;hmp_migrate&lt;/code&gt;,从&lt;code&gt;hmp_migrate&lt;/code&gt;函数开始，会依次调用&lt;code&gt;qmp_migrate&lt;/code&gt;,&lt;code&gt;tcp_start_outgoing_migration&lt;/code&gt;,&lt;code&gt;migrate_fd_connect&lt;/code&gt;, &lt;code&gt;migrate_fd_put_ready&lt;/code&gt;,具体可看源码，不一一详细介绍。&lt;/p&gt;
-&lt;p&gt;重点说一下&lt;code&gt;migrate_fd_connect&lt;/code&gt;函数与&lt;code&gt;migrate_fd_put_ready&lt;/code&gt;函数，&lt;br&gt;&lt;code&gt;migrate_fd_connect&lt;/code&gt;函数主要调用了&lt;code&gt;qemu_savevm_state_begin&lt;/code&gt;函数进行迁移工作的初始化工作（对应于前文说的迁移过程的第一阶段），而&lt;code&gt;migrate_fd_connect&lt;/code&gt;函数主要调用了&lt;code&gt;qemu_savevm_state_iterate&lt;/code&gt;函数（对应第二阶段）与&lt;code&gt;qemu_savevm_state_complete&lt;/code&gt;函数（对应第三阶段），这里注意，此三个函数（&lt;code&gt;qemu_savevm_state_beging&lt;/code&gt;,&lt;code&gt;qemu_savevm_state_iterate&lt;/code&gt;,&lt;code&gt;qemu_savevm_state_complete&lt;/code&gt;)里面代码结构非同类似，必有蹊跷，这里贴出其中的&lt;code&gt;qemu_savevm_state_iterate&lt;/code&gt;函数：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;qemu_savevm_state_iterate&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(QEMUFile *f)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    SaveStateEntry *se;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; ret = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    QTAILQ_FOREACH(se, &amp;amp;savevm_handlers, entry) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (se-&amp;gt;save_live_state == &lt;span class=&quot;literal&quot;&gt;NULL&lt;/span&gt;)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;continue&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* Section type */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        qemu_put_byte(f, QEMU_VM_SECTION_PART);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        qemu_put_be32(f, se-&amp;gt;section_id);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        ret = se-&amp;gt;save_live_state(f, QEMU_VM_SECTION_PART, se-&amp;gt;opaque);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (ret &amp;lt;= &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;comment&quot;&gt;/* Do not proceed to the next vmstate before this one reported&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;               completion of the current stage. This serializes the migration&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;               and reduces the probability that a faster changing state is&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;               synchronized over and over again. */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;            &lt;span class=&quot;keyword&quot;&gt;break&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (ret != &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        return ret;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    ret = qemu_file_get_error(f);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (ret != &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        qemu_savevm_state_cancel(f);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    return ret;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;三个函数都会有一句代码&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;ret = se-&amp;gt;save_live_state(f, QEMU_VM_SECTION_PART, se-&amp;gt;opaque); 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;只是其中参数不同。&lt;/p&gt;
-&lt;p&gt;这个save_live_state是什么？&lt;/p&gt;
-&lt;p&gt;注意，非常重要，存在于虚拟机迁移的核心结构体SaveStateEntry中：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; SaveStateEntry &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    QTAILQ_ENTRY(SaveStateEntry) entry;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; idstr[&lt;span class=&quot;number&quot;&gt;256&lt;/span&gt;];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; instance_id;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; alias_id;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; version_id;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; section_id;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    SaveSetParamsHandler *set_params;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    SaveLiveStateHandler *save_live_state;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    SaveStateHandler *save_state;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    LoadStateHandler *load_state;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;const&lt;/span&gt; VMStateDescription *vmsd;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *opaque;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    CompatEntry *compat;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; no_migrate;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; is_ram;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125; SaveStateEntry;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;此结构体存储了虚拟机迁移的用到的所有数据结构，主要包括被传输设备的存储格式以及被调用的具体设备的迁移功能函数. 那指针 &lt;code&gt;*save_live_state&lt;/code&gt; 到底做了什么，一一追踪可发现，在&lt;code&gt;vl.c&lt;/code&gt;文件中的main函数中（整个qemu程序的开始),针对ram设备，可发现如下一段代码：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;register_savevm_live(NULL, &amp;quot;ram&amp;quot;, 0, 4, NULL, ram_save_live, NULL, ram_load, NULL);
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;正是&lt;code&gt;register_savem_live&lt;/code&gt;函数将&lt;code&gt;ram_save_live&lt;/code&gt;指针传递给了&lt;code&gt;save_live_state&lt;/code&gt;，前文说了，&lt;code&gt;ram_save_live&lt;/code&gt;便是真正执行迁移工作的函数，这里如果需要自定义迁移工作，修改&lt;code&gt;ram_save_live&lt;/code&gt;注册到&lt;code&gt;register_savevm_live&lt;/code&gt;函数中就行了。了解清楚这一连串的函数调用关系，便能彻底明白迁移的每一步工作。&lt;/p&gt;
-&lt;h2 id=&quot;思考&quot;&gt;&lt;a href=&quot;#思考&quot; class=&quot;headerlink&quot; title=&quot;思考&quot;&gt;&lt;/a&gt;思考&lt;/h2&gt;&lt;p&gt;本文重点介绍了pre-copy迁移算法的详细过程，并简单介绍了post-copy算法，两个算法各有优缺点，也都各有改进之处。虚拟机迁移的初衷是保证云平台的高可用性，高可用性要尽量减少提供服务的云主机的宕机时间即停机时间，在此同时，也应尽量减少迁移过程中带来的性能开销，就像post-copy若不断的缺页，虽保证了极短的宕机时间，但如果性能损失太大也是无法接受的。目前多数优化迁移算法的工作主要是采取减少传输的内存数据量来实现，而为了减少内存数据量，又有：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;压缩内存&lt;/li&gt;
-&lt;li&gt;基于hash指纹找出相同或类似页面去重&lt;/li&gt;
-&lt;li&gt;尽可能传输不必要的页面如free页面等&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;除此之外，也有工作不传输整个内存页面，而是传输内存页面到外部设备的映射关系，目的端则靠此映射关系从外设获取数据。这里不一一列出相关论文，若有兴趣深入者，可自行查阅。笔者也有一部分工作提出了相应的思路与实现，之后会有专门文章作详细介绍。&lt;/p&gt;
-&lt;p&gt;如果你对迁移算法的优化有什么看法或什么建议，可留言，也可直接与我邮件联系。&lt;/p&gt;
-&lt;h2 id=&quot;参考&quot;&gt;&lt;a href=&quot;#参考&quot; class=&quot;headerlink&quot; title=&quot;参考&quot;&gt;&lt;/a&gt;参考&lt;/h2&gt;&lt;p&gt;崔磊先生的博士论文&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://www.usenix.org/legacy/event/nsdi05/tech/full_papers/clark/clark.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;NSDI’05 Live Migration of Virtual Machines&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://www.cs.binghamton.edu/~mhines/papers/vee2009.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;VEE’09 Post-Copy Based Live Virtual Machine Migration Using Adaptive Pre-Paging and Dynamic Self-Ballooning&lt;/a&gt; &lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;如转载本文请注明出处:&lt;a href=&quot;http://www.chongh.wiki/blog/2016/01/02/highavailability-migration/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/01/02/highavailability-migration/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;无序，直接看文章。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;什么是云平台高可用&lt;/li&gt;
-&lt;li&gt;虚拟机迁移主要算法&lt;/li&gt;
-&lt;li&gt;实现 Pre-copy&lt;/li&gt;
-&lt;li&gt;思考&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;什么是云平台高可用&quot;&gt;&lt;a href=&quot;#什么是云平台高可用&quot; class=&quot;headerlink&quot; title=&quot;什么是云平台高可用&quot;&gt;&lt;/a&gt;什么是云平台高可用&lt;/h2&gt;&lt;p&gt;云，一个再熟悉不过的词了。大家都看到了云计算的商业价值，于是乎各大IT公司都纷纷提出自己的云计算服务，有Amozon的EC2，微软的Azure,谷歌的Google AppEngine,腾讯云，百度云，阿里云等。说到Google AppEngine，相信许多用goagent翻墙党都用过这个东西，但估计大家都只忙着使用goagent，却忽略了AppEngine其中提供的云服务。如今，云无处不在，从当今主流产品看，云平台需要满足以下几个需求：&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
-    
-    
-      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
-    
-      <category term="Migration" scheme="http://yoursite.com/tags/Migration/"/>
-    
-      <category term="Cloud" scheme="http://yoursite.com/tags/Cloud/"/>
     
   </entry>
   
