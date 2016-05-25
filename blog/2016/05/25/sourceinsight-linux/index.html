@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/vimtest.png">
-<meta property="og:updated_time" content="2016-05-25T20:15:20.000Z">
+<meta property="og:updated_time" content="2016-05-25T20:18:58.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Source Insight for Linux">
 <meta name="twitter:description" content="windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。">
@@ -348,19 +348,16 @@
 <p>本文旨在将linux下的vim打造成windows下的source insight，甚至让开发者比在source insight下阅读源码更加有欲望。 个人现在基本上只用linux和mac系统， 一些必须用到windows的功能也可以通过虚拟机来完成。 至于Mac下sublime该如何配置，可以参考写的<a href="">下一篇</a>文章。</p>
 <p>函数、变量的定义以及函数在哪里被调用应该是阅读源码最关心的事情。首先，放一张图，如果你对图上的这种环境还感兴趣，可以继续阅读，不然，就跳过吧。</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/vimtest.png" alt="vimtest"></p>
-<p>ctags</p>
-<p>干嘛用的？ 下面会用到。首先确保系统已经安装ctags, 以ubuntu系统为例</p>
+<p>ctags<br>干嘛用的？ 下面会用到。首先确保系统已经安装ctags, 以ubuntu系统为例</p>
 <pre><code>apt-get install ctags
-</code></pre><p>taglist</p>
-<p>干什么？taglist插件是基于ctags的，需要用到ctags来生成tags文件，其效果实现的就是上图左上角窗口的功能，可以列出项目中的某文件中的函数以及变量。</p>
+</code></pre><p>taglist<br>干什么？taglist插件是基于ctags的，需要用到ctags来生成tags文件，其效果实现的就是上图左上角窗口的功能，可以列出项目中的某文件中的函数以及变量。</p>
 <p>怎么用？ 可以在<a href="http://www.vim.org/scripts/script.php?script_id=273" target="_blank" rel="external">此处</a>下载taglist.vim插件，将其解压后的./plugin/taglist.vim拷贝到/usr/share/vim/vim73/plugin目录下，此处的/usr/share/vim/vim73是你系统上相应vim所在的路径。下文还要用到的SrcExpl,Trinity插件配置的方式类似。</p>
 <p>SrcExpl<br>干什么？实现的是上图中最下方窗口的功能，显示函数或者变量的定义，可以把光标移到最下方窗口跳转到相应的定义处。</p>
 <p>怎么用？ 在<a href="http://www.vim.org/scripts/script.php?script_id=2179" target="_blank" rel="external">此处</a>下载SrcExp.viml插件，将其解压后的./plugin/srcexpl.vim拷贝至上述vim所在的路径的plugin文件夹中。</p>
-<p>Trinity</p>
-<p>干什么？里面有两个插件NERD_tree.vim以及trinity.vim。 NERD_tshang’wshangweree实现上图右上角功能，显示项目的文件树。trinity.vim用来管理taglist.vim,SrcEcpl.vim,NERD_tree.vim此三个插件，控制其快速开关。</p>
+<p>Trinity<br>干什么？里面有两个插件NERD_tree.vim以及NERD_tree.vim。 NERD_tshang’wshangweree实现上图右上角功能，显示项目的文件树。trinity.vim用来管理taglist.vim,SrcEcpl.vim,NERD_tree.vim此三个插件，控制其快速开关。</p>
+<p>怎么用？在<a href="http://www.vim.org/scripts/script.php?script_id=2347" target="_blank" rel="external">此处</a>下载，将其解压后的NERD_tree.vim,NERD_tree.vim拷贝至上述vim所在的路径的plugin文件夹中。</p>
 <p>上述利器弄好了之后，再稍作配置就可以实现函数、变量定义的跳转功能了，效果图和上图一模一样。</p>
-<p>配置</p>
-<p>修改/etc/vim/vimrc 文件，在末尾添加以下内容：</p>
+<p>配置<br>修改/etc/vim/vimrc 文件，在末尾添加以下内容：</p>
 <pre><code>&quot; Open and close all the three plugins on the same time 
 nmap &lt;F8&gt;   :TrinityToggleAll&lt;CR&gt; 
 

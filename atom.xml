@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-25T20:15:20.000Z</updated>
+  <updated>2016-05-25T20:18:58.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,26 +20,23 @@
     <link href="http://yoursite.com/blog/2016/05/25/sourceinsight-linux/"/>
     <id>http://yoursite.com/blog/2016/05/25/sourceinsight-linux/</id>
     <published>2016-05-25T20:12:34.000Z</published>
-    <updated>2016-05-25T20:15:20.000Z</updated>
+    <updated>2016-05-25T20:18:58.000Z</updated>
     
     <content type="html">&lt;p&gt;windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;本文旨在将linux下的vim打造成windows下的source insight，甚至让开发者比在source insight下阅读源码更加有欲望。 个人现在基本上只用linux和mac系统， 一些必须用到windows的功能也可以通过虚拟机来完成。 至于Mac下sublime该如何配置，可以参考写的&lt;a href=&quot;&quot;&gt;下一篇&lt;/a&gt;文章。&lt;/p&gt;
 &lt;p&gt;函数、变量的定义以及函数在哪里被调用应该是阅读源码最关心的事情。首先，放一张图，如果你对图上的这种环境还感兴趣，可以继续阅读，不然，就跳过吧。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/vimtest.png&quot; alt=&quot;vimtest&quot;&gt;&lt;/p&gt;
-&lt;p&gt;ctags&lt;/p&gt;
-&lt;p&gt;干嘛用的？ 下面会用到。首先确保系统已经安装ctags, 以ubuntu系统为例&lt;/p&gt;
+&lt;p&gt;ctags&lt;br&gt;干嘛用的？ 下面会用到。首先确保系统已经安装ctags, 以ubuntu系统为例&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;apt-get install ctags
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;taglist&lt;/p&gt;
-&lt;p&gt;干什么？taglist插件是基于ctags的，需要用到ctags来生成tags文件，其效果实现的就是上图左上角窗口的功能，可以列出项目中的某文件中的函数以及变量。&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;taglist&lt;br&gt;干什么？taglist插件是基于ctags的，需要用到ctags来生成tags文件，其效果实现的就是上图左上角窗口的功能，可以列出项目中的某文件中的函数以及变量。&lt;/p&gt;
 &lt;p&gt;怎么用？ 可以在&lt;a href=&quot;http://www.vim.org/scripts/script.php?script_id=273&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;此处&lt;/a&gt;下载taglist.vim插件，将其解压后的./plugin/taglist.vim拷贝到/usr/share/vim/vim73/plugin目录下，此处的/usr/share/vim/vim73是你系统上相应vim所在的路径。下文还要用到的SrcExpl,Trinity插件配置的方式类似。&lt;/p&gt;
 &lt;p&gt;SrcExpl&lt;br&gt;干什么？实现的是上图中最下方窗口的功能，显示函数或者变量的定义，可以把光标移到最下方窗口跳转到相应的定义处。&lt;/p&gt;
 &lt;p&gt;怎么用？ 在&lt;a href=&quot;http://www.vim.org/scripts/script.php?script_id=2179&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;此处&lt;/a&gt;下载SrcExp.viml插件，将其解压后的./plugin/srcexpl.vim拷贝至上述vim所在的路径的plugin文件夹中。&lt;/p&gt;
-&lt;p&gt;Trinity&lt;/p&gt;
-&lt;p&gt;干什么？里面有两个插件NERD_tree.vim以及trinity.vim。 NERD_tshang’wshangweree实现上图右上角功能，显示项目的文件树。trinity.vim用来管理taglist.vim,SrcEcpl.vim,NERD_tree.vim此三个插件，控制其快速开关。&lt;/p&gt;
+&lt;p&gt;Trinity&lt;br&gt;干什么？里面有两个插件NERD_tree.vim以及NERD_tree.vim。 NERD_tshang’wshangweree实现上图右上角功能，显示项目的文件树。trinity.vim用来管理taglist.vim,SrcEcpl.vim,NERD_tree.vim此三个插件，控制其快速开关。&lt;/p&gt;
+&lt;p&gt;怎么用？在&lt;a href=&quot;http://www.vim.org/scripts/script.php?script_id=2347&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;此处&lt;/a&gt;下载，将其解压后的NERD_tree.vim,NERD_tree.vim拷贝至上述vim所在的路径的plugin文件夹中。&lt;/p&gt;
 &lt;p&gt;上述利器弄好了之后，再稍作配置就可以实现函数、变量定义的跳转功能了，效果图和上图一模一样。&lt;/p&gt;
-&lt;p&gt;配置&lt;/p&gt;
-&lt;p&gt;修改/etc/vim/vimrc 文件，在末尾添加以下内容：&lt;/p&gt;
+&lt;p&gt;配置&lt;br&gt;修改/etc/vim/vimrc 文件，在末尾添加以下内容：&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;&amp;quot; Open and close all the three plugins on the same time 
 nmap &amp;lt;F8&amp;gt;   :TrinityToggleAll&amp;lt;CR&amp;gt; 
 
