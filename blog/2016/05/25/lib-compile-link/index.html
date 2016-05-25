@@ -88,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/blog/2016/05/25/lib-compile-link/index.html">
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="当你在linux下写C/C++代码的时候，是不是会遇到许多编译链接的问题？ 时不时报个glibc,gcc，g++等相关的错误？ 很多时候都无从下手，而且比较混乱。 这也是编译链接过程中经常出现的问题。">
-<meta property="og:updated_time" content="2016-05-25T14:46:56.000Z">
+<meta property="og:updated_time" content="2016-05-25T18:49:35.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="理清编译链接的那些事儿">
 <meta name="twitter:description" content="当你在linux下写C/C++代码的时候，是不是会遇到许多编译链接的问题？ 时不时报个glibc,gcc，g++等相关的错误？ 很多时候都无从下手，而且比较混乱。 这也是编译链接过程中经常出现的问题。">
@@ -343,7 +343,7 @@
       
         <p>当你在linux下写C/C++代码的时候，是不是会遇到许多编译链接的问题？ 时不时报个glibc,gcc，g++等相关的错误？ 很多时候都无从下手，而且比较混乱。 这也是编译链接过程中经常出现的问题。</p>
 <a id="more"></a>
-<p>这篇文章不是去介绍如何编译链接，而是理清编译链接过程中碰到的一些概念和出现的问题。尤其是，libc,,glib,glibc,eglibc，libc++，libstdc++，gcc,g++。 </p>
+<p>这篇文章不是去介绍如何编译链接，而是理清编译链接过程中碰到的一些概念和出现的问题。尤其是，libc,glib,glibc,eglibc,libc++,libstdc++,gcc,g++。 </p>
 <p>从libc说起。<br>libc是Linux下原来的标准C库，也就是当初写hello world时包含的头文件#include &lt; stdio.h> 定义的地方。 </p>
 <p>后来逐渐被glibc取代，也就是传说中的GNU C Library,在此之前除了有libc，还有klibc,uclibc。现在只要知道用的最多的是glibc就行了，主流的一些linux操作系统如 Debian, Ubuntu，Redhat等用的都是glibc（或者其变种，下面会说到).</p>
 <p>那glibc都做了些什么呢？ glibc是Linux系统中最底层的API，几乎其它任何的运行库都要依赖glibc。 glibc最主要的功能就是对系统调用的封装，你想想看，你怎么能在C代码中直接用fopen函数就能打开文件？ 打开文件最终还是要触发系统中的sys_open系统调用，而这中间的处理过程都是glibc来完成的。<a href="http://www.chongh.wiki/blog/2016/04/08/linux-syscalls/" target="_blank" rel="external">这篇文章</a>详细介绍了glibc是如何与上层应用程序和系统调用交互的。除了封装系统调用，glibc自身也提供了一些上层应用函数必要的功能,如string,malloc,stdlib,linuxthreads,locale,signal等等。</p>
