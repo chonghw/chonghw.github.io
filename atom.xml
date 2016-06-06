@@ -201,11 +201,11 @@ sudo update-alternatives --config gcc
   </entry>
   
   <entry>
-    <title>Linux内存分配的秘密(一)</title>
+    <title>深入理解Linux内存分配</title>
     <link href="http://yoursite.com/blog/2016/05/03/linux-memory-alloc/"/>
     <id>http://yoursite.com/blog/2016/05/03/linux-memory-alloc/</id>
     <published>2016-05-03T19:41:45.000Z</published>
-    <updated>2016-05-04T13:39:57.000Z</updated>
+    <updated>2016-06-06T17:55:55.000Z</updated>
     
     <content type="html">&lt;p&gt;没有目录，希望能一口气读完&lt;/p&gt;
 &lt;p&gt;为了写一个用户层程序，你也许会声明一个全局变量，这个全局变量可能是一个int类型也可能是一个数组，而声明之后你有可能会先初始化它，也有可能放在之后用到它的时候再初始化。除此之外，你有可能会选择在函数内部去声明局部变量，又或者为变量动态申请内存。&lt;/p&gt;
