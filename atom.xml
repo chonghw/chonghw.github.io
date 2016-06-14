@@ -1060,7 +1060,7 @@ $ echo $?
     <link href="http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/"/>
     <id>http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/</id>
     <published>2016-04-02T21:24:15.000Z</published>
-    <updated>2016-05-19T13:41:44.000Z</updated>
+    <updated>2016-06-14T14:22:54.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
@@ -1188,7 +1188,7 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.mod.o&amp;apos;:     Permission d
 rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission denied 
 &lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
 &lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;如转载本文请注明出处: &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;br&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/u/2767520802?is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
 &lt;hr&gt;
 &lt;h3 id=&quot;Reference&quot;&gt;&lt;a href=&quot;#Reference&quot; class=&quot;headerlink&quot; title=&quot;Reference&quot;&gt;&lt;/a&gt;Reference&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html&lt;/a&gt;&lt;/p&gt;
@@ -1231,7 +1231,7 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
     <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
     <published>2016-03-31T02:17:12.000Z</published>
-    <updated>2016-05-19T13:17:49.000Z</updated>
+    <updated>2016-06-14T14:22:13.000Z</updated>
     
     <content type="html">&lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
 &lt;blockquote&gt;
@@ -1422,7 +1422,7 @@ pip install distorm3
 &lt;p&gt;完&lt;/p&gt;
 &lt;hr&gt;
 &lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;如转载本文请注明出处: &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;br&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;] &lt;/p&gt;
 &lt;hr&gt;
 &lt;h3 id=&quot;0x0A-References&quot;&gt;&lt;a href=&quot;#0x0A-References&quot; class=&quot;headerlink&quot; title=&quot;0x0A References&quot;&gt;&lt;/a&gt;0x0A References&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://libvmi.com/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Libvmi&lt;/a&gt;&lt;/p&gt;
