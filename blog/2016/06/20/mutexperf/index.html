@@ -1,0 +1,743 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入探索并发编程系列(一)-锁不慢；锁竞争慢">
+<meta property="og:url" content="http://yoursite.com/blog/2016/06/20/mutexperf/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex1.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex2.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex3.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex4.png">
+<meta property="og:updated_time" content="2016-07-07T15:14:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入探索并发编程系列(一)-锁不慢；锁竞争慢">
+<meta name="twitter:description" content="锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex1.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 深入探索并发编程系列(一)-锁不慢；锁竞争慢 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                深入探索并发编程系列(一)-锁不慢；锁竞争慢
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-06-20T11:01:55-04:00" content="2016-06-20">
+              2016-06-20
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/06/20/mutexperf/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/06/20/mutexperf/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。</p>
+<a id="more"></a>
+<p>在某些平台上或者当锁被高度竞争时，锁确实慢。另外，当你在开发一个多线程程序时，由于锁的引入，给性能带来巨大的瓶颈是很常见的。但这并不意味着所有的锁都是缓慢的。我会在这篇文章中解释，有的时候，使用锁的策略反而能带来非常好的性能。</p>
+<p>大家对锁的误解可能源自于某个最容易忽视的原因：不是所有的程序员都会意识到轻量级锁和内核锁的区别。我会在下一篇文章中对轻量级锁做专门介绍:<a href="">总是使用轻量级锁</a>。在这篇文章中，假设你在Windows平台下做C/C++开发，你需要的正是一个临界区对象。</p>
+<p>有时候，锁是慢的这个结论是由benchmark支撑的。例如，这篇文章在高负载状态下来测试锁的性能：每个线程必须持有锁来完成任何一项任务（高竞争），并且锁都是在极短的时间间隔下被持有（高频率）。这种方式似乎很完美，但在实际应用中，却要避免这种使用锁的方式<sup>注1</sup>。基于这种考虑，我设计了一种benchmark，同时包含对锁使用的最坏情况和最好情况。</p>
+<p>由于一些其它的考虑，大家可能不愿意用锁了。存在一系列的技术被称为无锁编程(或者不含锁编程<sup>注2</sup>）。无锁编程是极具挑战性的，但其本身可以在许多实际应用场景下带来高度的性能回报。据我所知，有些程序员会花费许多天甚至几周的时间来设计某种无锁算法，之后再做一系列测试，但在几个月后才发现隐藏的bug. 风险与回报并存对于相当一部分程序员都是有诱惑力的，这当然也包括我，在以后的几篇文章中会提到这些。有了无锁编程的诱惑，大家开始觉得锁使用起来很枯燥，缓慢并且非常糟糕。</p>
+<p>但也不能把锁贬的一文不值。在现实软件中，当大家为了保护内存分配器的时候，锁就是一个让人敬仰的东西。<a href="https://techcrunch.com/2016/07/01/exploiting-machine-learning-in-cybersecurity/?ncid=rss&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Techcrunch+%28TechCrunch%29" target="_blank" rel="external">Doug Lea的分配器</a>是在游戏开发中非常著名的内存分配器<sup>注3</sup>，但其只支持单线程，这时候我们就必须使用锁机制来进行保护。在游戏运行时，经常会碰到多个线程抢占一个内存分配器，每秒钟抢占次数可达到15000次左右。在加载过程中，每秒钟会达到100000次甚至更多。虽然这并不是个大问题。但你却可以看到，锁能非常出色的来处理这些负载。</p>
+<h3 id="锁竞争benchmark"><a href="#锁竞争benchmark" class="headerlink" title="锁竞争benchmark"></a>锁竞争benchmark</h3><p>在这次测试中，我们创建一个线程来生成随机数，采用传统的<a href="https://en.wikipedia.org/wiki/Mersenne_Twister" target="_blank" rel="external">Mersenne Twister</a>生成器来实现。此线程时而获取锁，时而释放锁。获取与释放锁的间隔时间是随机的，但它都很接近我们提前决策出的平均值。举个例子，假设我们要每秒钟获取锁15000次，让持有锁的时间保持在总时间的50%. 下图是部分的timeline。红色说明锁正在被持有，灰色说明锁被释放。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/mutex1.png" alt="MUTEX1"></p>
+<p>这是个泊松分布过程。如果我们知道生成单个随机数的平均时间–在2.66GHz的四核Xeon处理器上需要6.349ns–那么我们用工作单元(work units）而不是秒来衡量时间。可以用我前面的文章中介绍的方法,<a href="http://preshing.com/20111007/how-to-generate-random-timings-for-a-poisson-process/" target="_blank" rel="external">How to Generate Random Timings for a Poisson Process</a>,算出获取与释放锁的时间间隔有多少个工作单元。下面代码是C++的实现。我省略了一些细节，喜欢的话，可以在 <a href="http://7xppf1.com1.z0.glb.clouddn.com/mutex5.zip" target="_blank" rel="external">这里</a> 下载完整的源码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">QueryPerformanceCounter(&amp;start);</span><br><span class="line">for (;;)</span><br><span class="line">&#123;</span><br><span class="line">    // Do some work without holding the lock</span><br><span class="line">    workunits = (int) (random.poissonInterval(averageUnlockedCount) + 0.5f);</span><br><span class="line">    for (int i = 1; i &lt; workunits; i++)</span><br><span class="line">        random.integer();       // Do one work unit</span><br><span class="line">    workDone += workunits;</span><br><span class="line"></span><br><span class="line">    QueryPerformanceCounter(&amp;end);</span><br><span class="line">    elapsedTime = (end.QuadPart - start.QuadPart) * ooFreq;</span><br><span class="line">    if (elapsedTime &gt;= timeLimit)</span><br><span class="line">        break;</span><br><span class="line"></span><br><span class="line">    // Do some work while holding the lock</span><br><span class="line">    EnterCriticalSection(&amp;criticalSection);</span><br><span class="line">    workunits = (int) (random.poissonInterval(averageLockedCount) + 0.5f);</span><br><span class="line">    for (int i = 1; i &lt; workunits; i++)</span><br><span class="line">        random.integer();       // Do one work unit</span><br><span class="line">    workDone += workunits;</span><br><span class="line">    LeaveCriticalSection(&amp;criticalSection);</span><br><span class="line"></span><br><span class="line">    QueryPerformanceCounter(&amp;end);</span><br><span class="line">    elapsedTime = (end.QuadPart - start.QuadPart) * ooFreq;</span><br><span class="line">    if (elapsedTime &gt;= timeLimit)</span><br><span class="line">        break;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>现在假设我们运行两个这样的线程，每个线程运行在不同的CPU核心上。当执行任务时，每个线程有一半的时间是持有锁的，但如果其中一个线程在另一个线程持有锁的情况下试图获取锁，此线程会被强制等待。这就是锁竞争。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/mutex2.png" alt="MUTEX2"></p>
+<p>在我看来，这是锁在实际程序中应用的非常好的例子。当我们运行上述的场景时，可以发现每个线程会花费25%的时间在等待，75%的时间在执行实际的任务。与单线程相比，两个线程都获得了1.5X的性能提升。</p>
+<p>我在2.66GHZ的四核Xeon处理器上做过不同的测试，从一个线程到两个线程，一直到最多四个线程的情况，每个线程都分别运行在不同的CPU核心上。同时，我还改变锁被持有的时间，从锁绝不被持有，到每个线程必须100%的时间持有锁。在所有的case中，锁频率保持一个常数–在执行任务过程中，线程每秒钟获取锁15000次。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/mutex3.png" alt="MUTEX3"></p>
+<p>结果很有意思。对于短的锁持有时间，比如持有时间占比&lt;10%的情况, 系统可能达到很高的并发性。虽然不是最完美的并发，但很接近。说明锁是非常快的！</p>
+<p>为了把结果解释清楚一些，我用<a href="http://preshing.com/20111203/a-c-profiling-module-for-multithreaded-apis/" target="_blank" rel="external">这个分析器</a>分析了多线程游戏引擎中的内存分配锁.在游戏运行时，每秒钟有15000个锁来自三个线程，锁的持有时间在2%左右。正好落在图表中左侧的舒适区(comfort zone).</p>
+<p>这些结果都表明一旦锁持有时间超过90%，就没有必要再使用多线程了。这时，单线程会表现的更好。同时，最让人吃惊的是4个线程的性能都急剧下降到60%左右。这看起来像是个异常情况，所以我又重新运行这些测试很多次了，甚至还改变了测试顺序。得到的结果却是一样的。我对此最好的解释就是，测试可能触碰到了Windows分配器的盲区，我没有更进一步的去研究这个问题。</p>
+<h3 id="锁频率benchmark"><a href="#锁频率benchmark" class="headerlink" title="锁频率benchmark"></a>锁频率benchmark</h3><p>一个轻量级锁也会带来开销。正如我的<a href="http://preshing.com/20111124/always-use-a-lightweight-mutex/" target="_blank" rel="external">下一篇</a>文章中说的,对Windows临界区的lock/unlock成对操作会花费23.5ns（基于上述测试的CPU). 因此可以说明，每秒钟有15000个锁已经足够少了，锁的开销并不会在很大程度上影响整个结果。但如果我们提高锁频率，又会发生什么呢？</p>
+<p>算法中，严格控制锁与锁之间执行的任务数，因此我做了一系列新的测试：锁与锁的间隔时间从10ns到最高31ns(相对应每秒钟大约32000次锁).每次测试都使用两个线程。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/mutex4.png" alt="MUTEX4"></p>
+<p>正如你想的那样，锁频率很高的话，锁本身的开销就已经高于所执行的任务本身了. 在网上找到的一些benchmarks,包括前面提到的那个分析器， 都落在图表中的右下角。在这些高频率下，和一些CPU指令的规模一样，锁的间隔比较小。好消息是，当锁与锁之间的任务比较简单的时候，无锁编程更可行。</p>
+<p>与此同时，结果表明当锁频率达到每秒钟32000次时（锁间隔是3.1us)也是可以接受的。在游戏开发中，内存分配器就可能会在加载过程中达到这个频率。如果锁间隔比较短暂，你仍然可以得到1.5X的并发度。</p>
+<p>我们已经了解了一系列锁性能的例子：有性能表现的很好的时候，也有性能慢的跟爬虫似的时候。我已经证明了游戏引擎中的内存分配器一直都能保持非常好的性能。把这个例子运用到实际场景中，不能说锁是慢的。不得不承认，锁很容易被滥用，但你不必太害怕–只要经过仔细的分析，任何情况下都能找出导致性能瓶颈的因素。当你正在考虑锁有多可靠，并去理解锁的相关优化方法时(相比无锁编程)，锁有时候表现的真的非常出色。</p>
+<p>写这篇文章的目的是为了让锁得到应有的尊敬–欢迎批评指正。锁在工业应用程序中有广泛的应用，至于锁的性能，并不总是能达到一个很好的均衡。如果你在自己的经验中发现类似这样的例子，非常乐意看到你的评论。</p>
+<h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><p>注释1:一种避免或者降低锁冲突的科学思想是partition，避免资源集中。例如，对于hashtable，可以由之前的一个hashtable对应一把锁，改为每个bucket配置一把锁，这样冲突将大大降低。再例如，计数程序，如果大家都对同一个全局变量进行读写而加一把锁，那么冲突严重，可以适当的选择多个计数器，不同的线程累加对应的计数器，一个线程负责将这些计数器的值求和。等等等等。</p>
+<p>注释2: 这里的无锁编程，原文为lock free。不含锁编程，原文为lockless。但是需要注意的是，lock free并不是无锁的意思，它的本质是说一组线程，总有（至少）一个线程能make progress，和有没有锁没有本质联系。lock free目前一般都翻译为无锁（有些地方也翻译为锁无关），因此本文也采用这种译法，但是读者需要特别注意。另外lockless就是真正的无锁、不包含锁的编程。</p>
+<p>注释3: Doug Lea是并发编程的大牛，《Java并发编程实战》的作者之一，非常乐意分享。他写的这个分配器非常出名，glibc所采用的内存分配器实现就是基于他设计的算法。</p>
+<p>注释4: 本文的描述和试验可能让人有点迷糊，这里提供一下Paul E. McKenney大叔在他的著作《Is Parallel Programming Hard, And, If So, What Can You Do About It?》中第4章中的例子来解释，让读者更好的理解：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">pthread_rwlock_t</span> rwl = PTHREAD_RWLOCK_INITIALIZER;</span><br><span class="line"><span class="keyword">int</span> holdtime = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">int</span> thinktime = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">long</span> <span class="keyword">long</span> *readcounts;</span><br><span class="line"><span class="keyword">int</span> nreadersrunning = <span class="number">0</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GOFLAG_INIT 0</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GOFLAG_RUN  1</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GOFLAG_STOP 2</span></span><br><span class="line"><span class="keyword">char</span> goflag = GOFLAG_INIT;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">reader</span><span class="params">(<span class="keyword">void</span> *arg)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">   <span class="keyword">int</span> i;</span><br><span class="line">   <span class="keyword">long</span> <span class="keyword">long</span> loopcnt = <span class="number">0</span>;</span><br><span class="line">   <span class="keyword">long</span> me = (long)arg;</span><br><span class="line">   __sync_fetch_and_add(&amp;nreadersrunning, <span class="number">1</span>);</span><br><span class="line">   <span class="keyword">while</span> (ACCESS_ONCE(goflag) == GOFLAG_INIT) &#123;</span><br><span class="line">     <span class="keyword">continue</span>;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">while</span> (ACCESS_ONCE(goflag) == GOFLAG_RUN) &#123;</span><br><span class="line">     <span class="keyword">if</span> (pthread_rwlock_rdlock(&amp;rwl) != <span class="number">0</span>) &#123;</span><br><span class="line">       perror(<span class="string">"pthread_rwlock_rdlock"</span>);</span><br><span class="line">       <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">     &#125; </span><br><span class="line">     <span class="keyword">for</span>(i=<span class="number">1</span>;i&lt;holdtime;i++)&#123;</span><br><span class="line">       barrier();</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> (pthread_rwlock_unlock(&amp;rwl) != <span class="number">0</span>) &#123;</span><br><span class="line">       perror(<span class="string">"pthread_rwlock_unlock"</span>);</span><br><span class="line">       <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">for</span> (i=<span class="number">1</span>;i&lt;thinktime;i++) &#123;</span><br><span class="line">       barrier();</span><br><span class="line">     &#125;</span><br><span class="line">     loopcnt++;</span><br><span class="line">   &#125;</span><br><span class="line">   readcounts[me] = loopcnt;</span><br><span class="line">   return <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 其中19-21行等待测试开始的信号；22行开始测试；holdtime控制临界区的长短，thinktime用来控制两次申请锁之间的间隔。测试的时候有三个变量：holdtime、thinktime、线程数（1个、2个、4个、直到核数的两倍）。试试看。</p>
+<h3 id="Acknowledge"><a href="#Acknowledge" class="headerlink" title="Acknowledge"></a>Acknowledge</h3><p>本译文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多详细注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/2495479763?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">skyline09_ </a>与<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出意见。</p>
+<p>原文： <a href="http://preshing.com/20111118/locks-arent-slow-lock-contention-is/" target="_blank" rel="external">http://preshing.com/20111118/locks-arent-slow-lock-contention-is/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/05/25/sourceinsight-linux/" rel="next" title="Source Insight for Linux">
+                <i class="fa fa-chevron-left"></i> Source Insight for Linux
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/06/20/mutexperf/"
+           data-title="深入探索并发编程系列(一)-锁不慢；锁竞争慢" data-url="http://yoursite.com/blog/2016/06/20/mutexperf/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">25</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#锁竞争benchmark"><span class="nav-number">1.</span> <span class="nav-text">锁竞争benchmark</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#锁频率benchmark"><span class="nav-number">2.</span> <span class="nav-text">锁频率benchmark</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注释"><span class="nav-number">3.</span> <span class="nav-text">注释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledge"><span class="nav-number">4.</span> <span class="nav-text">Acknowledge</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-05-25T20:20:15.000Z</updated>
+  <updated>2016-07-07T15:14:30.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,62 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>深入探索并发编程系列(一)-锁不慢；锁竞争慢</title>
+    <link href="http://yoursite.com/blog/2016/06/20/mutexperf/"/>
+    <id>http://yoursite.com/blog/2016/06/20/mutexperf/</id>
+    <published>2016-06-20T15:01:55.000Z</published>
+    <updated>2016-07-07T15:14:30.000Z</updated>
+    
+    <content type="html">&lt;p&gt;锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;在某些平台上或者当锁被高度竞争时，锁确实慢。另外，当你在开发一个多线程程序时，由于锁的引入，给性能带来巨大的瓶颈是很常见的。但这并不意味着所有的锁都是缓慢的。我会在这篇文章中解释，有的时候，使用锁的策略反而能带来非常好的性能。&lt;/p&gt;
+&lt;p&gt;大家对锁的误解可能源自于某个最容易忽视的原因：不是所有的程序员都会意识到轻量级锁和内核锁的区别。我会在下一篇文章中对轻量级锁做专门介绍:&lt;a href=&quot;&quot;&gt;总是使用轻量级锁&lt;/a&gt;。在这篇文章中，假设你在Windows平台下做C/C++开发，你需要的正是一个临界区对象。&lt;/p&gt;
+&lt;p&gt;有时候，锁是慢的这个结论是由benchmark支撑的。例如，这篇文章在高负载状态下来测试锁的性能：每个线程必须持有锁来完成任何一项任务（高竞争），并且锁都是在极短的时间间隔下被持有（高频率）。这种方式似乎很完美，但在实际应用中，却要避免这种使用锁的方式&lt;sup&gt;注1&lt;/sup&gt;。基于这种考虑，我设计了一种benchmark，同时包含对锁使用的最坏情况和最好情况。&lt;/p&gt;
+&lt;p&gt;由于一些其它的考虑，大家可能不愿意用锁了。存在一系列的技术被称为无锁编程(或者不含锁编程&lt;sup&gt;注2&lt;/sup&gt;）。无锁编程是极具挑战性的，但其本身可以在许多实际应用场景下带来高度的性能回报。据我所知，有些程序员会花费许多天甚至几周的时间来设计某种无锁算法，之后再做一系列测试，但在几个月后才发现隐藏的bug. 风险与回报并存对于相当一部分程序员都是有诱惑力的，这当然也包括我，在以后的几篇文章中会提到这些。有了无锁编程的诱惑，大家开始觉得锁使用起来很枯燥，缓慢并且非常糟糕。&lt;/p&gt;
+&lt;p&gt;但也不能把锁贬的一文不值。在现实软件中，当大家为了保护内存分配器的时候，锁就是一个让人敬仰的东西。&lt;a href=&quot;https://techcrunch.com/2016/07/01/exploiting-machine-learning-in-cybersecurity/?ncid=rss&amp;amp;utm_source=feedburner&amp;amp;utm_medium=feed&amp;amp;utm_campaign=Feed%3A+Techcrunch+%28TechCrunch%29&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Doug Lea的分配器&lt;/a&gt;是在游戏开发中非常著名的内存分配器&lt;sup&gt;注3&lt;/sup&gt;，但其只支持单线程，这时候我们就必须使用锁机制来进行保护。在游戏运行时，经常会碰到多个线程抢占一个内存分配器，每秒钟抢占次数可达到15000次左右。在加载过程中，每秒钟会达到100000次甚至更多。虽然这并不是个大问题。但你却可以看到，锁能非常出色的来处理这些负载。&lt;/p&gt;
+&lt;h3 id=&quot;锁竞争benchmark&quot;&gt;&lt;a href=&quot;#锁竞争benchmark&quot; class=&quot;headerlink&quot; title=&quot;锁竞争benchmark&quot;&gt;&lt;/a&gt;锁竞争benchmark&lt;/h3&gt;&lt;p&gt;在这次测试中，我们创建一个线程来生成随机数，采用传统的&lt;a href=&quot;https://en.wikipedia.org/wiki/Mersenne_Twister&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Mersenne Twister&lt;/a&gt;生成器来实现。此线程时而获取锁，时而释放锁。获取与释放锁的间隔时间是随机的，但它都很接近我们提前决策出的平均值。举个例子，假设我们要每秒钟获取锁15000次，让持有锁的时间保持在总时间的50%. 下图是部分的timeline。红色说明锁正在被持有，灰色说明锁被释放。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex1.png&quot; alt=&quot;MUTEX1&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这是个泊松分布过程。如果我们知道生成单个随机数的平均时间–在2.66GHz的四核Xeon处理器上需要6.349ns–那么我们用工作单元(work units）而不是秒来衡量时间。可以用我前面的文章中介绍的方法,&lt;a href=&quot;http://preshing.com/20111007/how-to-generate-random-timings-for-a-poisson-process/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;How to Generate Random Timings for a Poisson Process&lt;/a&gt;,算出获取与释放锁的时间间隔有多少个工作单元。下面代码是C++的实现。我省略了一些细节，喜欢的话，可以在 &lt;a href=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex5.zip&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这里&lt;/a&gt; 下载完整的源码&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;QueryPerformanceCounter(&amp;amp;start);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;for (;;)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    // Do some work without holding the lock&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    workunits = (int) (random.poissonInterval(averageUnlockedCount) + 0.5f);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    for (int i = 1; i &amp;lt; workunits; i++)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        random.integer();       // Do one work unit&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    workDone += workunits;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    QueryPerformanceCounter(&amp;amp;end);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    elapsedTime = (end.QuadPart - start.QuadPart) * ooFreq;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    if (elapsedTime &amp;gt;= timeLimit)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        break;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    // Do some work while holding the lock&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    EnterCriticalSection(&amp;amp;criticalSection);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    workunits = (int) (random.poissonInterval(averageLockedCount) + 0.5f);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    for (int i = 1; i &amp;lt; workunits; i++)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        random.integer();       // Do one work unit&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    workDone += workunits;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    LeaveCriticalSection(&amp;amp;criticalSection);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    QueryPerformanceCounter(&amp;amp;end);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    elapsedTime = (end.QuadPart - start.QuadPart) * ooFreq;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    if (elapsedTime &amp;gt;= timeLimit)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        break;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;现在假设我们运行两个这样的线程，每个线程运行在不同的CPU核心上。当执行任务时，每个线程有一半的时间是持有锁的，但如果其中一个线程在另一个线程持有锁的情况下试图获取锁，此线程会被强制等待。这就是锁竞争。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex2.png&quot; alt=&quot;MUTEX2&quot;&gt;&lt;/p&gt;
+&lt;p&gt;在我看来，这是锁在实际程序中应用的非常好的例子。当我们运行上述的场景时，可以发现每个线程会花费25%的时间在等待，75%的时间在执行实际的任务。与单线程相比，两个线程都获得了1.5X的性能提升。&lt;/p&gt;
+&lt;p&gt;我在2.66GHZ的四核Xeon处理器上做过不同的测试，从一个线程到两个线程，一直到最多四个线程的情况，每个线程都分别运行在不同的CPU核心上。同时，我还改变锁被持有的时间，从锁绝不被持有，到每个线程必须100%的时间持有锁。在所有的case中，锁频率保持一个常数–在执行任务过程中，线程每秒钟获取锁15000次。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex3.png&quot; alt=&quot;MUTEX3&quot;&gt;&lt;/p&gt;
+&lt;p&gt;结果很有意思。对于短的锁持有时间，比如持有时间占比&amp;lt;10%的情况, 系统可能达到很高的并发性。虽然不是最完美的并发，但很接近。说明锁是非常快的！&lt;/p&gt;
+&lt;p&gt;为了把结果解释清楚一些，我用&lt;a href=&quot;http://preshing.com/20111203/a-c-profiling-module-for-multithreaded-apis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这个分析器&lt;/a&gt;分析了多线程游戏引擎中的内存分配锁.在游戏运行时，每秒钟有15000个锁来自三个线程，锁的持有时间在2%左右。正好落在图表中左侧的舒适区(comfort zone).&lt;/p&gt;
+&lt;p&gt;这些结果都表明一旦锁持有时间超过90%，就没有必要再使用多线程了。这时，单线程会表现的更好。同时，最让人吃惊的是4个线程的性能都急剧下降到60%左右。这看起来像是个异常情况，所以我又重新运行这些测试很多次了，甚至还改变了测试顺序。得到的结果却是一样的。我对此最好的解释就是，测试可能触碰到了Windows分配器的盲区，我没有更进一步的去研究这个问题。&lt;/p&gt;
+&lt;h3 id=&quot;锁频率benchmark&quot;&gt;&lt;a href=&quot;#锁频率benchmark&quot; class=&quot;headerlink&quot; title=&quot;锁频率benchmark&quot;&gt;&lt;/a&gt;锁频率benchmark&lt;/h3&gt;&lt;p&gt;一个轻量级锁也会带来开销。正如我的&lt;a href=&quot;http://preshing.com/20111124/always-use-a-lightweight-mutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;下一篇&lt;/a&gt;文章中说的,对Windows临界区的lock/unlock成对操作会花费23.5ns（基于上述测试的CPU). 因此可以说明，每秒钟有15000个锁已经足够少了，锁的开销并不会在很大程度上影响整个结果。但如果我们提高锁频率，又会发生什么呢？&lt;/p&gt;
+&lt;p&gt;算法中，严格控制锁与锁之间执行的任务数，因此我做了一系列新的测试：锁与锁的间隔时间从10ns到最高31ns(相对应每秒钟大约32000次锁).每次测试都使用两个线程。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex4.png&quot; alt=&quot;MUTEX4&quot;&gt;&lt;/p&gt;
+&lt;p&gt;正如你想的那样，锁频率很高的话，锁本身的开销就已经高于所执行的任务本身了. 在网上找到的一些benchmarks,包括前面提到的那个分析器， 都落在图表中的右下角。在这些高频率下，和一些CPU指令的规模一样，锁的间隔比较小。好消息是，当锁与锁之间的任务比较简单的时候，无锁编程更可行。&lt;/p&gt;
+&lt;p&gt;与此同时，结果表明当锁频率达到每秒钟32000次时（锁间隔是3.1us)也是可以接受的。在游戏开发中，内存分配器就可能会在加载过程中达到这个频率。如果锁间隔比较短暂，你仍然可以得到1.5X的并发度。&lt;/p&gt;
+&lt;p&gt;我们已经了解了一系列锁性能的例子：有性能表现的很好的时候，也有性能慢的跟爬虫似的时候。我已经证明了游戏引擎中的内存分配器一直都能保持非常好的性能。把这个例子运用到实际场景中，不能说锁是慢的。不得不承认，锁很容易被滥用，但你不必太害怕–只要经过仔细的分析，任何情况下都能找出导致性能瓶颈的因素。当你正在考虑锁有多可靠，并去理解锁的相关优化方法时(相比无锁编程)，锁有时候表现的真的非常出色。&lt;/p&gt;
+&lt;p&gt;写这篇文章的目的是为了让锁得到应有的尊敬–欢迎批评指正。锁在工业应用程序中有广泛的应用，至于锁的性能，并不总是能达到一个很好的均衡。如果你在自己的经验中发现类似这样的例子，非常乐意看到你的评论。&lt;/p&gt;
+&lt;h3 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h3&gt;&lt;p&gt;注释1:一种避免或者降低锁冲突的科学思想是partition，避免资源集中。例如，对于hashtable，可以由之前的一个hashtable对应一把锁，改为每个bucket配置一把锁，这样冲突将大大降低。再例如，计数程序，如果大家都对同一个全局变量进行读写而加一把锁，那么冲突严重，可以适当的选择多个计数器，不同的线程累加对应的计数器，一个线程负责将这些计数器的值求和。等等等等。&lt;/p&gt;
+&lt;p&gt;注释2: 这里的无锁编程，原文为lock free。不含锁编程，原文为lockless。但是需要注意的是，lock free并不是无锁的意思，它的本质是说一组线程，总有（至少）一个线程能make progress，和有没有锁没有本质联系。lock free目前一般都翻译为无锁（有些地方也翻译为锁无关），因此本文也采用这种译法，但是读者需要特别注意。另外lockless就是真正的无锁、不包含锁的编程。&lt;/p&gt;
+&lt;p&gt;注释3: Doug Lea是并发编程的大牛，《Java并发编程实战》的作者之一，非常乐意分享。他写的这个分配器非常出名，glibc所采用的内存分配器实现就是基于他设计的算法。&lt;/p&gt;
+&lt;p&gt;注释4: 本文的描述和试验可能让人有点迷糊，这里提供一下Paul E. McKenney大叔在他的著作《Is Parallel Programming Hard, And, If So, What Can You Do About It?》中第4章中的例子来解释，让读者更好的理解：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;pthread_rwlock_t&lt;/span&gt; rwl = PTHREAD_RWLOCK_INITIALIZER;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; holdtime = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; thinktime = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; *readcounts;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; nreadersrunning = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;define&lt;/span&gt; GOFLAG_INIT 0&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;define&lt;/span&gt; GOFLAG_RUN  1&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;define&lt;/span&gt; GOFLAG_STOP 2&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; goflag = GOFLAG_INIT;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *&lt;span class=&quot;title&quot;&gt;reader&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *arg)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; i;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; loopcnt = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; me = (long)arg;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   __sync_fetch_and_add(&amp;amp;nreadersrunning, &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt; (ACCESS_ONCE(goflag) == GOFLAG_INIT) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &lt;span class=&quot;keyword&quot;&gt;continue&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt; (ACCESS_ONCE(goflag) == GOFLAG_RUN) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (pthread_rwlock_rdlock(&amp;amp;rwl) != &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       perror(&lt;span class=&quot;string&quot;&gt;&quot;pthread_rwlock_rdlock&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       &lt;span class=&quot;built_in&quot;&gt;exit&lt;/span&gt;(&lt;span class=&quot;number&quot;&gt;-1&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &amp;#125; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt;(i=&lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;i&amp;lt;holdtime;i++)&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       barrier();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (pthread_rwlock_unlock(&amp;amp;rwl) != &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       perror(&lt;span class=&quot;string&quot;&gt;&quot;pthread_rwlock_unlock&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       &lt;span class=&quot;built_in&quot;&gt;exit&lt;/span&gt;(&lt;span class=&quot;number&quot;&gt;-1&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (i=&lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;i&amp;lt;thinktime;i++) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       barrier();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;     loopcnt++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   readcounts[me] = loopcnt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   return &lt;span class=&quot;literal&quot;&gt;NULL&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt; 其中19-21行等待测试开始的信号；22行开始测试；holdtime控制临界区的长短，thinktime用来控制两次申请锁之间的间隔。测试的时候有三个变量：holdtime、thinktime、线程数（1个、2个、4个、直到核数的两倍）。试试看。&lt;/p&gt;
+&lt;h3 id=&quot;Acknowledge&quot;&gt;&lt;a href=&quot;#Acknowledge&quot; class=&quot;headerlink&quot; title=&quot;Acknowledge&quot;&gt;&lt;/a&gt;Acknowledge&lt;/h3&gt;&lt;p&gt;本译文由 &lt;a href=&quot;http://weibo.com/2767520802/profile?topnav=1&amp;amp;wvr=6&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Diting0x&lt;/a&gt; 与 &lt;a href=&quot;http://weibo.com/yebangyu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;睡眼惺忪的小叶先森&lt;/a&gt; 共同完成，在原文的基础上添加了许多详细注释，帮助大家理解。&lt;/p&gt;
+&lt;p&gt;感谢好友&lt;a href=&quot;http://weibo.com/u/2495479763?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;skyline09_ &lt;/a&gt;与&lt;a href=&quot;http://weibo.com/u/1707881862?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;小伙伴-小伙伴儿 &lt;/a&gt;阅读了初稿，并给出意见。&lt;/p&gt;
+&lt;p&gt;原文： &lt;a href=&quot;http://preshing.com/20111118/locks-arent-slow-lock-contention-is/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://preshing.com/20111118/locks-arent-slow-lock-contention-is/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;br&gt;仅为学习使用，未经博主同意，请勿转载&lt;br&gt;本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="High-performance" scheme="http://yoursite.com/categories/High-performance/"/>
+    
+    
+  </entry>
   
   <entry>
     <title>Source Insight for Linux</title>
@@ -192,11 +248,11 @@ sudo update-alternatives --config gcc
     
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
-      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
+    
+      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
   </entry>
   
@@ -1220,9 +1276,9 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
-    
       <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
+    
+      <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
     
   </entry>
   
@@ -1451,13 +1507,13 @@ pip install distorm3
     
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
-      <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
-    
-      <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
-    
       <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
     
       <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
+    
+      <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
+    
+      <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
     
       <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
     
@@ -1643,9 +1699,9 @@ pip install distorm3
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
-    
       <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
+    
+      <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -1816,90 +1872,6 @@ pip install distorm3
     <summary type="html">
     
       &lt;p&gt;内存破坏是计算机安全中亘古不变的话题。内存破坏也被看作是top three危险的软件错误。像C/C++这种底层语言很容易引来这些bugs. 这些程序语言无法对内存安全性的保证，以至于让一些攻击者利用内存bugs改变程序行为或甚至控制整个控制流（control-flow).  要了解什么是内存安全性，可参考上一篇文章：&lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/17/memory-safety/&quot;&gt;内存持久战-内存安全性&lt;/a&gt;.  然而，一种最显而易见的解决方案就是避免这些容易引起内存破坏的程序语言，用一种内存安全的程序语言去重写这些程序。显然这是不切实际的，比如重写整个OS？&lt;br&gt;尽管papers的许多防御措施层出不穷，但大部分都无法应用到工业上，归结于以下问题：性能开销太大、与现有的程序特性并不兼容、不够健壮、不够完整、依赖于编译器或源码等等。&lt;br&gt;对内存的破坏与保护是一场持久战。本文重在总结利用内存破坏的相关攻击及其实施过程。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="security" scheme="http://yoursite.com/categories/security/"/>
-    
-    
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Memory" scheme="http://yoursite.com/tags/Memory/"/>
-    
-      <category term="System" scheme="http://yoursite.com/tags/System/"/>
-    
-      <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>内存持久战-内存安全性</title>
-    <link href="http://yoursite.com/blog/2016/02/17/memory-safety/"/>
-    <id>http://yoursite.com/blog/2016/02/17/memory-safety/</id>
-    <published>2016-02-18T01:07:28.000Z</published>
-    <updated>2016-04-26T00:47:28.000Z</updated>
-    
-    <content type="html">&lt;p&gt;C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章&lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;内存持久战-攻击模型&lt;/a&gt;，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;内存持久战-防御机制&lt;/a&gt;做好铺垫。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;IEEE Security&amp;amp;Privacy’13&lt;/li&gt;
-&lt;li&gt;不访问未定义的内存&lt;/li&gt;
-&lt;li&gt;无限间距&lt;/li&gt;
-&lt;li&gt;Pointers as capabilities&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;h3 id=&quot;IEEE-Security-amp-Privacy’13&quot;&gt;&lt;a href=&quot;#IEEE-Security-amp-Privacy’13&quot; class=&quot;headerlink&quot; title=&quot;IEEE Security&amp;amp;Privacy’13&quot;&gt;&lt;/a&gt;IEEE Security&amp;amp;Privacy’13&lt;/h3&gt;&lt;p&gt;发表在IEEE Security&amp;amp;Privacy’13的一篇SoK(Systematization of Knowledge)文章，&lt;a href=&quot;https://nebelwelt.net/publications/files/13Oakland.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Eternal War in Memory &lt;/a&gt;，阐述了一种定义内存安全的通用方法。&lt;br&gt;&lt;strong&gt;&lt;em&gt;Definition 1:&lt;/em&gt;&lt;/strong&gt; 文中提到，一个程序的执行，只要不会出现以下内存访问错误，就是内存安全的：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;1.缓冲区溢出&lt;/li&gt;
-&lt;li&gt;2.引用空指针&lt;/li&gt;
-&lt;li&gt;3.释放后使用（use after free）&lt;/li&gt;
-&lt;li&gt;4.使用未初始化内存&lt;/li&gt;
-&lt;li&gt;5.非法释放已经释放过的指针或未分配的指针&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;维基百科 &lt;a href=&quot;https://en.wikipedia.org/wiki/Memory_safety&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;wikipedia page on memory safety&lt;/a&gt; 也有类似的定义。从定义来看，排除这些错误是内存安全本身的定义所导向的，而并非内存安全性的本质。那么，如何将这些错误统一起来？&lt;/p&gt;
-&lt;h3 id=&quot;不访问未定义的内存&quot;&gt;&lt;a href=&quot;#不访问未定义的内存&quot; class=&quot;headerlink&quot; title=&quot;不访问未定义的内存&quot;&gt;&lt;/a&gt;不访问未定义的内存&lt;/h3&gt;&lt;p&gt;只有当程序访问未定义的内存时才会产生内存错误，这块内存是在程序中没有具体分配的，例如，&lt;em&gt;heap&lt;/em&gt; 的一部分（通过&lt;em&gt;malloc&lt;/em&gt;)，&lt;em&gt;stack&lt;/em&gt;(作为局部变量或者函数参数），又或者是静态数据区域（作为全局变量). &lt;a href=&quot;http://www.cs.berkeley.edu/~necula/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;George Necula&lt;/a&gt; 在他的&lt;em&gt;CCured&lt;/em&gt;项目中（旨在为C程序实施内存安全性）提到，一个内存安全的程序从来不会去访问未定义的内存。我们可以假设，内存可以无限的大，大到内存地址从不会复用(reused).如此一来，被释放的内存（可以调用&lt;em&gt;free&lt;/em&gt; 或者从函数返回的时候&lt;em&gt;pop&lt;/em&gt;）从不会被重新分配，并且会永久的保持未定义状态。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;&lt;em&gt;Definition 2:&lt;/em&gt;&lt;/strong&gt; 不访问未定义的内存就是内存安全的。&lt;br&gt;这种定义明显排除了&lt;em&gt;error 2&lt;/em&gt; 和 &lt;em&gt;error 3&lt;/em&gt;. 如果将&lt;em&gt;allocated&lt;/em&gt; 的定义包括&lt;em&gt;initialized&lt;/em&gt;，又可以排除&lt;em&gt;error 4&lt;/em&gt;. 如果假设&lt;em&gt;free&lt;/em&gt;只能在定义过的内存指针中调用，那又可以排除&lt;em&gt;error 5&lt;/em&gt;. &lt;/p&gt;
-&lt;p&gt;不幸的是，&lt;em&gt;Definition 2&lt;/em&gt; 并未排除缓冲区溢出错误，也就是&lt;em&gt;error 1&lt;/em&gt;。 来看一个例子，假定一个标准&lt;em&gt;stack&lt;/em&gt; 布局， 在此定义下，&lt;em&gt;program 1&lt;/em&gt; 的执行会被认为是内存安全的：&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;/* Program 1 */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int x;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int buf[4];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;buf[5] =3; /*overwrite*/&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;&lt;em&gt;Definition 2&lt;/em&gt; 允许 &lt;em&gt;Program 1&lt;/em&gt; 通过是因为此程序是在合法分配的内存中写数据，甚至写的数据类型也是正确的。但实际上问题在于，数组&lt;em&gt;buf&lt;/em&gt; 的溢出将数据写进了变量&lt;em&gt;x&lt;/em&gt; 中, 显然这是内存不安全的。&lt;/p&gt;
-&lt;h3 id=&quot;无限间距&quot;&gt;&lt;a href=&quot;#无限间距&quot; class=&quot;headerlink&quot; title=&quot;无限间距&quot;&gt;&lt;/a&gt;无限间距&lt;/h3&gt;&lt;p&gt;将 &lt;em&gt;Definition 2&lt;/em&gt; 延伸， &lt;em&gt;Program 1&lt;/em&gt; 被看作是内存不安全的。只要加上这个假设： 内存区域分配的间距是无限大的。&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Buf&lt;/em&gt; 和 &lt;em&gt;x&lt;/em&gt; 的分配间距无限大，&lt;em&gt;buf[5]&lt;/em&gt; 将会访问 &lt;em&gt;buf&lt;/em&gt; 区域的边界外部。边界外部是个未定义的内存区域，按照上述定义，就会产生错误。&lt;em&gt;heap&lt;/em&gt; ,静态数据区域对溢出的处理方式类似。&lt;/p&gt;
-&lt;p&gt;尽管 &lt;em&gt;Definition 2&lt;/em&gt; 是个很接近让人满意的定义，但事实并未如此。来看 &lt;em&gt;Program 1&lt;/em&gt; 的变形 &lt;em&gt;Program 2&lt;/em&gt;，也是一种缓冲区溢出, &lt;em&gt;Definition 2&lt;/em&gt;  仍然会允许 &lt;em&gt;Program 2&lt;/em&gt; 执行。&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;/*Program 2 */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;struct foo &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   int buf[4];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   int x;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   &amp;#125;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;struct foo *pf -malloc(sizeof(struct foo));&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pf-&amp;gt;buf[5] =3;/*overwrite pf-&amp;gt;x*/&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;这里，缓冲区溢出发生在 &lt;em&gt;object&lt;/em&gt; 的内部。我们仍然可以类似的在域间引入无限间距的概念来排除缓存溢出的错误。这并未太背离现实，C标准允许编译器决定不同域的间距。另一方面，程序语言把结构体当做一个单独的&lt;em&gt;object&lt;/em&gt; (从 &lt;em&gt;malloc&lt;/em&gt; 返回的单独指针). 许多程序会把一个结构体映射到另一个结构体，或者会确定好一种间距方案。许多编译器都支持这些操作，但是否可以有一种更好的定义不依赖于这些？&lt;/p&gt;
-&lt;h3 id=&quot;Pointers-as-capabilities&quot;&gt;&lt;a href=&quot;#Pointers-as-capabilities&quot; class=&quot;headerlink&quot; title=&quot;Pointers as capabilities&quot;&gt;&lt;/a&gt;Pointers as capabilities&lt;/h3&gt;&lt;p&gt;从 &lt;em&gt;Definition 2&lt;/em&gt; 中，了解到许多概念，比如，定义的（分配的），未定义的（从没有分配的或者分配后回收的),我们假设分配后回收的内存不会再复用。如此一来，只要访问未定义的内存，就会违背内存安全性。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;&lt;em&gt;Definition 3:&lt;/em&gt;&lt;/strong&gt; 我们引入这么一个概念, Pointers as capabilities. 也就是说，允许指针的持有者访问一定区域中的内存。一个指针由三个元素组成&lt;em&gt;（p,b,e)&lt;/em&gt;: &lt;em&gt;b&lt;/em&gt; 定义有效的区域，&lt;em&gt;e&lt;/em&gt; 定义边界，&lt;em&gt;p&lt;/em&gt; 代表指针本身。 程序只能操作&lt;em&gt;p&lt;/em&gt;，&lt;em&gt;b&lt;/em&gt; 和&lt;em&gt;e&lt;/em&gt; ,这样做只是为了定义一次执行是否是内存安全的。&lt;/p&gt;
-&lt;p&gt;举个例子，看下面的&lt;em&gt;Program 3&lt;/em&gt;以及对应的内存效果图：&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;/* Program 3 */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;struct foo &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  int x;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  int y;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  char *pc;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;struct foo *pf = malloc(...);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pf-&amp;gt;x = 5;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pf-&amp;gt;y = 256;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pf-&amp;gt;pc = &amp;quot;before&amp;quot;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pf-&amp;gt;pc += 3;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int *px = &amp;amp;pf-&amp;gt;x;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/memory-safety3.jpg&quot; alt=&quot;memory-safety3&quot;&gt;&lt;/p&gt;
-&lt;p&gt;重点关注代码的最后两行。&lt;em&gt;Program 3&lt;/em&gt; 允许指针运算来新建一个新的指针，但只能当新指针落在b到e之间才能被解引用。从代码中看到，增加 &lt;em&gt;\&lt;/em&gt;pc&lt;em&gt;的&lt;/em&gt;p&lt;em&gt; ,新指针仍然落在&lt;/em&gt;b&lt;em&gt; 和&lt;/em&gt;e&lt;em&gt; 之间，所以执行&lt;/em&gt;*(pf-&amp;gt;pc)&lt;em&gt; 是合法有效的。但如果执行 &lt;/em&gt;pf-&amp;gt;pc+=10&lt;em&gt; , &lt;/em&gt;*(pf-&amp;gt;pc)&lt;em&gt; 将会违背内存安全性，尽管&lt;/em&gt;pf-&amp;gt;pc&lt;em&gt; 有可能碰巧就落在定义的内存区域中（这块内存区域可能分配给了其它&lt;/em&gt;object*).&lt;/p&gt;
-&lt;p&gt;最后一行代码创建一个新的指针&lt;em&gt;px&lt;/em&gt; 指向&lt;em&gt;pf&lt;/em&gt; 指针的第一个域，将边界缩小到其中的一个域中。这就排除了 &lt;em&gt;Program 2&lt;/em&gt; 带来的内存溢出问题。加入我们保留&lt;em&gt;pf&lt;/em&gt;整个的边界，此程序可能会利用&lt;em&gt;px&lt;/em&gt;溢出到结构体中的其它域中。&lt;/p&gt;
-&lt;p&gt;Capability是无法伪造的，就像我们并不能伪造一个指针映射到整形数据中。非法映射可以是直接的（&lt;em&gt;e.g. p=(int \&lt;/em&gt;)5&lt;em&gt; ） 也可以是间接的，比如将含有整形数据的结构体映射到含有指针的结构体中（&lt;/em&gt;e.g. p=(int **)pf&lt;em&gt; ), 将&lt;/em&gt;Program 3&lt;em&gt; 中结构体中的第一个整形数据域映射成指针。我们的定义简单的将映射看作是空操作。只有有效的指针才能被解引用，一个指针的capabilities在它创建的时候就已经确定了。 我们的定义中允许 &lt;/em&gt;Program 4* 的执行：&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;/* Program 4 */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int x;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int *p = &amp;amp;x;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int y = (int)p;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;int *q = (int *)y&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;*q = 5;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;&lt;em&gt;p&lt;/em&gt; 指针初始化得&lt;em&gt;b&lt;/em&gt; 和&lt;em&gt;e&lt;/em&gt; 一直会保持不变，尽管之后&lt;em&gt;p&lt;/em&gt; 被转化成整形y, 因此当&lt;em&gt;y&lt;/em&gt; 被转回为&lt;em&gt;q&lt;/em&gt; 并被解引用的时候，指针依然存在。从另一方面来看，如果在&lt;em&gt;Program 3&lt;/em&gt; 的最后加上 &lt;em&gt;p=(int \&lt;/em&gt;*)pf&lt;em&gt; , 紧接着 &lt;/em&gt;*p=malloc(sizeof(int))&lt;em&gt;， 之后的操作 &lt;/em&gt;**p&lt;em&gt;以及&lt;/em&gt;printf(“%d\n”,pf-&amp;gt;x)* 都是合法的。也就是说，一块内存区域一开始存储了整形数据，之后也可将整形数据修改为指向整形数据的指针，然后解引用指针，这样操作是安全的，但反过来却不行。&lt;/p&gt;
-&lt;p&gt;在某种意义上来说，基于capability定义的内存安全性是一种类型安全形式（type safety)。这里只有两种类型：指针类型和非指针类型。这种定义保证了 1) 指针只在定义了合法内存区域的安全模式下被创建. 2) 指针只有在它们是指向分配给它们的内存区域的情况下被解引用. 3) 那块内存区域仍然是定义过的。这种定义排除了上述所有的五种错误。&lt;/p&gt;
-&lt;p&gt;注：本文主要意译 PL Enthusiast 上的一篇文章： &lt;a href=&quot;http://www.pl-enthusiast.net/2014/07/21/memory-safety/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;What is memory safety&lt;/a&gt; &lt;/p&gt;
-&lt;h3 id=&quot;References&quot;&gt;&lt;a href=&quot;#References&quot; class=&quot;headerlink&quot; title=&quot;References&quot;&gt;&lt;/a&gt;References&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://www.pl-enthusiast.net/2014/07/21/memory-safety/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;What is memory safety&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://nebelwelt.net/publications/files/13Oakland.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;S&amp;amp;P’13 Eternal War in Memory &lt;/a&gt;&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h2&gt;&lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
-&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;转载本文请注明出处以及&lt;a href=&quot;http://www.pl-enthusiast.net/2014/07/21/memory-safety/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;What is memory safety&lt;/a&gt; 出处&lt;br&gt;原文地址: &lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/17/memory-safety/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/02/17/memory-safety/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;另，感谢&lt;a href=&quot;https://nebelwelt.net/publications/files/13Oakland.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;S&amp;amp;P’13 Eternal War in Memory &lt;/a&gt;的作者 &lt;a href=&quot;https://nebelwelt.net&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Mathis Payer教授&lt;/a&gt; 的某些答疑，感谢好友 &lt;a href=&quot;http://www.yebangyu.org/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;叶邦宇&lt;/a&gt; 指出的一些勘误。&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章&lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/&quot;&gt;内存持久战-攻击模型&lt;/a&gt;，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/&quot;&gt;内存持久战-防御机制&lt;/a&gt;做好铺垫。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;IEEE Security&amp;amp;Privacy’13&lt;/li&gt;
-&lt;li&gt;不访问未定义的内存&lt;/li&gt;
-&lt;li&gt;无限间距&lt;/li&gt;
-&lt;li&gt;Pointers as capabilities&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
     
     </summary>
     
