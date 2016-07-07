@@ -92,7 +92,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex3.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/mutex4.png">
-<meta property="og:updated_time" content="2016-07-07T16:04:36.000Z">
+<meta property="og:updated_time" content="2016-07-07T20:19:20.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(一)-锁不慢；锁竞争慢">
 <meta name="twitter:description" content="锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。">
@@ -349,7 +349,7 @@
         <p>锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。</p>
 <a id="more"></a>
 <p>在某些平台上或者当锁被高度竞争时，锁确实慢。另外，当你在开发一个多线程程序时，由于锁的引入，给性能带来巨大的瓶颈是很常见的。但这并不意味着所有的锁都是缓慢的。我会在这篇文章中解释，有的时候，使用锁的策略反而能带来非常好的性能。</p>
-<p>大家对锁的误解可能源自于某个最容易忽视的原因：不是所有的程序员都会意识到轻量级锁和内核锁的区别。我会在下一篇文章中对轻量级锁做专门介绍:<a href="">总是使用轻量级锁</a>。在这篇文章中，假设你在Windows平台下做C/C++开发，你需要的正是一个临界区对象。</p>
+<p>大家对锁的误解可能源自于某个最容易忽视的原因：不是所有的程序员都会意识到轻量级锁和内核锁的区别。我会在下一篇文章中对轻量级锁做专门介绍:<a href="">总是使用轻量级锁</a>。在这篇文章中，假设你在Windows平台下做C/C++开发，你需要的正是一个<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms682530.aspx" target="_blank" rel="external">Critical Section</a>对象。</p>
 <p>有时候，锁是慢的这个结论是由benchmark支撑的。例如，这篇文章在高负载状态下来测试锁的性能：每个线程必须持有锁来完成任何一项任务（高竞争），并且锁都是在极短的时间间隔下被持有（高频率）。这种方式似乎很完美，但在实际应用中，却要避免这种使用锁的方式<sup>注1</sup>。基于这种考虑，我设计了一种benchmark，同时包含对锁使用的最坏情况和最好情况。</p>
 <p>由于一些其它的考虑，大家可能不愿意用锁了。存在一系列的技术被称为无锁编程(或者不含锁编程<sup>注2</sup>）。无锁编程是极具挑战性的，但其本身可以在许多实际应用场景下带来高度的性能回报。据我所知，有些程序员会花费许多天甚至几周的时间来设计某种无锁算法，之后再做一系列测试，但在几个月后才发现隐藏的bug. 风险与回报并存对于相当一部分程序员都是有诱惑力的，这当然也包括我，在以后的几篇文章中会提到这些。有了无锁编程的诱惑，大家开始觉得锁使用起来很枯燥，缓慢并且非常糟糕。</p>
 <p>但也不能把锁贬的一文不值。在现实软件中，当大家为了保护内存分配器的时候，锁就是一个让人敬仰的东西。<a href="https://techcrunch.com/2016/07/01/exploiting-machine-learning-in-cybersecurity/?ncid=rss&amp;utm_source=feedburner&amp;utm_medium=feed&amp;utm_campaign=Feed%3A+Techcrunch+%28TechCrunch%29" target="_blank" rel="external">Doug Lea的分配器</a>是在游戏开发中非常著名的内存分配器<sup>注3</sup>，但其只支持单线程，这时候我们就必须使用锁机制来进行保护。在游戏运行时，经常会碰到多个线程抢占一个内存分配器，每秒钟抢占次数可达到15000次左右。在加载过程中，每秒钟会达到100000次甚至更多。虽然这并不是个大问题。但你却可以看到，锁能非常出色的来处理这些负载。</p>
