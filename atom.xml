@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-08T01:26:55.000Z</updated>
+  <updated>2016-07-08T16:26:19.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/06/20/mutexperf/"/>
     <id>http://yoursite.com/blog/2016/06/20/mutexperf/</id>
     <published>2016-06-20T15:01:55.000Z</published>
-    <updated>2016-07-08T01:26:55.000Z</updated>
+    <updated>2016-07-08T16:26:19.000Z</updated>
     
     <content type="html">&lt;p&gt;锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -41,7 +41,7 @@
 &lt;p&gt;结果很有意思。对于短的锁持有时间，比如持有时间占比&amp;lt;10%的情况, 系统可能达到很高的并发性。虽然不是最完美的并发，但很接近。说明锁是非常快的！&lt;/p&gt;
 &lt;p&gt;为了把结果解释清楚一些，我用&lt;a href=&quot;http://preshing.com/20111203/a-c-profiling-module-for-multithreaded-apis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这个分析器&lt;/a&gt;分析了多线程游戏引擎中的内存分配锁.在游戏运行时，每秒钟有15000个锁来自三个线程，锁的持有时间在2%左右。正好落在图表中左侧的舒适区(comfort zone).&lt;/p&gt;
 &lt;p&gt;这些结果都表明一旦锁持有时间超过90%，就没有必要再使用多线程了。这时，单线程会表现的更好。同时，最让人吃惊的是4个线程的性能都急剧下降到60%左右。这看起来像是个异常情况，所以我又重新运行这些测试很多次了，甚至还改变了测试顺序。得到的结果却是一样的。我对此最好的解释就是，测试可能触碰到了Windows分配器的盲区，我没有更进一步的去研究这个问题。&lt;/p&gt;
-&lt;h3 id=&quot;锁频率benchmark&quot;&gt;&lt;a href=&quot;#锁频率benchmark&quot; class=&quot;headerlink&quot; title=&quot;锁频率benchmark&quot;&gt;&lt;/a&gt;锁频率benchmark&lt;/h3&gt;&lt;p&gt;一个轻量级锁也会带来开销。正如我的&lt;a href=&quot;http://preshing.com/20111124/always-use-a-lightweight-mutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;下一篇&lt;/a&gt;文章中说的,对Windows临界区的lock/unlock成对操作会花费23.5ns（基于上述测试的CPU). 因此可以说明，每秒钟有15000个锁已经足够少了，锁的开销并不会在很大程度上影响整个结果。但如果我们提高锁频率，又会发生什么呢？&lt;/p&gt;
+&lt;h3 id=&quot;锁频率benchmark&quot;&gt;&lt;a href=&quot;#锁频率benchmark&quot; class=&quot;headerlink&quot; title=&quot;锁频率benchmark&quot;&gt;&lt;/a&gt;锁频率benchmark&lt;/h3&gt;&lt;p&gt;一个轻量级锁也会带来开销。正如我的&lt;a href=&quot;http://preshing.com/20111124/always-use-a-lightweight-mutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;下一篇&lt;/a&gt;文章中说的,对Windows Critical Section的lock/unlock成对操作会花费23.5ns（基于上述测试的CPU). 因此可以说明，每秒钟有15000个锁已经足够少了，锁的开销并不会在很大程度上影响整个结果。但如果我们提高锁频率，又会发生什么呢？&lt;/p&gt;
 &lt;p&gt;算法中，严格控制锁与锁之间执行的任务数，因此我做了一系列新的测试：锁与锁的间隔时间从10ns到最高31ns(相对应每秒钟大约32000次锁).每次测试都使用两个线程。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/mutex4.png&quot; alt=&quot;MUTEX4&quot;&gt;&lt;/p&gt;
 &lt;p&gt;正如你想的那样，锁频率很高的话，锁本身的开销就已经高于所执行的任务本身了. 在网上找到的一些benchmarks,包括前面提到的那个分析器， 都落在图表中的右下角。在这些高频率下，和一些CPU指令的规模一样，锁的间隔比较小。好消息是，当锁与锁之间的任务比较简单的时候，无锁编程更可行。&lt;/p&gt;
