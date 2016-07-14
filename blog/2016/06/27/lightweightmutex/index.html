@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/lightmutex1.png">
-<meta property="og:updated_time" content="2016-07-13T15:28:41.000Z">
+<meta property="og:updated_time" content="2016-07-14T01:53:59.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(二)-总是使用轻量级锁">
 <meta name="twitter:description" content="在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。">
@@ -362,7 +362,7 @@
 <p>一些前辈可能会说在以前的老平台下，只有重量级锁的实现，或者说那时只能用信号量来完成任务。但现在大部分平台都提供了轻量级锁的实现。就算平台没有提供，你也可以在应用层实现自己的轻量级锁，如果你可以容忍一些弊端和警告的话，甚至还可以在进程间共享锁。我的下一篇文章将会告诉大家如何<a href="">自己动手写轻量级锁</a>.</p>
 <h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><p>注释1： 当然，合理的计时框架应该是这样的：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">log</span> start time;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">  lock();</span><br><span class="line">  unlock();</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">log</span> end time;</span><br></pre></td></tr></table></figure>
-<p>不过这里的结果是墙上时钟(Clock Time)，而不是CPU时间。</p>
+<p>不过这里的结果是墙上时钟(Wall Clock)，而不是CPU时间。</p>
 <p>注释2： Linux下提供了两种轻量级锁，分别为<code>pthread_spinlock_t</code>和<code>pthread_mutex_t</code>。前者属于busy loop类型，当没有获得锁时会通过一个while循环进行等待；对于后者，当线程无法成功拿到锁时会调用<code>system_wait</code>，当前线程加入到mutex对应的等待队列中。一般来说，当临界区较短或者一个core上只有一个线程时，和mutex相比，使用spin lock性能较佳，因为避免了上下文切换。</p>
 <p>注释3：使用如下代码可以创建一把用于进程互斥的mutex:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pthread_mutexattr_t</span> mutexattr;  </span><br><span class="line">pthread_mutexattr_init(&amp;mutexattr);  </span><br><span class="line">pthread_mutexattr_setpshared(&amp;mutexattr,PTHREAD_PROCESS_SHARED);</span><br><span class="line"><span class="comment">//there is a mutex...</span></span><br><span class="line">pthread_mutex_init(&amp;mutex,&amp;mutexattr);</span><br></pre></td></tr></table></figure>

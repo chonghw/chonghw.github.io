@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-13T15:28:41.000Z</updated>
+  <updated>2016-07-14T01:53:59.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/06/27/lightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/06/27/lightweightmutex/</id>
     <published>2016-06-28T03:36:21.000Z</published>
-    <updated>2016-07-13T15:28:41.000Z</updated>
+    <updated>2016-07-14T01:53:59.000Z</updated>
     
     <content type="html">&lt;p&gt;在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -41,7 +41,7 @@
 &lt;p&gt;一些前辈可能会说在以前的老平台下，只有重量级锁的实现，或者说那时只能用信号量来完成任务。但现在大部分平台都提供了轻量级锁的实现。就算平台没有提供，你也可以在应用层实现自己的轻量级锁，如果你可以容忍一些弊端和警告的话，甚至还可以在进程间共享锁。我的下一篇文章将会告诉大家如何&lt;a href=&quot;&quot;&gt;自己动手写轻量级锁&lt;/a&gt;.&lt;/p&gt;
 &lt;h3 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h3&gt;&lt;p&gt;注释1： 当然，合理的计时框架应该是这样的：&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;built_in&quot;&gt;log&lt;/span&gt; start time;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; i = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;; i &amp;lt; &lt;span class=&quot;number&quot;&gt;1000000&lt;/span&gt;; i++)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;built_in&quot;&gt;log&lt;/span&gt; end time;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;不过这里的结果是墙上时钟(Clock Time)，而不是CPU时间。&lt;/p&gt;
+&lt;p&gt;不过这里的结果是墙上时钟(Wall Clock)，而不是CPU时间。&lt;/p&gt;
 &lt;p&gt;注释2： Linux下提供了两种轻量级锁，分别为&lt;code&gt;pthread_spinlock_t&lt;/code&gt;和&lt;code&gt;pthread_mutex_t&lt;/code&gt;。前者属于busy loop类型，当没有获得锁时会通过一个while循环进行等待；对于后者，当线程无法成功拿到锁时会调用&lt;code&gt;system_wait&lt;/code&gt;，当前线程加入到mutex对应的等待队列中。一般来说，当临界区较短或者一个core上只有一个线程时，和mutex相比，使用spin lock性能较佳，因为避免了上下文切换。&lt;/p&gt;
 &lt;p&gt;注释3：使用如下代码可以创建一把用于进程互斥的mutex:&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;pthread_mutexattr_t&lt;/span&gt; mutexattr;  &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pthread_mutexattr_init(&amp;amp;mutexattr);  &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pthread_mutexattr_setpshared(&amp;amp;mutexattr,PTHREAD_PROCESS_SHARED);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;//there is a mutex...&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;pthread_mutex_init(&amp;amp;mutex,&amp;amp;mutexattr);&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
