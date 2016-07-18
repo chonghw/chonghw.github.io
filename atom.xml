@@ -1574,7 +1574,7 @@ pip install distorm3
     <link href="http://yoursite.com/blog/2016/03/07/rootkit-tutorial/"/>
     <id>http://yoursite.com/blog/2016/03/07/rootkit-tutorial/</id>
     <published>2016-03-08T02:25:37.000Z</published>
-    <updated>2016-04-28T19:53:55.000Z</updated>
+    <updated>2016-07-18T16:19:06.000Z</updated>
     
     <content type="html">&lt;blockquote&gt;
 &lt;ul&gt;
@@ -1683,7 +1683,7 @@ pip install distorm3
 &lt;p&gt; &lt;a href=&quot;https://github.com&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://github.com&lt;/a&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;hr&gt;
-&lt;h3 id=&quot;0xA-Acknowledgement&quot;&gt;&lt;a href=&quot;#0xA-Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;0xA: Acknowledgement&quot;&gt;&lt;/a&gt;0xA: Acknowledgement&lt;/h3&gt;&lt;p&gt;本文有许多知识来源于 Phd shiqing以及新浪微博用户@Littlehann 两位大神的指点。&lt;/p&gt;
+&lt;h3 id=&quot;0xA-Acknowledgement&quot;&gt;&lt;a href=&quot;#0xA-Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;0xA: Acknowledgement&quot;&gt;&lt;/a&gt;0xA: Acknowledgement&lt;/h3&gt;&lt;p&gt;本文有部分知识来源于 Phd shiqing以及新浪微博用户@Littlehann 两位大神的指点。&lt;/p&gt;
 &lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
 &lt;p&gt;转载本文请注明出处:&lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/07/rootkit-tutorial/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/03/07/rootkit-tutorial/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/diting0x/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
