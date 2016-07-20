@@ -277,6 +277,168 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2016/07/04/writelightweightmutex/" itemprop="url">
+                  自己动手实现轻量级锁
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-07-04T09:16:31-04:00" content="2016-07-04">
+              2016-07-04
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/07/04/writelightweightmutex/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/07/04/writelightweightmutex/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>在<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/" target="_blank" rel="external">上一篇</a>文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手写轻量级锁也是有可能的。</p>
+<p>为什么要这么做呢？ 在过去，一些平台(如BeOS)的本地API中并没有提供轻量级锁的实现。如今，这已经不再是要担心的问题了。那我还要重点提这些主要是觉得深入了解同步原语的实现很有意思。作为一个好奇心比较重的人，我就这么做了，实现的轻量级锁在非竞争条件下能减少Windows Critical Section的50%开销。[更新：更进一步研究表明，在高竞争条件下，Windows Critical Section的表现还是要好很多]。</p>
+<p>准确地说，有许多方法可以完全在用户空间下实现互斥量(锁)，每种方法也都有自己的tradeoffs：</p>
+<ul>
+<li>Spin锁. 采用一种忙则等待的策略。可能会浪费CPU时间，最坏的情况是当多个线程运行在同一个CPU核时会导致活锁<sup>注1</sup>。尽管如此，一些程序员也已经在一些特定场景下找到了当切换到spin锁如何加速的方法。<sup>注2</sup></li>
+<li>Peterson算法. 像是为两个线程准备的spin锁<sup>注3</sup>。可以说是一个很巧妙的技巧，但似乎在当今平台上并没什么用处。值得注意的是由于Bartosz Milewski 在<a href="https://bartoszmilewski.com/2008/11/05/who-ordered-memory-fences-on-an-x86/" target="_blank" rel="external">讨论x86内存模型细节</a>的时候将Peterson算法作为案例研究(case study).其他人也在<a href="http://objectmix.com/c/742068-subtle-difference-between-c-0x-mm-other-mms.html" target="_blank" rel="external">类似的语境</a>下讨论过Peterson算法</li>
+<li>Charles Bloom写了篇很长的文章讨论<a href="http://cbloomrants.blogspot.com/2011/07/07-15-11-review-of-many-mutex.html" target="_blank" rel="external">不同锁的实现</a>。文章提供了非常有价值的信息，但对那些对C++ 11原子库和<a href="http://preshing.com/20120226/roll-your-own-lightweight-mutex/" target="_blank" rel="external">Relacy</a>不熟悉的人来说可能会望而却步。</li>
+</ul>
+<p>其中不乏非常先进的实现<sup>注4</sup>。本文则介绍一种相对简单的技术，会用到信号量和一些原子操作。当我写<a href="http://www.chongh.wiki/blog/2016/06/20/mutexperf/" target="_blank" rel="external">锁不慢;锁竞争慢</a>这篇文章时突然想到了这种方法,但不久后发现在1996年就已经有人用过了，那时候一些工程师把它叫做<a href="https://www.haiku-os.org/legacy-docs/benewsletter/Issue1-26.html#Engineering1-26" target="_blank" rel="external">Benaphore</a>. 下面是其在Win32平台下的C++实现(假设你使用的是X86 CPU架构).</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;intrin.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> Benaphore</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    LONG m_counter;</span><br><span class="line">    HANDLE m_semaphore;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    Benaphore()</span><br><span class="line">    &#123;</span><br><span class="line">        m_counter = <span class="number">0</span>;</span><br><span class="line">        m_semaphore = CreateSemaphore(NULL, <span class="number">0</span>, <span class="number">1</span>, NULL);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~Benaphore()</span><br><span class="line">    &#123;</span><br><span class="line">        CloseHandle(m_semaphore);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">Lock</span><span class="params">()</span></span><br><span class="line">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (_InterlockedIncrement(&amp;m_counter) &gt; <span class="number">1</span>) <span class="comment">// x86/64 guarantees acquire semantics</span></span><br><span class="line">        &#123;</span><br><span class="line">            WaitForSingleObject(m_semaphore, INFINITE);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">Unlock</span><span class="params">()</span></span><br><span class="line">    </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (_InterlockedDecrement(&amp;m_counter) &gt; <span class="number">0</span>) <span class="comment">// x86/64 guarantees release semantics</span></span><br><span class="line">        &#123;</span><br><span class="line">            ReleaseSemaphore(m_semaphore, <span class="number">1</span>, <span class="literal">NULL</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这种实现也可以作为对原子操作的简单介绍，它是许多无锁算法的核心。</p>
+<p><code>_InterlockedIncrement</code>是Win32平台下的原子读改写(read-modify-write(RMW))操作<sup>注5</sup>.  在同一块数据上，如果多个线程同时执行原子RMW操作，需要排队等候，每次执行其中一个线程。这样一来，也能推断出到底发生了什么以确保正确性。它也能工作在多核与多处理器系统上。</p>
+<p>每个现代处理器都提供了一些原子RMW指令，尽管其工具链提供的API在返回值上可能代表不同的含义。在Win32平台下，<code>_InterlockedIncrement</code>对整型数据执行加1操作并返回更新后的整型值。<code>m_counter</code>被初始化为0，第一个调用<code>Lock</code>的线程会从<code>_InterlockedIncrement</code>中得到返回值1. 这样就会跳过<code>WaitForSingleObject</code>调用，并立即返回。这把锁现在属于这个线程了，生活如此美好！</p>
+<p>如果另一个线程调用<code>Lock</code>，而此时第一个线程正持有这把锁，此线程将会从<code>_InterlockedIncrement</code>中得到返回值2。这就意味着这把锁现在处于忙碌状态。此时，再继续执行下去是不安全的，我们只好自食其果，让其跳转到某个开销比较大的内核调用中：<code>WaitForSingleObject</code> 。其会对信号量执行减1操作。我们在<code>CreateSemaphore</code>中将信号量初始化为0，因此此线程现在会被强制等待直到另一个线程出现并将信号量增加，才能继续执行。</p>
+<p>下一步，假设第一个线程调用<code>Unlock</code>。<code>_InterlockedDecrement</code>的返回值就是1. 这就意味着另一个线程正在等待这把锁，此时我们必须使用<code>ReleaseSemaphore</code>增加信号量。第二个线程才能继续执行，并拿到锁的持有权。</p>
+<p>尽管时间很短，在第二个线程调用<code>WaitForSingleObject</code>之前第一个线程会调用<code>ReleaseSemaphore</code>，所有的过程都会正常执行。如果你此时添加第三个线程，第四个线程或者任意数量的线程，也无所谓。为了更好的测试，你可以在实现中增加一个<code>TryLock</code>函数</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">TryLock</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    LONG result = _InterlockedCompareExchange(&amp;m_counter, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">    return (result == <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="性能与弊端"><a href="#性能与弊端" class="headerlink" title="性能与弊端"></a>性能与弊端</h2><p>你可能已经注意到<code>_InterlockedIncrement</code>前面的下划线。这是<code>InterlockedIncrement</code>的<a href="https://en.wikipedia.org/wiki/Intrinsic_function" target="_blank" rel="external">编译器独有版本</a>. 它会在适当的地方输出<code>lock xadd</code>指令。由于<code>Lock</code>正好定义在<code>Benaphore</code>类内部，编译器将其看作是一个内联函数。当调用<code>Benaphore::Lock</code>的时候，编译器在默认的发行版设置会将其编译成10条指令，而在无竞争的情况下，则不会出现函数调用。以下是反汇编代码：<br><img src="http://7xppf1.com1.z0.glb.clouddn.com/ownlightwightmutex1.png" alt="ownlightweightmutex1"><br>在无竞争的情况下，Benaphore甚至比Win32平台下的Critical Section性能还要好。就像我在<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/" target="_blank" rel="external">上一篇文章</a>对Mutex和Critical Section做过的测试一样，我也测试了Benaphore在无竞争情况下一对lock/unlock操作的时间。结果如下：</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/ownlightweightmutex2.png" alt="ownlightweightmutex2"></p>
+<p>在Win32平台下，如果你有一个程序每秒钟使用一百万次锁，Benaphore的实现能将程序整体的性能提升几个百分点。 如果你使用原子操作的常规版本而非内置版本，会发生一次跳转到kernel32.dll，这是Benaphore就没什么优势了：在我的多核处理器上测试需要49.8ns.</p>
+<p>并且，只要修改部分代码，你就可以在进程间共享Benaphore–这是Critical Section无法做到的。这时你必须将<code>m_counter</code>变量放进<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551(v=vs.85" target="_blank" rel="external">共享内存</a>.aspx),并使用一个已经命名的信号量。然而，依赖于你使用的实例情况，这可能会破坏隔离进程的初衷。如果一个进程在不恰当的时间终止，可能会将Benaphore置于一种不一致的状态，然后终止其它进程.</p>
+<p>这种实现是不可递归的.如果一些线程试图将同一个Benaphore锁上两次，就会出现死锁情况。我会在<a href="">下一篇</a>文章中，将这种实现扩展成可递归的.</p>
+<p>如果将这些代码放到另一种CPU架构中运行，比如Xbox 360或者多核的i0S设备，必须把<code>_InterlockedIncrement</code>宏替换成可以显示提供<a href="http://preshing.com/20120913/acquire-and-release-semantics/" target="_blank" rel="external">acquire和release语义</a>的东西。</p>
+<p>最后，如果你将Benaphore应用到其它平台，要当心它可能会出现<a href="https://en.wikipedia.org/wiki/Priority_inversion" target="_blank" rel="external">优先级反转</a>(priority inversion)问题<sup>注6</sup>。举个例子，MacOS X和Linux在使用POSIX锁的时候通过<a href="https://en.wikipedia.org/wiki/Priority_inheritance" target="_blank" rel="external">优先级继承</a>机制能避免优先级反转问题。 如果你使用的是Benaphore,会绕过这种操作系统机制，这并不会帮到你。但在Windows上情况是不一样的：不管你使用哪种同步原语，Windows都会通过<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ms684831(v=vs.85" target="_blank" rel="external">提升饥饿进程的优先级</a>.aspx)来避免优先级反转问题。<sup>注7</sup></p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。</p>
+<p>注意到作者说的是最坏的情况，实际上上述所说的这种情况一般不会出现，因为一般来说现代操作系统对线程的管理中，除了优先级之外还有时间片机制，不会出现A得不到调度的情况。</p>
+<p>不知道作者所说的活锁是不是这种情况。如果我所说有错，恳请读者指正。</p>
+<p>注2：一般说来，在实现spin lock的时候有一些优化的点。首先，需要区分单处理器和多处理器的情况；其次，在多处理器下，在自旋的过程中，随着尝试拿锁的失败次数越来越多，拿锁的间隔也应该越来越长，常用的是<code>Exponential Backoff</code>策略，间隔呈指数级上升。<code>pause</code>指令也常常在这个地方被使用，一是为了优化性能(和cpu指令预取有关)，二是节能减排。</p>
+<p>注3：<code>peterson</code>算法原先是为两个线程互斥访问而设计的算法，它的出发点和核心是仅仅使用store和load(写读操作，不使用<code>CAS</code>也就是<code>compare and swap</code>原子操作等)来实现互斥访问。由于在现有体系结构下，为了性能，乱序执行已经是常态，因此仅仅使用读写操作而不用其他的机制例如<code>Memory Barrier</code>来实现<code>peterson</code>算法非常困难，再加上推广到多个线程的方法并不明显，因此在业界鲜为人用。</p>
+<p>注4：实现spin lock的算法非常多，在《The Art Of Multiprocessor Programming》这本书的第七章中有详细的介绍，当contention非常严重的情况下，一种称为<code>MCS Queue Lock</code>的实现非常高效。另外，在实现spin lock的时候除了性能，还需要考虑多方面的指标：是否公平？是否满足先来先服务？scalability如何？等等等等。在保证公平这点上，<code>Ticket Lock</code>是妇孺皆知的算法，但是具有较差的scalability，更多细节感兴趣的朋友可以参考<a href="https://pdos.csail.mit.edu/papers/linux:lock.pdf" target="_blank" rel="external">这篇</a>论文。</p>
+<p>注5：RMW中，有家喻户晓的CAS(<code>Compare And Swap</code>)、TAS(<code>Test And Set</code>)、FAA(<code>Fetch And Add</code>)等。为了实现这些原子变量，早期的Intel CPU使用锁住总线的方式(正如大家在很多资料中看到的)；现在，一般使用cache一致性来实现，先把其他CPU上对应的cache line都invalid掉，然后修改该变量的CPU把自己的cache line置为exclusive，就可以放心的更改了。</p>
+<p>注6：为了解释优先级反转，考虑三个线程A、B、C，优先级分别为高中低。假设某时刻线程C持有锁，然后它被相对较高优先级的、cpu密集的线程B给抢占。当具有最高优先级的A尝试获得锁时，就反而被比它优先级低的B给block住了。这就是优先级反转。为了避免这种情况，除了文中介绍的常用的优先级继承这种机制外，简单的做法是线程持有spin lock的时候禁止抢占，而linux下则可以通过<code>futex</code>这种基础设施来避免优先级反转。</p>
+<p>注7：本文都是考虑Windows下的实现，我们不妨一起来看看在Linux + X86下，如何利用gcc这种伟大的编译器来实现自己的锁。</p>
+<p>不考虑scalability和性能，下面的非常简短的代码是一个简单spin lock实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> flag = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  <span class="keyword">while</span>(__sync_lock_test_and_set(&amp;flag, <span class="number">1</span>)) &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">unlock</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">  __sync_lock_release(&amp;flag, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然，也可以通过gcc内置的<code>__sync_bool_compare_and_swap</code>来实现，更多原子操作可以参考<a href="https://gcc.gnu.org/onlinedocs/gcc-5.4.0/gcc/_005f_005fsync-Builtins.html#_005f_005fsync-Builtins" target="_blank" rel="external">这里</a>。</p>
+<p>为了实现一个忙则睡眠的锁，可以使用<code>futex</code>，不过相比，这里面的水就非常深了。以下是抛砖引玉的实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;linux/futex.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;sys/syscall.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CAS(address, a, b) __sync_bool_compare_and_swap(address, a, b)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ACCESS_ONCE(x) (*((volatile __typeof__(x) *) &amp;x))</span></span><br><span class="line"><span class="keyword">class</span> MyMutex</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  MyMutex()</span><br><span class="line">  &#123;</span><br><span class="line">    val = <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span></span><br><span class="line">  </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (CAS(&amp;val, <span class="number">0</span>, <span class="number">1</span>)) &#123;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (ACCESS_ONCE(val) == <span class="number">2</span> || CAS(&amp;val, <span class="number">1</span>, <span class="number">2</span>)) &#123;</span><br><span class="line">        sys_futex(&amp;val, FUTEX_WAIT_PRIVATE, <span class="number">2</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="number">0</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!CAS(&amp;val, <span class="number">0</span>, <span class="number">2</span>));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">unlock</span><span class="params">()</span></span><br><span class="line">  </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (__sync_fetch_and_add(&amp;val, <span class="number">-1</span>) != <span class="number">1</span>) &#123;</span><br><span class="line">      val = <span class="number">0</span>;</span><br><span class="line">      sys_futex(&amp;val, FUTEX_WAKE_PRIVATE, <span class="number">1</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">long</span> <span class="title">sys_futex</span><span class="params">(<span class="keyword">void</span> *addr1, <span class="keyword">int</span> op, <span class="keyword">int</span> val1, <span class="keyword">struct</span> timespec *timeout, <span class="keyword">void</span> *addr2, <span class="keyword">int</span> val3)</span></span><br><span class="line">  </span>&#123;</span><br><span class="line">    return syscall(SYS_futex, addr1, op, val1, timeout, addr2, val3);</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="keyword">int</span> val;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>免责声明：自己拨弄<code>futex</code>不是一个好主意，慎重。这里提供的代码仅供参考和提供进一步学习的方向，不对正确性和安全性负责。如果用于生产环境出了问题，我们不承担任何责任。</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本译文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>与<a href="http://weibo.com/u/2495479763?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">skyline09_ </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20120226/roll-your-own-lightweight-mutex/" target="_blank" rel="external">http://preshing.com/20120226/roll-your-own-lightweight-mutex/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+          
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2016/06/27/lightweightmutex/" itemprop="url">
                   深入探索并发编程系列(二)-总是使用轻量级锁
                 </a>
@@ -1355,128 +1517,6 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2016/04/27/paxos-mutilpaxos/" itemprop="url">
-                  Paxos/Mutil-paxos 算法浅析
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-04-27T20:48:54-04:00" content="2016-04-27">
-              2016-04-27
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index">
-                    <span itemprop="name">Algorithm</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2016/04/27/paxos-mutilpaxos/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/04/27/paxos-mutilpaxos/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。</p>
-          <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2016/04/27/paxos-mutilpaxos/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-        
-      
-    </div>
-    
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
@@ -1522,7 +1562,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/">
-              <span class="site-state-item-count">26</span>
+              <span class="site-state-item-count">27</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
