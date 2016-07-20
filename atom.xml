@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-20T14:45:21.000Z</updated>
+  <updated>2016-07-20T14:52:44.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/07/04/writelightweightmutex/</id>
     <published>2016-07-04T13:16:31.000Z</published>
-    <updated>2016-07-20T14:45:21.000Z</updated>
+    <updated>2016-07-20T14:52:44.000Z</updated>
     
     <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
