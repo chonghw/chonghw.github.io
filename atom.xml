@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-20T14:52:44.000Z</updated>
+  <updated>2016-07-20T15:05:26.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/07/04/writelightweightmutex/</id>
     <published>2016-07-04T13:16:31.000Z</published>
-    <updated>2016-07-20T14:52:44.000Z</updated>
+    <updated>2016-07-20T15:05:26.000Z</updated>
     
     <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -46,7 +46,7 @@
 &lt;p&gt;并且，只要修改部分代码，你就可以在进程间共享Benaphore–这是Critical Section无法做到的。这时你必须将&lt;code&gt;m_counter&lt;/code&gt;变量放进&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/aa366551\(v=vs.85\&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;共享内存&lt;/a&gt;.aspx),并使用一个已经命名的信号量。然而，依赖于你使用的实例情况，这可能会破坏隔离进程的初衷。如果一个进程在不恰当的时间终止，可能会将Benaphore置于一种不一致的状态，然后终止其它进程.&lt;/p&gt;
 &lt;p&gt;这种实现是不可递归的.如果一些线程试图将同一个Benaphore锁上两次，就会出现死锁情况。我会在&lt;a href=&quot;&quot;&gt;下一篇&lt;/a&gt;文章中，将这种实现扩展成可递归的.&lt;/p&gt;
 &lt;p&gt;如果将这些代码放到另一种CPU架构中运行，比如Xbox 360或者多核的i0S设备，必须把&lt;code&gt;_InterlockedIncrement&lt;/code&gt;宏替换成可以显示提供&lt;a href=&quot;http://preshing.com/20120913/acquire-and-release-semantics/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;acquire和release语义&lt;/a&gt;的东西。&lt;/p&gt;
-&lt;p&gt;最后，如果你将Benaphore应用到其它平台，要当心它可能会出现&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inversion&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级反转&lt;/a&gt;(priority inversion)问题&lt;sup&gt;注6&lt;/sup&gt;。举个例子，MacOS X和Linux在使用POSIX锁的时候通过&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inheritance&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级继承&lt;/a&gt;机制能避免优先级反转问题。 如果你使用的是Benaphore,会绕过这种操作系统机制，这并不会帮到你。但在Windows上情况是不一样的：不管你使用哪种同步原语，Windows都会通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ms684831(v=vs.85&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;提升饥饿进程的优先级&lt;/a&gt;.aspx)来避免优先级反转问题。&lt;sup&gt;注7&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;最后，如果你将Benaphore应用到其它平台，要当心它可能会出现&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inversion&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级反转&lt;/a&gt;(priority inversion)问题&lt;sup&gt;注6&lt;/sup&gt;。举个例子，MacOS X和Linux在使用POSIX锁的时候通过&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inheritance&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级继承&lt;/a&gt;机制能避免优先级反转问题。 如果你使用的是Benaphore,会绕过这种操作系统机制，这并不会帮到你。但在Windows上情况是不一样的：不管你使用哪种同步原语，Windows都会通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ms684831\(v=vs.85\&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;提升饥饿进程的优先级&lt;/a&gt;.aspx)来避免优先级反转问题。&lt;sup&gt;注7&lt;/sup&gt;&lt;/p&gt;
 &lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。&lt;/p&gt;
 &lt;p&gt;注意到作者说的是最坏的情况，实际上上述所说的这种情况一般不会出现，因为一般来说现代操作系统对线程的管理中，除了优先级之外还有时间片机制，不会出现A得不到调度的情况。&lt;/p&gt;
 &lt;p&gt;不知道作者所说的活锁是不是这种情况。如果我所说有错，恳请读者指正。&lt;/p&gt;
