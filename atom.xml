@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-20T13:19:10.000Z</updated>
+  <updated>2016-07-20T13:21:02.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,9 +20,10 @@
     <link href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/07/04/writelightweightmutex/</id>
     <published>2016-07-04T13:16:31.000Z</published>
-    <updated>2016-07-20T13:19:10.000Z</updated>
+    <updated>2016-07-20T13:21:02.000Z</updated>
     
     <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手写轻量级锁也是有可能的。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;为什么要这么做呢？ 在过去，一些平台(如BeOS)的本地API中并没有提供轻量级锁的实现。如今，这已经不再是要担心的问题了。那我还要重点提这些主要是觉得深入了解同步原语的实现很有意思。作为一个好奇心比较重的人，我就这么做了，实现的轻量级锁在非竞争条件下能减少Windows Critical Section的50%开销。[更新：更进一步研究表明，在高竞争条件下，Windows Critical Section的表现还是要好很多]。&lt;/p&gt;
 &lt;p&gt;准确地说，有许多方法可以完全在用户空间下实现互斥量(锁)，每种方法也都有自己的tradeoffs：&lt;/p&gt;
 &lt;ul&gt;
@@ -69,7 +70,7 @@
     
     <summary type="html">
     
-      &lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊
+      &lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手写轻量级锁也是有可能的。&lt;/p&gt;
     
     </summary>
     
