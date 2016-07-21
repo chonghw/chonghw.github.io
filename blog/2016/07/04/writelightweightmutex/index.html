@@ -82,18 +82,18 @@
 
 
 
-<meta name="description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。">
+<meta name="description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入探索并发编程系列(三)-自己动手实现轻量级锁">
 <meta property="og:url" content="http://yoursite.com/blog/2016/07/04/writelightweightmutex/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。">
+<meta property="og:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/ownlightwightmutex1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/ownlightweightmutex2.png">
-<meta property="og:updated_time" content="2016-07-21T01:01:33.000Z">
+<meta property="og:updated_time" content="2016-07-21T01:39:13.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(三)-自己动手实现轻量级锁">
-<meta name="twitter:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。">
+<meta name="twitter:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。">
 <meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/ownlightwightmutex1.png">
 
 
@@ -344,9 +344,9 @@
       
 
       
-        <p>在<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/" target="_blank" rel="external">上一篇</a>文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是有可能的。</p>
+        <p>在<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/" target="_blank" rel="external">上一篇</a>文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。</p>
 <a id="more"></a>
-<p>为什么要这么做呢？ 在过去，一些平台(如BeOS)的本地API中并没有提供轻量级锁的实现。如今，这已经不再是要担心的问题了。那我还要重点提这些主要是觉得深入了解同步原语的实现很有意思。作为一个好奇心比较重的人，我就这么做了，实现的轻量级锁在非竞争条件下能减少Windows Critical Section的50%开销。[更新：更进一步研究表明，在高竞争条件下，Windows Critical Section的表现还是要好很多]。</p>
+<p>为什么要这么做呢？ 在过去，一些平台(如BeOS)的本地API中并没有提供轻量级锁的实现。如今，这已经不再是要担心的问题了。那我还要重点提这些主要是觉得深入了解同步原语的实现很有意思。作为一个好奇心比较重的人，我就这么做了，实现的轻量级锁在非竞争条件下相比Windows Critical Section能减少50%的开销。[更新：更进一步研究表明，在高竞争条件下，Windows Critical Section的表现还是要好很多]。</p>
 <p>准确地说，有许多方法可以完全在用户空间下实现互斥量(锁)，每种方法也都有自己的tradeoffs：</p>
 <ul>
 <li>Spin锁. 采用一种忙则等待的策略。可能会浪费CPU时间，最坏的情况是当多个线程运行在同一个CPU核时会导致活锁<sup>注1</sup>。尽管如此，一些程序员也已经在一些特定场景下找到了当切换到spin锁如何加速的方法。<sup>注2</sup></li>
