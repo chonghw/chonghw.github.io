@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-27T12:49:35.000Z</updated>
+  <updated>2016-07-27T23:07:20.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -16,11 +16,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>深入探索并发编程(四)-实现递归锁</title>
+    <title>深入探索并发编程系列(四)-实现递归锁</title>
     <link href="http://yoursite.com/blog/2016/07/11/recursivemutex/"/>
     <id>http://yoursite.com/blog/2016/07/11/recursivemutex/</id>
     <published>2016-07-11T12:47:43.000Z</published>
-    <updated>2016-07-27T12:49:35.000Z</updated>
+    <updated>2016-07-27T23:07:20.000Z</updated>
     
     <content type="html">&lt;p&gt;当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。&lt;br&gt;虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
