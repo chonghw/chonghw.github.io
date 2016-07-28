@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-07-27T23:07:20.000Z</updated>
+  <updated>2016-07-28T01:40:52.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/07/11/recursivemutex/"/>
     <id>http://yoursite.com/blog/2016/07/11/recursivemutex/</id>
     <published>2016-07-11T12:47:43.000Z</published>
-    <updated>2016-07-27T23:07:20.000Z</updated>
+    <updated>2016-07-28T01:40:52.000Z</updated>
     
     <content type="html">&lt;p&gt;当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。&lt;br&gt;虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -55,7 +55,7 @@
 &lt;li&gt;&lt;p&gt;你可能会注意到，&lt;code&gt;m_recurtion&lt;/code&gt;的值被修改的时候，不会用到任何原子操作。那是因为在调用&lt;code&gt;Lock&lt;/code&gt;中的&lt;code&gt;_InterlockedIncrement&lt;/code&gt;和&lt;code&gt;Unlock&lt;/code&gt;中的&lt;code&gt;_InterlockedDecrement&lt;/code&gt;之间，获取锁的线程对&lt;code&gt;m_owner&lt;/code&gt;和&lt;code&gt;m_recurtion&lt;/code&gt;都独自占有访问权，拥有所有必要的aquire和release语义&lt;sup&gt;注4&lt;/sup&gt;。在&lt;code&gt;m_recurtion&lt;/code&gt;使用原子操作是没必要的，而且会很浪费。&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;最后一点又是如何保证的呢？在非竞争情况下是通过原子操作来保证的(fast path)，而在有竞争的情况下，是通过信号量来保证的(slow path)。在X86和X64平台下，对&lt;code&gt;_InterlockedIncrement&lt;/code&gt;&lt;sup&gt;注5&lt;/sup&gt;的调用会生成&lt;code&gt;lock xadd&lt;/code&gt;指令，其充当一个完整的内存隔离器(memory barrier)&lt;sup&gt;注6&lt;/sup&gt;，以确保acquire和release语义。这是x86/x64独有的性质。如果你把这份代码放到多核的iOS设备上运行，比如说IPAD2，用&lt;code&gt;OSAtomicIncrement32&lt;/code&gt;替代&lt;code&gt;_InterlockedIncrement&lt;/code&gt;是远远不够的。你还必须要调用&lt;code&gt;OSAtomicIncrement32Barrier&lt;/code&gt;才能得到类似的保证。就算在Xbox360上，能共享Win32的API，但是却是运行在PowerPC上，正确的函数调用实际上是&lt;code&gt;InterlockedIncrementAcquire&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;最后一点又是如何保证的呢？在非竞争情况下是通过原子操作来保证的(fast path)，而在有竞争的情况下，是通过信号量来保证的(slow path)。在X86和X64平台下，对&lt;code&gt;_InterlockedIncrement&lt;/code&gt;&lt;sup&gt;注5&lt;/sup&gt;的调用会生成&lt;code&gt;lock xadd&lt;/code&gt;指令，其充当一个完整的memory barrier&lt;sup&gt;注6&lt;/sup&gt;，以确保acquire和release语义。这是x86/x64独有的性质。如果你把这份代码放到多核的iOS设备上运行，比如说IPAD2，用&lt;code&gt;OSAtomicIncrement32&lt;/code&gt;替代&lt;code&gt;_InterlockedIncrement&lt;/code&gt;是远远不够的。你还必须要调用&lt;code&gt;OSAtomicIncrement32Barrier&lt;/code&gt;才能得到类似的保证。就算在Xbox360上，能共享Win32的API，但是却是运行在PowerPC上，正确的函数调用实际上是&lt;code&gt;InterlockedIncrementAcquire&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;读到这一章节，相信很多读者都已经懵逼了。希望这种懵逼是值得的。我会在&lt;a href=&quot;&quot;&gt;以后的文章&lt;/a&gt;中更多的谈谈内存访问语义。&lt;/p&gt;
 &lt;p&gt;对于那些还没有钻研过同步原语的读者来说，&lt;code&gt;RecursiveBenaphore&lt;/code&gt;类给大家展示了，可递归锁实现的代码是多么的微妙。 这里每个细节的存在都是有原因的，里面的执行顺序很关键，隐含的一些假设和保证都发挥着重要作用&lt;sup&gt;注7&lt;/sup&gt;。&lt;/p&gt;
 &lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1：lock free并不是说不含锁的意思。不包含锁的英文一般是lockless。实际上，lock free考察的是由一组线程构成的一个系统。不管如何，至少能保证一个线程make progress因此保证系统是在make progress，那么这个算法或者系统或者说实现是lock free的。&lt;/p&gt;

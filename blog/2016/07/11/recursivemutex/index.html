@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/recursivemutex.png">
-<meta property="og:updated_time" content="2016-07-27T23:07:20.000Z">
+<meta property="og:updated_time" content="2016-07-28T01:40:52.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(四)-实现递归锁">
 <meta name="twitter:description" content="当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。">
@@ -376,7 +376,7 @@
 <li><p>你可能会注意到，<code>m_recurtion</code>的值被修改的时候，不会用到任何原子操作。那是因为在调用<code>Lock</code>中的<code>_InterlockedIncrement</code>和<code>Unlock</code>中的<code>_InterlockedDecrement</code>之间，获取锁的线程对<code>m_owner</code>和<code>m_recurtion</code>都独自占有访问权，拥有所有必要的aquire和release语义<sup>注4</sup>。在<code>m_recurtion</code>使用原子操作是没必要的，而且会很浪费。</p>
 </li>
 </ul>
-<p>最后一点又是如何保证的呢？在非竞争情况下是通过原子操作来保证的(fast path)，而在有竞争的情况下，是通过信号量来保证的(slow path)。在X86和X64平台下，对<code>_InterlockedIncrement</code><sup>注5</sup>的调用会生成<code>lock xadd</code>指令，其充当一个完整的内存隔离器(memory barrier)<sup>注6</sup>，以确保acquire和release语义。这是x86/x64独有的性质。如果你把这份代码放到多核的iOS设备上运行，比如说IPAD2，用<code>OSAtomicIncrement32</code>替代<code>_InterlockedIncrement</code>是远远不够的。你还必须要调用<code>OSAtomicIncrement32Barrier</code>才能得到类似的保证。就算在Xbox360上，能共享Win32的API，但是却是运行在PowerPC上，正确的函数调用实际上是<code>InterlockedIncrementAcquire</code></p>
+<p>最后一点又是如何保证的呢？在非竞争情况下是通过原子操作来保证的(fast path)，而在有竞争的情况下，是通过信号量来保证的(slow path)。在X86和X64平台下，对<code>_InterlockedIncrement</code><sup>注5</sup>的调用会生成<code>lock xadd</code>指令，其充当一个完整的memory barrier<sup>注6</sup>，以确保acquire和release语义。这是x86/x64独有的性质。如果你把这份代码放到多核的iOS设备上运行，比如说IPAD2，用<code>OSAtomicIncrement32</code>替代<code>_InterlockedIncrement</code>是远远不够的。你还必须要调用<code>OSAtomicIncrement32Barrier</code>才能得到类似的保证。就算在Xbox360上，能共享Win32的API，但是却是运行在PowerPC上，正确的函数调用实际上是<code>InterlockedIncrementAcquire</code></p>
 <p>读到这一章节，相信很多读者都已经懵逼了。希望这种懵逼是值得的。我会在<a href="">以后的文章</a>中更多的谈谈内存访问语义。</p>
 <p>对于那些还没有钻研过同步原语的读者来说，<code>RecursiveBenaphore</code>类给大家展示了，可递归锁实现的代码是多么的微妙。 这里每个细节的存在都是有原因的，里面的执行顺序很关键，隐含的一些假设和保证都发挥着重要作用<sup>注7</sup>。</p>
 <h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：lock free并不是说不含锁的意思。不包含锁的英文一般是lockless。实际上，lock free考察的是由一组线程构成的一个系统。不管如何，至少能保证一个线程make progress因此保证系统是在make progress，那么这个算法或者系统或者说实现是lock free的。</p>
