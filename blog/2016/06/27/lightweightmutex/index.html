@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/lightmutex1.png">
-<meta property="og:updated_time" content="2016-07-28T13:48:07.000Z">
+<meta property="og:updated_time" content="2016-07-31T02:50:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(二)-总是使用轻量级锁">
 <meta name="twitter:description" content="在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。">
@@ -367,7 +367,7 @@
 <p>注释3：使用如下代码可以创建一把用于进程互斥的mutex:</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pthread_mutexattr_t</span> mutexattr;  </span><br><span class="line">pthread_mutexattr_init(&amp;mutexattr);  </span><br><span class="line">pthread_mutexattr_setpshared(&amp;mutexattr,PTHREAD_PROCESS_SHARED);</span><br><span class="line"><span class="comment">//there is a mutex...</span></span><br><span class="line">pthread_mutex_init(&amp;mutex,&amp;mutexattr);</span><br></pre></td></tr></table></figure>
 <p>当前，前提是mutex位于进程间的共享内存上。另外，进程间通信和互斥一般不使用mutex。</p>
-<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由<a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a>与 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由<a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a>与<a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
 <p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>与<a href="http://weibo.com/u/2495479763?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">skyline09_ </a>阅读了初稿，并给出宝贵的意见。</p>
 <p>原文： <a href="http://preshing.com/20111124/always-use-a-lightweight-mutex/" target="_blank" rel="external">http://preshing.com/20111124/always-use-a-lightweight-mutex/</a></p>
 <p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
