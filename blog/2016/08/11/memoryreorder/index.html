@@ -82,28 +82,19 @@
 
 
 
-<meta name="description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。
-Intel在x86/x64体系结构手册的Volume 3, §8.2.3 中列出了一些可能会发生的诡异的事情。这里介绍其中一个最简单的例子。假设在内存中有两个整型变量x和y，都初始化为0。两个处理器并行执行下面的机器码：
-
-不要被上面的汇编代码给吓坏了。这个例子的确是阐述CPU执行顺序的最好方式。">
+<meta name="description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入探索内存并发系列(五)-将内存乱序逮个正着">
 <meta property="og:url" content="http://yoursite.com/blog/2016/08/11/memoryreorder/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。
-Intel在x86/x64体系结构手册的Volume 3, §8.2.3 中列出了一些可能会发生的诡异的事情。这里介绍其中一个最简单的例子。假设在内存中有两个整型变量x和y，都初始化为0。两个处理器并行执行下面的机器码：
-
-不要被上面的汇编代码给吓坏了。这个例子的确是阐述CPU执行顺序的最好方式。">
+<meta property="og:description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryreorder1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryorder2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryorder3.png">
-<meta property="og:updated_time" content="2016-08-11T15:11:00.000Z">
+<meta property="og:updated_time" content="2016-08-11T15:12:45.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索内存并发系列(五)-将内存乱序逮个正着">
-<meta name="twitter:description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。
-Intel在x86/x64体系结构手册的Volume 3, §8.2.3 中列出了一些可能会发生的诡异的事情。这里介绍其中一个最简单的例子。假设在内存中有两个整型变量x和y，都初始化为0。两个处理器并行执行下面的机器码：
-
-不要被上面的汇编代码给吓坏了。这个例子的确是阐述CPU执行顺序的最好方式。">
+<meta name="twitter:description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。">
 <meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryreorder1.png">
 
 
@@ -355,6 +346,7 @@ Intel在x86/x64体系结构手册的Volume 3, §8.2.3 中列出了一些可能�
 
       
         <p>当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。</p>
+<a id="more"></a>
 <p>Intel在<a href="http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html" target="_blank" rel="external">x86/x64体系结构手册</a>的Volume 3, §8.2.3 中列出了一些可能会发生的诡异的事情。这里介绍其中一个最简单的例子。假设在内存中有两个整型变量<code>x</code>和<code>y</code>，都初始化为0。两个处理器并行执行下面的机器码：</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memoryreorder1.png" alt=""></p>
 <p>不要被上面的汇编代码给吓坏了。这个例子的确是阐述CPU执行顺序的最好方式。每个处理器将1写入其中一个整型变量中，然后将另一个整型变量读取到寄存器中。（r1和r2只是x86中真实寄存器-如eax寄存器-的代表符号).</p>
