@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-08-12T01:37:18.000Z</updated>
+  <updated>2016-08-12T01:38:22.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/08/11/memoryreorder/"/>
     <id>http://yoursite.com/blog/2016/08/11/memoryreorder/</id>
     <published>2016-08-11T15:03:27.000Z</published>
-    <updated>2016-08-12T01:37:18.000Z</updated>
+    <updated>2016-08-12T01:38:22.000Z</updated>
     
     <content type="html">&lt;p&gt;当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -65,7 +65,7 @@
 &lt;p&gt;这里lock保证了&lt;code&gt;a=1&lt;/code&gt;和&lt;code&gt;b=2&lt;/code&gt;这两行代码不会被拉到lock之上执行；同理，也不会被拉到unlock之下执行。&lt;/p&gt;
 &lt;p&gt;因此，我们说lock和unlock分别提供了acquire语义和release语义。但是lock和unlock之间的代码是允许乱序的，也可能发生乱序的，而这正是这个实验的目的。&lt;/p&gt;
 &lt;p&gt;这里，lock对应文中的&lt;code&gt;sem_wait&lt;/code&gt;，unlock对应&lt;code&gt;sem_post&lt;/code&gt;。借此机会，读者可以对锁有更好的认识。&lt;/p&gt;
-&lt;p&gt;注4：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？请看下面的注4。&lt;/p&gt;
+&lt;p&gt;注4：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？请看下面的注5。&lt;/p&gt;
 &lt;p&gt;注5：到目前为止，读者可能会对通篇文章里的内容有两个疑问：&lt;/p&gt;
 &lt;p&gt;1，为什么CPU要乱序执行，难道是考虑性能吗？那为什么乱序就能提升性能？&lt;/p&gt;
 &lt;p&gt;2，为什么在Intel X86/64架构下，就只有写读（Store Load）发生乱序呢？读读呢？读写呢？&lt;/p&gt;

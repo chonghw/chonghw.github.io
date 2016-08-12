@@ -91,7 +91,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryreorder1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryorder2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memoryorder3.png">
-<meta property="og:updated_time" content="2016-08-12T01:37:18.000Z">
+<meta property="og:updated_time" content="2016-08-12T01:38:22.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(五)-将内存乱序逮个正着">
 <meta name="twitter:description" content="当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。">
@@ -388,7 +388,7 @@
 <p>这里lock保证了<code>a=1</code>和<code>b=2</code>这两行代码不会被拉到lock之上执行；同理，也不会被拉到unlock之下执行。</p>
 <p>因此，我们说lock和unlock分别提供了acquire语义和release语义。但是lock和unlock之间的代码是允许乱序的，也可能发生乱序的，而这正是这个实验的目的。</p>
 <p>这里，lock对应文中的<code>sem_wait</code>，unlock对应<code>sem_post</code>。借此机会，读者可以对锁有更好的认识。</p>
-<p>注4：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？请看下面的注4。</p>
+<p>注4：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？请看下面的注5。</p>
 <p>注5：到目前为止，读者可能会对通篇文章里的内容有两个疑问：</p>
 <p>1，为什么CPU要乱序执行，难道是考虑性能吗？那为什么乱序就能提升性能？</p>
 <p>2，为什么在Intel X86/64架构下，就只有写读（Store Load）发生乱序呢？读读呢？读写呢？</p>
