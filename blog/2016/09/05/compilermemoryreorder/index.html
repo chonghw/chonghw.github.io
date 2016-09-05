@@ -1,0 +1,788 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="写在最前:掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入探索并发编程系列(六)-编译期间内存乱序">
+<meta property="og:url" content="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="写在最前:掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png">
+<meta property="og:updated_time" content="2016-09-05T23:02:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入探索并发编程系列(六)-编译期间内存乱序">
+<meta name="twitter:description" content="写在最前:掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 深入探索并发编程系列(六)-编译期间内存乱序 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                深入探索并发编程系列(六)-编译期间内存乱序
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-05T17:44:17-04:00" content="2016-09-05">
+              2016-09-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/09/05/compilermemoryreorder/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/09/05/compilermemoryreorder/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>写在最前:掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。<br><a id="more"></a><br>在众多资料中，preshing这个博客质量很高，经过和作者邮件沟通获得授权后，我们着手翻译了他的一系列文章并加上注释，构成了“深入探索并发编程系列”。翻译，力求精准又易懂；注释，力求全面又有益，希望对大家理解这个系列有所帮助，也希望可以为社区做点贡献。</p>
+<hr>
+<p>在写完C/C++代码之后与CPU执行之前，代码会根据一定规则在与内存的交互过程中发生乱序。内存执行顺序的变化在编译器(编译期间)和cpu(运行期间)中都会发生，其目的都是为了让代码运行的更快。</p>
+<p>编译器开发者和cpu厂商都遵守着内存乱序的基本原则，简单归纳如下：</p>
+<pre><code>不能改变单线程程序的行为
+</code></pre><p>这条原则带来的影响就是，写单线程代码的程序员都忽视了内存乱序的影响。在多线程编程中，由于互斥量，信号量和事件都在设计的时候都阻止了它们调用点中的内存乱序，内存乱序的影响同样被忽视了。只有当使用无锁(lock-free)<sup>注1</sup>技术时–内存在线程间共享而没有任何的互斥量-<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">内存乱序的效果</a>才会显露无疑.</p>
+<p>要提醒你的是，在多核平台下写lock-free的代码而不发生内存乱序也是有可能的。就像我在<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/" target="_blank" rel="external">无锁编程介绍</a>中提到的那样，可以利用顺序一致类型来达到目的(比如java中的volatile变量或C++11原子类型)，这样做的后果是有可能会牺牲一些性能。我不去详细谈论这些细节。在这篇文章中，集中关注编译器对常规，非顺序一致类型的内存乱序情况。</p>
+<h3 id="编译器指令乱序"><a href="#编译器指令乱序" class="headerlink" title="编译器指令乱序"></a>编译器指令乱序</h3><p>就像你了解的那样,编译器的工作就是将人们可读的源代码转化为CPU可读的机器码。在转换过程中，编译器是可以非常自由的改变其中行为的。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png" alt=""></p>
+<p>其中一个例子就是可以让指令乱序-再次说明，仅仅在单线程程序的行为不会改变的这一基本原则下才有效。<br>这种指令乱序现象主要发生在编译器优化开启的情况下。看看下面的函数</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> A, B;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    A = B + <span class="number">1</span>;</span><br><span class="line">    B = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果使用GCC 4.6.1编译这个函数而没有开启编译器优化选项时，会产生以下机器代码，使用-s选项可以看到其中的汇编代码。对变量B的写操作恰好发生在对变量A写操作之后，这和源代码中的行为是一致的。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -S -masm=intel foo.c</span><br><span class="line">$ cat foo.s</span><br><span class="line">        ...</span><br><span class="line">        mov     eax, DWORD PTR _B  (redo this at home...)</span><br><span class="line">        add     eax, <span class="number">1</span></span><br><span class="line">        mov     DWORD PTR _A, eax</span><br><span class="line">        mov     DWORD PTR _B, <span class="number">0</span></span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>当使用-o2开启编译器优化选项时，结果是这样的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -O2 -S -masm=intel foo.c</span><br><span class="line">$ cat foo.s</span><br><span class="line">        ...</span><br><span class="line">        mov     eax, DWORD PTR B</span><br><span class="line">        mov     DWORD PTR B, <span class="number">0</span></span><br><span class="line">        add     eax, <span class="number">1</span></span><br><span class="line">        mov     DWORD PTR A, eax</span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>这时，编译器就有选择的余地了，内存会发生乱序，在写变量A之前会先写变量B。有什么理由不这么做呢？这时内存乱序的基本规则并没有被打破。对于一个单线程程序来说，并不会发觉其中的差异<sup>注2</sup>。</p>
+<p>另一方面，在写lock-free代码时,这种编译器导致的乱序行为会引起一些问题。下面是一个经常被引用的例子，共享标志用来指示一些其它的共享数据被published了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> Value;</span><br><span class="line"><span class="keyword">int</span> IsPublished = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sendValue</span><span class="params">(<span class="keyword">int</span> x)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    Value = x;</span><br><span class="line">    IsPublished = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>想象一下当编译器在对Value进行写操作之前，先写IsPublished变量发生乱序会是什么情况。即使是在单处理器程序中，我们也会遇到一个问题：操作系统以抢占式方式调度某个线程在两次写操作之间运行，这时让其它线程以为Value变量已经更新过了，而实际上并没有。</p>
+<p>当然，编译器可能并不会将那些操作乱序，产生的机器代码在任何的多核CPU中（比如x86/x64)或者在任何CPU类型的单核处理器中，都会像lock-free方式一样工作，这个属于<a href="http://preshing.com/20120930/weak-vs-strong-memory-models/" target="_blank" rel="external">强内存模型</a><br>如果正好就在那样的环境中工作，只能说我们是幸运的。毫无疑问，识别共享变量的内存乱序一定要多练习，并且要确保内存执行顺序能正确实施，如你所愿。</p>
+<h3 id="显式Compiler-Barriers"><a href="#显式Compiler-Barriers" class="headerlink" title="显式Compiler Barriers"></a>显式Compiler Barriers</h3><p>阻止编译器级别的内存乱序最简单方式就是使用一种比较特殊的直接方法，称作compiler barrier. 我已经在前面的文章中介绍了GCC的compiler barrier. 在Microsoft Visual C++中，_ReadWriteBarrier充当同样的角色。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> A, B;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    A = B + <span class="number">1</span>;</span><br><span class="line">    <span class="function"><span class="keyword">asm</span> <span class="title">volatile</span><span class="params">(<span class="string">""</span> ::: <span class="string">"memory"</span>)</span></span>;</span><br><span class="line">    B = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样修改之后，我们可以开启编译器优化，内存的写指令会保证你想要的执行顺序</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -O2 -S -masm=intel foo.c</span><br><span class="line">$ cat foo.s</span><br><span class="line">        ...</span><br><span class="line">        mov     eax, DWORD PTR _B</span><br><span class="line">        add     eax, <span class="number">1</span></span><br><span class="line">        mov     DWORD PTR _A, eax</span><br><span class="line">        mov     DWORD PTR _B, <span class="number">0</span></span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>类似的，如果我们想保证sendMessage例子的正确性，并且只关心单核处理器系统，那么这里也需要引入compiler barrier. 不仅sending操作需要compiler barrier来阻止写操作乱序，接收端在读操作之间同样需要。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COMPILER_BARRIER() asm volatile(<span class="string">""</span> ::: <span class="string">"memory"</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> Value;</span><br><span class="line"><span class="keyword">int</span> IsPublished = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sendValue</span><span class="params">(<span class="keyword">int</span> x)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    Value = x;</span><br><span class="line">    COMPILER_BARRIER();          <span class="comment">// prevent reordering of stores</span></span><br><span class="line">    IsPublished = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">tryRecvValue</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (IsPublished)</span><br><span class="line">    &#123;</span><br><span class="line">        COMPILER_BARRIER();      <span class="comment">// prevent reordering of loads</span></span><br><span class="line">        return Value;</span><br><span class="line">    &#125;</span><br><span class="line">    return <span class="number">-1</span>;  <span class="comment">// or some other value to mean not yet received</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就像我提到的那样，compiler barrier在单核处理器中已经足够能用来阻止内存乱序了。但现在已经是2012年了，更常见的是多核处理器。如果我们要保证交互在多处理器环境中依然能保证想要的执行顺序，并且能适用任意的CPU架构，仅仅compiler barrier是不够的。这时我们需要一个CPU fence指令，或者在运行时能执行充当memory barrier的操作<sup>注3</sup>。我会在<a href="http://preshing.com/20120710/memory-barriers-are-like-source-control-operations/" target="_blank" rel="external">下面文章</a>中介绍更多这方面的内容.</p>
+<p>Linux内核的预处理器宏(比如smb_rmb)可以充当CPU fence指令，这些宏在单核处理器系统中编译时被降级为简单的 compiler barriers<sup>注4</sup>.</p>
+<h3 id="隐式Compiler-Barrier"><a href="#隐式Compiler-Barrier" class="headerlink" title="隐式Compiler Barrier"></a>隐式Compiler Barrier</h3><p>也有其它的方法来阻止编译器乱序。当然，上面提到的CPU fence指令就能直接作为compiler barriers. 下面是PowerPC系统中CPU fence指令的例子，它在GCC中被定义为一个宏：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> RELEASE_FENCE() asm volatile(<span class="string">"lwsync"</span> ::: <span class="string">"memory"</span>)</span></span><br></pre></td></tr></table></figure>
+<p>我们可以在代码中任意位置放置RELEASE_FENSE,来阻止处理器乱序以及编译器乱序。举个例子，在多处理器环境下，它可以让sendValue函数变得更加安全。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sendValue</span><span class="params">(<span class="keyword">int</span> x)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    Value = x;</span><br><span class="line">    RELEASE_FENCE();</span><br><span class="line">    IsPublished = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在新的C++11原子库标准中，每个non-relaxed原子操作也可以作为一个compiler barrier。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> Value;</span><br><span class="line"><span class="built_in">std</span>::atomic&lt;<span class="keyword">int</span>&gt; IsPublished(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">sendValue</span><span class="params">(<span class="keyword">int</span> x)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    Value = x;</span><br><span class="line">    <span class="comment">// &lt;-- reordering is prevented here!</span></span><br><span class="line">    IsPublished.store(<span class="number">1</span>, <span class="built_in">std</span>::memory_order_release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>和你想的那样，每个包含compiler barrier的函数自身都可以作为一个compiler barrier，这个函数也可以是内联的。(然而，微软的文档中表明Visual C++ 编译器的早期版本并不是那么回事)</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">doSomeStuff</span><span class="params">(Foo* foo)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    foo-&gt;bar = <span class="number">5</span>;</span><br><span class="line">    sendValue(<span class="number">123</span>);       <span class="comment">// prevents reordering of neighboring assignments</span></span><br><span class="line">    foo-&gt;bar2 = foo-&gt;bar;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实际上，大多数的函数调用不管它们自身是否包含compiler barrier,都可以充当compiler barrier. 这里排除那些内联函数，用pure属性声明的函数<sup>注5</sup>，以及开启了link-time code generation编译链接选项的情况<sup>注6</sup>。除了上述这些情况，由于编译器并不清楚函数的副作用，对一个外部函数的调用比compiler barrier还要强。编译器必须要放弃那些对此函数可见的内存上的任何假设。</p>
+<p>当你能考虑到这些的时候，就可以高枕无忧了。在上面的代码中，假设sendValue函数在一个外部库里实现。编译器是怎么知道sendValue不依赖于foo-&gt;bar的值呢？它又是如何知道sendValue不会在内存中修改foo-&gt;bar呢？它并不知道。因此，为了遵守内存执行顺序的基本原则，编译器不能对sendValue函数的外部调用做任何乱序操作。类似地，它必须在调用结束后在内存中读取foo-&gt;bar的新值，而不是假设它仍然是5，尽管这时已经开启了优化选项。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ gcc -O2 -S -masm=intel dosomestuff.c</span><br><span class="line">$ cat dosomestuff.s</span><br><span class="line">        ...</span><br><span class="line">        mov    ebx, DWORD PTR [esp+<span class="number">32</span>]</span><br><span class="line">        mov    DWORD PTR [ebx], <span class="number">5</span>            <span class="comment">// Store 5 to foo-&gt;bar</span></span><br><span class="line">        mov    DWORD PTR [esp], <span class="number">123</span></span><br><span class="line">        call    sendValue                     <span class="comment">// Call sendValue</span></span><br><span class="line">        mov    eax, DWORD PTR [ebx]          <span class="comment">// Load fresh value from foo-&gt;bar</span></span><br><span class="line">        mov    DWORD PTR [ebx+<span class="number">4</span>], eax</span><br><span class="line">        ...</span><br></pre></td></tr></table></figure>
+<p>可以看到，尽管当编译器必须从内存中重新读取数据的时候，阻止编译器指令乱序的例子也有很多。我相信这些隐藏的规则构成了人们长期认为C语言中的volatile数据类型对正确编写多线程代码来说并不是必要的原因之一<sup>注7</sup>。</p>
+<h3 id="横空出现的写操作"><a href="#横空出现的写操作" class="headerlink" title="横空出现的写操作"></a>横空出现的写操作</h3><p>指令乱序让无锁编程变得tricky?在C++11标准化之前，并没有技术上的规则来阻止编译器做tricky的优化. 具体来说，在没有任何写操作的情况下，编译器会很自由的引入写操作。下面是个非常简单的例子，也是受到Hans Boehm<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html" target="_blank" rel="external">一些文章</a>中例子的启发。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> A, B;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (A)</span><br><span class="line">        B++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>尽管在实际中这看起来不太现实，没有任何东西能阻止编译器在检查变量A之前将变量B递增传递给寄存器，结果会生成下面的机器码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> r = B;    <span class="comment">// Promote B to a register before checking A.</span></span><br><span class="line">    <span class="keyword">if</span> (A)</span><br><span class="line">        r++;</span><br><span class="line">    B = r;          <span class="comment">// Surprise! A new memory store where there previously was none.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再强调一次，这时内存执行顺序的基本原则仍然遵守了。一个单线程程序可能对此一无所知。但在多线程环境下，尽管在变量A是0的时候，我们的函数却错误地消除了线程对变量B并发的修改，这和原始的代码情况不同<sup>注8</sup>。尽管我们已经用C/C++写多线程和无锁代码几十年了，这种晦涩但在技术上可行的情况也就是人们说C++不支持线程的一部分原因。</p>
+<p>我不知道现实中是否有人成为这种横空出现的写操作的受害者。可能是因为我们倾向编写的无锁代码的类型（比较固定），以至于并没有太多的优化机会来适应这种模式。我觉得当我看到编译器产生这种代码变换时，我会去找相应的方法来避免其所带来的影响.如果这些发生在你身上，可以在评论中让我看到。</p>
+<p>在任何的情况下，新的C++11 标准明确的说明了编译器会引入数据竞争的情况。细节可以在最近的C++11 手稿的1.10.22章节中找到</p>
+<pre><code>Compiler transformations that introduce assignments to a potentially shared memory location that would not be modified by the abstract machine are generally precluded by this standard.
+</code></pre><h3 id="为什么有编译器乱序"><a href="#为什么有编译器乱序" class="headerlink" title="为什么有编译器乱序"></a>为什么有编译器乱序</h3><p>就像我在文章开头提到的那样，编译器会像处理器一样以同样的原因-性能优化-来修改内存执行顺序。这种优化是现代CPU复杂性的直接产物。</p>
+<p>当CPU最多只有几十万个晶体管的时候，我有点怀疑编译器在80年代早期就已经做了很多指令乱序的工作。我这个说法可能有点惊世骇俗。那时候并没有太多关于编译器乱序的观点。从那时起，根据摩尔定律，CPU的设计者将晶体管的数目成10000倍的增长，那些晶体管设计了许多trick,比如流水线，内存预取，ILP以及最近的多核。这些特征的结果就是，我们可以看到程序中指令的执行顺序在性能上能产生很大的差异。</p>
+<p>Intel在1993年发布的首个Pentium处理器，其所谓的U和V管道，是我记得的第一个人们经常说起关于<a href="http://www.agner.org/optimize/microarchitecture.pdf" target="_blank" rel="external">管道和指令乱序</a>的处理器。最近，当我在Visual Studio上开始涉及X86汇编代码时。我对其中极少数的指令乱序情况感到非常惊讶。另一方面，我在Playstation 3平台上写SPU汇编代码时，发现编译器非常高效<sup>注9</sup>。这只是一些有趣的经历，并不能反应其他人的情况，当然也不影响我们在lock-free的代码中保证内存执行顺序的手段和方法<sup>注10</sup>。</p>
+<h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><p>注1：lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。</p>
+<p>注2：假设A、B的初始值都是0，那么对于单线程程序而言，foo执行完A的的值为1，B的值为0。保证这点的情况下，编译器可以随意优化。这里重要的是影响和效果。</p>
+<p>注3：很多时候我们把barrier分为两种：compiler级别和cpu级别。compiler级别的memory barrier只阻止编译器乱序，不影响CPU乱序，不对CPU乱序执行进行约束；而CPU级别的memory barrier则束缚了编译器和cpu两者的乱序。</p>
+<p>注4：在linux里，<code>barrier()</code>是编译器级别的memory barrier；<code>smp_wb()</code>是cpu级别的memory barrier。</p>
+<p>注5：指在gcc中，加了pure attribute的函数：</p>
+<p>void <strong>attribute</strong> ((pure)) foo()<br>{<br>  …<br>}</p>
+<p>根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说<code>strlen</code>和<code>memcpy</code>。</p>
+<p>因此，对于这类函数，gcc就可以施展手脚，优化一番了。比如说，</p>
+<p>int <strong>attribute</strong> ((pure)) strlen(char *p)<br>{<br>  …<br>}</p>
+<p>那么假如你写了这样的代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *p = <span class="string">"abc"</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(p); i++) &#123;</span><br><span class="line">  <span class="comment">//do sth</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>那么gcc可以将它优化为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *p = <span class="string">"abc"</span>;</span><br><span class="line"><span class="keyword">int</span> tmp = <span class="built_in">strlen</span>(p);</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tmp; i++) &#123;</span><br><span class="line">  <span class="comment">//do sth</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注6：gcc提供了必须inline和必须不inline的feature，很有意思。</p>
+<p>void <strong>attribute</strong> ((noinline)) foo()<br>{<br>  …<br>}</p>
+<p>void <strong>attribute</strong> ((always_inline)) foo()<br>{<br>  …<br>}</p>
+<p>注7：C/C++中的volatile常常被人错误使用，很多朋友错误以为它和Java中的volatile一样。其实不然。</p>
+<p>在C/C++中的volatile，有两个重要特点：</p>
+<p>1，它不提供任何的防止乱序的功能。</p>
+<p>2，它不保证是原子的。</p>
+<p>也就是说，以下操作不一定是原子的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">volatile</span> <span class="keyword">int64_t</span> a = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+<p>不考虑具体的、特定的平台和环境，以下操作是未定义行为：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">volatile</span> <span class="keyword">int</span> is_ready = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">int</span> info = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">void</span> thread_A</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">while</span>(is_ready == <span class="number">0</span>)</span><br><span class="line">  &#123;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//use info;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">void</span> thread_B</span><br><span class="line">&#123;</span><br><span class="line">  info = <span class="number">123</span>;</span><br><span class="line">  is_ready = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当线程A发现is_ready不等于0而退出循环时，不能保证线程B已经执行了<code>info=123</code>，因为volatile不提供memory ordering保证，线程B里的两条语句可能被CPU乱序执行(顺便一说，在Intel X86体系结构下，这两条语句不会被CPU乱序执行)。</p>
+<p>正确的做法是建立happens-before关系。更多细节，敬请继续关注我们的深入探索并发编程系列。</p>
+<p>注8：在多线程环境下，本来是要对B进行并发修改的，优化后却变成了对局部寄存器变量的修改，显然是不符合预期的。</p>
+<p>注9：原文为really went to town，这里的意思是说，和前面的x86中的极少数乱序相比，在Playstation 3下可以看到大量的乱序情况。</p>
+<p>注10：本文的重点是编译器的乱序；关于更多CPU乱序的细节和内容，请参考<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">上一篇</a>文章。</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>与<a href="http://weibo.com/u/2495479763?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">skyline09_ </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20120625/memory-ordering-at-compile-time/" target="_blank" rel="external">http://preshing.com/20120625/memory-ordering-at-compile-time/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/08/11/memoryreorder/" rel="next" title="深入探索并发编程系列(五)-将内存乱序逮个正着">
+                <i class="fa fa-chevron-left"></i> 深入探索并发编程系列(五)-将内存乱序逮个正着
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/09/05/compilermemoryreorder/"
+           data-title="深入探索并发编程系列(六)-编译期间内存乱序" data-url="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">30</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#编译器指令乱序"><span class="nav-number">1.</span> <span class="nav-text">编译器指令乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#显式Compiler-Barriers"><span class="nav-number">2.</span> <span class="nav-text">显式Compiler Barriers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#隐式Compiler-Barrier"><span class="nav-number">3.</span> <span class="nav-text">隐式Compiler Barrier</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#横空出现的写操作"><span class="nav-number">4.</span> <span class="nav-text">横空出现的写操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么有编译器乱序"><span class="nav-number">5.</span> <span class="nav-text">为什么有编译器乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注释"><span class="nav-number">6.</span> <span class="nav-text">注释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">7.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
