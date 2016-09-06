@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-06T13:33:10.000Z</updated>
+  <updated>2016-09-06T13:53:48.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/"/>
     <id>http://yoursite.com/blog/2016/09/05/compilermemoryreorder/</id>
     <published>2016-09-05T21:44:17.000Z</published>
-    <updated>2016-09-06T13:33:10.000Z</updated>
+    <updated>2016-09-06T13:53:48.000Z</updated>
     
     <content type="html">&lt;p&gt;写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。&lt;br&gt;&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;&lt;br&gt;在众多资料中，preshing这个博客质量很高，经过和作者邮件沟通获得授权后，我们着手翻译了他的一系列文章并加上注释，构成了“深入探索并发编程系列”。翻译，力求精准又易懂；注释，力求全面�又有益，希望对大家理解这个系列有所帮助，也希望可以为社区做点贡献。&lt;/p&gt;
 &lt;hr&gt;
@@ -92,7 +92,7 @@
 &lt;p&gt;void &lt;strong&gt;attribute&lt;/strong&gt; ((always_inline)) foo()&lt;br&gt;{&lt;br&gt;  …&lt;br&gt;}&lt;/p&gt;
 &lt;p&gt;注7：指在gcc中，加了pure attribute的函数：&lt;/p&gt;
 &lt;p&gt;void &lt;strong&gt;attribute&lt;/strong&gt; ((pure)) foo()&lt;br&gt;{&lt;br&gt;  …&lt;br&gt;}&lt;/p&gt;
-&lt;p&gt;根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说&lt;code&gt;strlen&lt;/code&gt;和`memcmp’.&lt;/p&gt;
+&lt;p&gt;根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说&lt;code&gt;strlen&lt;/code&gt;和&lt;code&gt;memcmp&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;因此，对于这类函数，gcc就可以施展手脚，优化一番了。比如说，&lt;/p&gt;
 &lt;p&gt;int &lt;strong&gt;attribute&lt;/strong&gt; ((pure)) strlen(char *p)&lt;br&gt;{&lt;br&gt;  …&lt;br&gt;}&lt;/p&gt;
 &lt;p&gt;那么假如你写了这样的代码：&lt;/p&gt;
