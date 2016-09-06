@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png">
-<meta property="og:updated_time" content="2016-09-06T02:26:27.000Z">
+<meta property="og:updated_time" content="2016-09-06T13:33:10.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(六)-编译期间内存乱序">
 <meta name="twitter:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
@@ -385,7 +385,7 @@
 <p>可以看到，尽管当编译器必须从内存中重新读取数据的时候，阻止编译器指令乱序的例子也有很多。我相信这些隐藏的规则构成了人们长期认为C语言中的volatile数据类型对正确编写多线程代码来说并不是必要的原因之一<sup>注9</sup>。</p>
 <h3 id="横空出现的写操作"><a href="#横空出现的写操作" class="headerlink" title="横空出现的写操作"></a>横空出现的写操作</h3><p>指令乱序让无锁编程变得tricky?在C++11标准化之前，并没有技术上的规则来阻止编译器做tricky的优化. 具体来说，在没有任何写操作的情况下，编译器会很自由的引入写操作。下面是个非常简单的例子，也是受到Hans Boehm<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2338.html" target="_blank" rel="external">一些文章</a>中例子的启发。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> A, B;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (A)</span><br><span class="line">        B++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>尽管在实际中这看起来不太现实，没有任何东西能阻止编译器在检查变量A之前将变量B递增传递给寄存器，结果会生成下面的机器码：</p>
+<p>尽管在实际中这看起来不太现实，没有任何东西能阻止编译器在检查变量A之前将变量B传递给寄存器，结果会生成下面的机器码：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">register</span> <span class="keyword">int</span> r = B;    <span class="comment">// Promote B to a register before checking A.</span></span><br><span class="line">    <span class="keyword">if</span> (A)</span><br><span class="line">        r++;</span><br><span class="line">    B = r;          <span class="comment">// Surprise! A new memory store where there previously was none.</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>再强调一次，这时内存执行顺序的基本原则仍然遵守了。一个单线程程序可能对此一无所知。但在多线程环境下，尽管在变量A是0的时候，我们的函数却错误地消除了线程对变量B并发的修改，这和原始的代码情况不同<sup>注10</sup>。尽管我们已经用C/C++写多线程和无锁代码几十年了，这种晦涩但在技术上可行的情况也就是人们说C++不支持线程的一部分原因。</p>
 <p>我不知道现实中是否有人成为这种横空出现的写操作的受害者。可能是因为我们倾向编写的无锁代码的类型（比较固定），以至于并没有太多的优化机会来适应这种模式。我觉得当我看到编译器产生这种代码变换时，我会去找相应的方法来避免其所带来的影响.如果这些发生在你身上，可以在评论中让我看到。</p>
@@ -413,14 +413,14 @@
 <p>void <strong>attribute</strong> ((always_inline)) foo()<br>{<br>  …<br>}</p>
 <p>注7：指在gcc中，加了pure attribute的函数：</p>
 <p>void <strong>attribute</strong> ((pure)) foo()<br>{<br>  …<br>}</p>
-<p>根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说<code>strlen</code>和<code>memcpy</code>。</p>
+<p>根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说<code>strlen</code>和`memcmp’.</p>
 <p>因此，对于这类函数，gcc就可以施展手脚，优化一番了。比如说，</p>
 <p>int <strong>attribute</strong> ((pure)) strlen(char *p)<br>{<br>  …<br>}</p>
 <p>那么假如你写了这样的代码：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *p = <span class="string">"abc"</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="built_in">strlen</span>(p); i++) &#123;</span><br><span class="line">  <span class="comment">//do sth</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>那么gcc可以将它优化为：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">char</span> *p = <span class="string">"abc"</span>;</span><br><span class="line"><span class="keyword">int</span> tmp = <span class="built_in">strlen</span>(p);</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tmp; i++) &#123;</span><br><span class="line">  <span class="comment">//do sth</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注8：Link-time Code Generation，一般简写为LTCG，主要针对不同编译单元(compiler unit)间的函数定义和调用进行优化。更多细节除了编译器官方文档外，可以参考<a href="http://arstechnica.com/civis/viewtopic.php?t=629188" target="_blank" rel="external">这里</a>和<a href="http://stackoverflow.com/questions/3546748/are-c-c-compilers-optimizing-across-compilation-units" target="_blank" rel="external">这里</a>。</p>
+<p>注8：Link-time Code Generation，一般简写为LTCG，主要针对不同编译单元(compilation unit)间的函数定义和调用进行优化。更多细节除了编译器官方文档外，可以参考<a href="http://arstechnica.com/civis/viewtopic.php?t=629188" target="_blank" rel="external">这里</a>和<a href="http://stackoverflow.com/questions/3546748/are-c-c-compilers-optimizing-across-compilation-units" target="_blank" rel="external">这里</a>。</p>
 <p>注9：C/C++中的volatile常常被人错误使用，很多朋友错误以为它和Java中的volatile一样。其实不然。</p>
 <p>在C/C++中的volatile，有两个重要特点：</p>
 <p>1，它不提供任何的防止乱序的功能。</p>
