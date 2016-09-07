@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png">
-<meta property="og:updated_time" content="2016-09-06T13:54:36.000Z">
+<meta property="og:updated_time" content="2016-09-07T03:30:20.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(六)-编译期间内存乱序">
 <meta name="twitter:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
@@ -413,7 +413,7 @@
 <p>void <strong>attribute</strong> ((always_inline)) foo()<br>{<br>  …<br>}</p>
 <p>注7：指在gcc中，加了pure attribute的函数：</p>
 <p>void <strong>attribute</strong> ((pure)) foo()<br>{<br>  …<br>}</p>
-<p>根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输出参数和一些全局变量，比如说<code>strlen</code>和<code>memcmp</code>.</p>
+<p>根据gcc文档，pure属性是用来修饰这样的函数：该函数除了返回一些值之外，不会产生其他作用和影响；并且它的返回值只依赖于它的输入参数和一些全局变量，比如说<code>strlen</code>和<code>memcmp</code>.</p>
 <p>因此，对于这类函数，gcc就可以施展手脚，优化一番了。比如说，</p>
 <p>int <strong>attribute</strong> ((pure)) strlen(char *p)<br>{<br>  …<br>}</p>
 <p>那么假如你写了这样的代码：</p>
