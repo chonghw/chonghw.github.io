@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-11T18:45:25.000Z</updated>
+  <updated>2016-09-07T03:30:20.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,27 +14,6 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
-  
-  <entry>
-    <title>lodge</title>
-    <link href="http://yoursite.com/blog/2016/09/11/lodge/"/>
-    <id>http://yoursite.com/blog/2016/09/11/lodge/</id>
-    <published>2016-09-11T18:17:52.000Z</published>
-    <updated>2016-09-11T18:45:25.000Z</updated>
-    
-    <content type="html">&lt;h3 id=&quot;The-Lodge转租&quot;&gt;&lt;a href=&quot;#The-Lodge转租&quot; class=&quot;headerlink&quot; title=&quot;The Lodge转租&quot;&gt;&lt;/a&gt;The Lodge转租&lt;/h3&gt;&lt;p&gt;八月份新签的The Lodge公寓(地址：2101 Cumberland AVE)，因十月份回国，打算Sublease, 具体时间可协商，十月到十一月之间入住均可。房型为3B3B，独卫。房租415/月，除电费以外全包。地理位置在沃尔玛旁边，去学校可坐公车。室友为两在读男Phd，学霸型，分别是清华男和中科院男，极少在家做饭，厨房干净整洁，没有party。感兴趣的朋友联系：765-476-3801&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge1.jpg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge2.png&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge3.jpg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge4.jpg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge5.jpeg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge6.jpeg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge7.jpeg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge8.jpg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge9.jpeg&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge10.jpeg&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
-&lt;figure class=&quot;half&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge9.jpeg&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/lodge8.jpg&quot;&gt;&lt;br&gt;&lt;/figure&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;h3 id=&quot;The-Lodge转租&quot;&gt;&lt;a href=&quot;#The-Lodge转租&quot; class=&quot;headerlink&quot; title=&quot;The Lodge转租&quot;&gt;&lt;/a&gt;The Lodge转租&lt;/h3&gt;&lt;p&gt;八月份新签的The Lodge公寓(地址：2101 Cumberla
-    
-    </summary>
-    
-    
-  </entry>
   
   <entry>
     <title>深入探索并发编程系列(六)-编译期间内存乱序</title>
@@ -1852,6 +1831,245 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
       <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>A Comprehensive Virtualized Enviroment Setup and Analysis</title>
+    <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
+    <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
+    <published>2016-03-31T02:17:12.000Z</published>
+    <updated>2016-06-14T14:22:13.000Z</updated>
+    
+    <content type="html">&lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;0x00 全文环境 &lt;/li&gt;
+&lt;li&gt;0x01 虚拟机创建KVM/QEMU &lt;/li&gt;
+&lt;li&gt;0x02 虚拟机管理Libvirt&lt;/li&gt;
+&lt;li&gt;0x03 虚拟机监控Libvmi&lt;/li&gt;
+&lt;li&gt;0x04 虚拟机监控Volatility&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;h3 id=&quot;0x00-全文环境&quot;&gt;&lt;a href=&quot;#0x00-全文环境&quot; class=&quot;headerlink&quot; title=&quot;0x00 全文环境&quot;&gt;&lt;/a&gt;0x00 全文环境&lt;/h3&gt;&lt;p&gt;Ubuntu12.04 + Kvm-kmod-3.8 + Qemu-kvm-1.1.2+ Libvirt 1.3.2 + Libvmi + Volatility &lt;/p&gt;
+&lt;h3 id=&quot;Ox01-虚拟机创建KVM-QEMU&quot;&gt;&lt;a href=&quot;#Ox01-虚拟机创建KVM-QEMU&quot; class=&quot;headerlink&quot; title=&quot;Ox01 虚拟机创建KVM/QEMU&quot;&gt;&lt;/a&gt;Ox01 虚拟机创建KVM/QEMU&lt;/h3&gt;&lt;p&gt;Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。&lt;br&gt;另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。&lt;/p&gt;
+&lt;p&gt;可执行：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;modprobe kvm 
+modprobe kvm_intel 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;开启内核自带的kvm&lt;/p&gt;
+&lt;p&gt;关于源码安装kvm-kmod以及qemu-kvm的详细过程可参考 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章。kvm-kmod安装成功后，运行lsmod | grep kvm， 会显示两个module:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kvm_intel             137721  3 
+kvm                   415549  1 kvm_intel
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;qemu-kvm安装成功后会在/your-confiure-location/bin/qemu-system-x86_64等可执行文件。&lt;/p&gt;
+&lt;p&gt;安装完KVM/QEMU后，创建虚拟机的时候，虚拟机的网络方式是比较关心的问题，KVM/QEMU有两种网络配置方式。&lt;/p&gt;
+&lt;p&gt;其一，用户模式（User Networking): 即NAT方式，也是默认的网络模式。让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机。既然无法访问客户机，那宿主机与客户机该如何传输文件呢？默认的，客户机得到的ip空间为10.0.2.0/24，宿主机提供了ip为10.0.2.2的地址让虚拟机访问。可以ssh到宿主机(10.0.2.2)，用scp来拷贝文件。&lt;/p&gt;
+&lt;p&gt;其二，桥接模式（Bridge Networking): 这种模式允许客户机就像一台独立的主机一样拥有网络。这种方式要比用户网络复杂一些，但是设置好后客户机与互联网，客户机与主机之间的通信都很容易。桥接网络需要网卡支持，一般的有线网卡都支持，绝大部分的无线网卡都不支持。&lt;/p&gt;
+&lt;p&gt;NAT方式是KVM/QEMU提供的默认方式，要设置桥接模式，首先在宿主机上安装桥接相关的包，&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install bridge-utils. 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改/etc/network/interfaces&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;auto lo
+iface lo inet loopback
+auto eth0
+iface eth0 inet manual
+auto br0
+iface br0 inet dhcp
+   bridge_ports eth0
+   bridge_stp off
+   bridge_fd 9
+   bridge_hello 2
+   bridge_maxwait 0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/etc/init.d/networking restart
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置好后，可运行brctl show命令，会显示：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;bridge name      bridge id              STP enabled interfaces
+br0              8000.68f728eddb0d      no          eth0
+                                              vnet0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后在创建虚拟机的时候可添加-net nic -net tap参数，如&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/usr/local/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -net nic -net tap -monitor stdio    
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后创建的虚拟机便工作在网桥模式中。&lt;/p&gt;
+&lt;h3 id=&quot;0x02-虚拟机管理Libvirt&quot;&gt;&lt;a href=&quot;#0x02-虚拟机管理Libvirt&quot; class=&quot;headerlink&quot; title=&quot;0x02 虚拟机管理Libvirt&quot;&gt;&lt;/a&gt;0x02 虚拟机管理Libvirt&lt;/h3&gt;&lt;p&gt;除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png&quot; alt=&quot;libvirt-internal&quot;&gt;&lt;/p&gt;
+&lt;p&gt;详细介绍可参考：&lt;a href=&quot;http://libvirt.org/internals.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvirt internals&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;安装libvirt: &lt;/p&gt;
+&lt;p&gt;先安装libvirt所依赖的包&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install libnl-dev libxml2 libxml2-dev  libpciaccess-dev libyajl-dev libdevmapper-dev libgnutls-dev
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如出现以下错误，都可以检查上述这些包是否安装好&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;error: Could not find libxml2 anywhere
+
+error: You must install the GnuTLS library in order to compile and run libvirt
+
+error: You must install device-mapper-devel/libdevmapper &amp;gt;= 1.0.0 to compile libvirt
+
+error: libnl-devel &amp;gt;= 1.1 is required for macvtap support
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下载 libvirt1.3.2.tar.gz&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;tar xvf libvirt1.3.2.tar.gz
+./configure
+make &amp;amp;&amp;amp; make install
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装完成后，执行ldconfig同步链接库，否则会出现以下错误：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;virsh: error while loading shared libraries: libvirt.so.0: cannot open shared object file: No such file or directory
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行检查libvirt安装成功&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;which libvirtd
+libvirtd –version
+which virsh
+virsh –version
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若出现此类错误：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;error: Failed to reconnect to the hypervisor
+error: no valid connection
+error: Failed to connect socket to &amp;apos;/usr/local/var/run/libvirt/libvirt-sock&amp;apos;: No such file or directory
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;则很有可能是libvirtd进程没有开启，这时需要手动开启libvirtd,执行libvirtd -d 即可。(libvirtd具体参数可参考：&lt;a href=&quot;http://linux.die.net/man/8/libvirtd&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvirtd manual&lt;/a&gt; ）&lt;/p&gt;
+&lt;p&gt;另外注意，libvirt从1.3版本后增加了virtlogd特性，需要执行virtlogd -d手动开启virtlogd进程（virtlogd具体参数可参看：&lt;a href=&quot;https://www.mankier.com/8/virtlogd&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;virtlogd manual&lt;/a&gt; ）. 否则会出现以下错误：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;error: Failed to connect socket to &amp;apos;/usr/local/var/run/libvirt/virtlogd-sock&amp;apos;: No such file or directory
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装好libvirt后，便可配置好xml文件，用virsh来管理。具体virsh命令这里不做介绍，可参考其中一个配置文件：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;domain type=&amp;apos;kvm&amp;apos;&amp;gt;
+&amp;lt;name&amp;gt;ubuntudemo&amp;lt;/name&amp;gt;&amp;lt;!--虚拟机名称--&amp;gt;
+&amp;lt;memory&amp;gt;1048576&amp;lt;/memory&amp;gt;&amp;lt;!--最大内存，单位KB--&amp;gt;
+&amp;lt;currentMemory&amp;gt;1048576&amp;lt;/currentMemory&amp;gt;&amp;lt;!--可用内存，单位k--&amp;gt;
+&amp;lt;uuid&amp;gt;87d5b3d2-3618-4a59-9efb-aa869ff34999&amp;lt;/uuid&amp;gt;
+
+&amp;lt;vcpu&amp;gt;1&amp;lt;/vcpu&amp;gt;&amp;lt;!--虚拟cpu个数--&amp;gt;
+&amp;lt;os&amp;gt;
+    &amp;lt;type arch=&amp;apos;x86_64&amp;apos;,machine=&amp;apos;pc&amp;apos;&amp;gt;hvm&amp;lt;/type&amp;gt;
+    &amp;lt;boot dev=&amp;apos;hd&amp;apos;/&amp;gt;&amp;lt;!--光盘启动--&amp;gt;
+&amp;lt;/os&amp;gt;
+&amp;lt;features&amp;gt;
+    &amp;lt;acpi/&amp;gt;
+    &amp;lt;apic/&amp;gt;
+    &amp;lt;pae/&amp;gt;
+&amp;lt;/features&amp;gt;
+&amp;lt;clock offset=&amp;apos;localtime&amp;apos;/&amp;gt;
+&amp;lt;on_poweroff&amp;gt;destroy&amp;lt;/on_poweroff&amp;gt;
+&amp;lt;on_reboot&amp;gt;restart&amp;lt;/on_reboot&amp;gt;
+&amp;lt;on_crash&amp;gt;destroy&amp;lt;/on_crash&amp;gt;
+&amp;lt;devices&amp;gt;
+    &amp;lt;emulator&amp;gt;/usr/bin/qemu&amp;lt;/emulator&amp;gt; &amp;lt;!--先创建好软链接   ln -s /use/local/qemukvm1.1.2/bin/qemu-system-x86_64 /usr/bin/qemu--&amp;gt;
+    &amp;lt;disk type=&amp;apos;file&amp;apos; device=&amp;apos;disk&amp;apos;&amp;gt;
+        &amp;lt;driver name=&amp;apos;qemu&amp;apos; type=&amp;apos;qcow2&amp;apos;/&amp;gt;
+        &amp;lt;source file=&amp;apos;/home/os.img/server12041.img&amp;apos;/&amp;gt;&amp;lt;!--目的镜像路径--&amp;gt;
+        &amp;lt;target dev=&amp;apos;vda&amp;apos; bus=&amp;apos;virtio&amp;apos;/&amp;gt;
+    &amp;lt;/disk&amp;gt;
+
+    &amp;lt;interface type=&amp;apos;bridge&amp;apos;&amp;gt;&amp;lt;!--虚拟机网络连接方式--&amp;gt;
+        &amp;lt;source bridge=&amp;apos;br0&amp;apos;/&amp;gt;&amp;lt;!--当前主机网桥的名称--&amp;gt;
+        &amp;lt;mac address=&amp;quot;00:16:3e:5d:aa:a8&amp;quot;/&amp;gt;&amp;lt;!--为虚拟机分配mac地址，务必唯一，否则dhcp获得同样ip,引起冲突--&amp;gt;
+    &amp;lt;/interface&amp;gt;
+    &amp;lt;input type=&amp;apos;mouse&amp;apos; bus=&amp;apos;ps2&amp;apos;/&amp;gt;
+    &amp;lt;!--vnc方式登录，端口号自动分配，自动加1，可以通过virsh vncdisplay ubuntudemo来查询（实际端口为显示结果+5900）--&amp;gt; 
+    &amp;lt;graphics type=&amp;apos;vnc&amp;apos; port=&amp;apos;-1&amp;apos; autoport=&amp;apos;yes&amp;apos; listen=&amp;apos;0.0.0.0&amp;apos; keymap=&amp;apos;en-us&amp;apos;/&amp;gt;
+&amp;lt;/devices&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;/p&gt;
+&lt;h3 id=&quot;0x03-虚拟机监控Libvmi&quot;&gt;&lt;a href=&quot;#0x03-虚拟机监控Libvmi&quot; class=&quot;headerlink&quot; title=&quot;0x03 虚拟机监控Libvmi&quot;&gt;&lt;/a&gt;0x03 虚拟机监控Libvmi&lt;/h3&gt;&lt;p&gt;Libvmi是一套能从底层二进制信息重构虚拟机上层语义的C语言API。由于hypervisor(VMM)获取的全是客户机的二进制比特，用户为了从外部（比如宿主机)监控客户机的行为需要理解客户机上层的语义，比如客户机正在运行的进程列表、模块列表等信息，这种二进制到上层语义之间的gap称之为语义鸿沟（semantic gap)，从外部监控客户机的行为称之为虚拟机自省（VM Introspection）。 Libvmi提供的API，能够读取物理内存、虚拟内存、符号表（System.map）、暂停/打开虚拟机、接收内存与寄存器事件的通知等，让用户能很方便的构建插件，来读取进程列表、模块列表等信息（大部分linux原生监控工具都可以通过libvmi来构建). &lt;/p&gt;
+&lt;p&gt;Libvmi目前支持Intel,AMD64以及ARM系统结构，支持的虚拟机平台包括XEN与KVM/QEMU，支持的被监控系统类型包括windows和linux. Libvmi从Xenaccess发展而来，要了解其详细原理，可参考论文&lt;a href=&quot;https://www.acsac.org/2007/papers/138.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Secure and Flexible Monitoring of Virtual Machines&lt;/a&gt;以及官方主页&lt;a href=&quot;http://libvmi.com/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvmi&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;安装libvmi:&lt;/p&gt;
+&lt;p&gt;先安装其依赖的包，注，这里针对KVM/QEMU，关于XEN依赖的包，会有所不同，可参考&lt;a href=&quot;http://libvmi.com/docs/gcode-install.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvmi-installation&lt;/a&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install automake autoconf
+apt-get install libtool
+apt-get install flex bison
+apt-get install check
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下载libvmi-0.10.1.tar.gz&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;tar xvf libvmi-0.10.1.tar.gz
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装    &lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd libvmi-0.10.1
+./autogen.sh
+./congfigure
+make 
+make install
+ldconfig
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;libvmi提供了很多plugin examples在/libvmi/examples文件夹中，&lt;br&gt;要运行其中的plugin（比如process-list，列举客户机中进程信息，类似linux的原生ls命令), 首先要找出客户机符号表中的一些偏移信息. libvmi提供了获取偏移信息的工具在/libvmi/tools/linux-offset-finder/ 文件夹中，将其拷贝到虚拟机中，make编译，生成了一个内核模块findoffset.ko，执行insmod findoffset.ko将其插入内核中，&lt;br&gt; 再执行dmesg 将得到的偏移信息，如：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ostype = &amp;quot;Linux&amp;quot;;
+sysmap = &amp;quot;/boot/System.map-3.2.0-29-generic&amp;quot;;
+linux_name = 0x470;
+linux_tasks = 0x248;
+linux_mm=0x280;
+linux_pid=0x2bc;
+linux_pgd=0x58;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。另外，这里的sysmap路径是host主机的路径，需要把guest中的System.map文件拷贝到host主机上。(还发现一个问题，虚拟机的名字不能全以数字命名，比如120432,不然在读取libvmi.conf配置文件时会出错).&lt;/p&gt;
+&lt;p&gt;之后运行&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/libvmi/examples/process-list ubuntudemo 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里ubuntudemo是创建的虚拟机名字。以下是列出的部分信息：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Process listing for VM ubuntudemo (id=3)
+Next list entry is at: ffff88003d638248
+[    0] swapper/0 (struct addr:ffffffff81c0d020)
+[    1] init (struct addr:ffff88003d638000)
+[    2] kthreadd (struct addr:ffff88003d639700)
+[    3] ksoftirqd/0 (struct addr:ffff88003d63ae00)
+[    6] migration/0 (struct addr:ffff88003d658000)
+[    7] watchdog/0 (struct addr:ffff88003d659700)
+[    8] cpuset (struct addr:ffff88003d65ae00)
+[    9] khelper (struct addr:ffff88003d65c500)
+[   10] kdevtmpfs (struct addr:ffff88003d65dc00)
+[   11] netns (struct addr:ffff88003d698000)
+[   12] sync_supers (struct addr:ffff88003d699700)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Libvmi提供的plugins有限，用户可根据需要编写，也可利用取证工具volatlity做更高层次语义的分析。Libvmi支持python绑定，提供了与volatility绑定的接口，具体可见下文。&lt;/p&gt;
+&lt;h3 id=&quot;0x04-虚拟机监控Volatility&quot;&gt;&lt;a href=&quot;#0x04-虚拟机监控Volatility&quot; class=&quot;headerlink&quot; title=&quot;0x04 虚拟机监控Volatility&quot;&gt;&lt;/a&gt;0x04 虚拟机监控Volatility&lt;/h3&gt;&lt;p&gt;Volatility是一个用python编写的内存分析工具，与libvmi（利用sysystem.map符号表信息)不同的是，volatility利用可执行文件elf中的调试信息（dwarf格式）以及system.map符号表信息来获取更丰富的变量和函数语义。其支持windows， linux以及mac。 文中以Linux为例。&lt;/p&gt;
+&lt;p&gt;Get Started:&lt;/p&gt;
+&lt;p&gt;下载volatility包&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/volatilityfoundation/volatility.git
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建Linux profile&lt;/p&gt;
+&lt;p&gt;profile是个zip文件，包含内核数据结构以及调试信息，也就是dwarf文件（volatility称之为vtypes)与system.map的压缩包。&lt;/p&gt;
+&lt;p&gt;volatility提供了一个内核模块在/volatility/tools/linux文件夹下来获取vtypes信息，将文件夹内容拷贝到要分析的客户机中，编译make，生成module.dwarf文件。在此之前请确保客户机中以及安装dwarfdump (apt-get install dwarfdump）。之后执行 head module.dwarf，会显示以下内容:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;.debug_info
+
+&amp;lt;0&amp;gt;&amp;lt;0+11&amp;gt;&amp;lt;DW_TAG_compile_unit&amp;gt; DW_AT_producer&amp;lt;GNU C 4.6.3&amp;gt; DW_AT_language&amp;lt;DW_LANG_C89&amp;gt;.....
+
+&amp;lt;1&amp;gt;&amp;lt;45&amp;gt;&amp;lt;DW_TAG_typedef&amp;gt; DW_AT_name&amp;lt;__s8&amp;gt; DW_AT_decl_file&amp;lt;1 include/asm-generic/int-ll64.h&amp;gt;.....
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;生成&lt;/p&gt;
+&lt;p&gt;接着将module.dwarf文件以及/boot/System.map-3.2.0-99-generic 文件（不同系统文件名不同）压缩成一个zip文件，如Ubuntu1204.zip。执行：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;zip volatility/volatility/plugins/overlays/linux/Ubuntu1204.zip volatility/tools/linux/module.dwarf /boot/System.map-3.2.0-99-generic
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用profile&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;python vol.py --info | grep Linux 
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt; 这时会显示之前创建的profile名，Linuxubuntu1204x64.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;LinuxUbuntu1204x64    - A Profile for Linux Ubuntu1204 x64 &amp;lt;=== This is the one we just created
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;绑定libvmi的python接口&lt;/p&gt;
+&lt;p&gt;在./volatility/plugins/addrspaces 有针对不同内存快照的物理地址空间，如vmware.py,lime.py，crash.py等。libvmi则提供了pyvmi接口，在/libvmi/tools/pyvmi文件夹中有个pyvmiaddressspace.py文件可供volatility使用，（若需要自己编写python程序，则需要build pyvmi，build过程可参见其中的README文件，若出现编译错误，请确保安装 apt-get install build-essentials, apt-get install python2.7-dev).&lt;br&gt;将pyvmiaddressspace.py文件拷贝至./volatility/plugins/addrespaces文件夹中便可以利用volatility的plugins来分析虚拟机的内存了。以linux_pslist plugin为例，执行：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;python vol.py -l vmi://ubuntudemo --profile=Linuxubuntu1204x64 linux_pslist  
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若出现distorm3（反编译库)相关错误，请确保已经安装distorm3&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-get install python-pip
+pip install distorm3
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;绑定pyvmi接口后，volatility所有的plugins都可以用来分析虚拟机内存。 &lt;/p&gt;
+&lt;p&gt;完&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;br&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;] &lt;/p&gt;
+&lt;hr&gt;
+&lt;h3 id=&quot;0x0A-References&quot;&gt;&lt;a href=&quot;#0x0A-References&quot; class=&quot;headerlink&quot; title=&quot;0x0A References&quot;&gt;&lt;/a&gt;0x0A References&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://libvmi.com/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Libvmi&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;http://libvirt.org/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Libvirt&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/volatilityfoundation/volatility/wiki&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Volatility wiki&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.acsac.org/2007/papers/138.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Secure and Flexible Monitoring of Virtual Machines&lt;/a&gt;&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;0x00 全文环境 &lt;/li&gt;
+&lt;li&gt;0x01 虚拟机创建KVM/QEMU &lt;/li&gt;
+&lt;li&gt;0x02 虚拟机管理Libvirt&lt;/li&gt;
+&lt;li&gt;0x03 虚拟机监控Libvmi&lt;/li&gt;
+&lt;li&gt;0x04 虚拟机监控Volatility&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+    
+    </summary>
+    
+      <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
+    
+    
+      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
+    
+      <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
+    
+      <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
+    
+      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
+    
+      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
+    
+      <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
+    
+      <category term="Volatility" scheme="http://yoursite.com/tags/Volatility/"/>
     
   </entry>
   
