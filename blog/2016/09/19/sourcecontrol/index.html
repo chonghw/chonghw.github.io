@@ -95,9 +95,8 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol5.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
-<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png">
-<meta property="og:updated_time" content="2016-09-19T17:18:59.000Z">
+<meta property="og:updated_time" content="2016-09-19T17:20:59.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(七)-内存屏障:资源控制操作">
 <meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
@@ -400,7 +399,6 @@
 <p>StoreLoad是唯一的。这是唯一的一种memory barrier类型可以阻止<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">前文</a>提到的这种结果：r1 = r2 = 0，这个例子我在前面的文章中提到过很多次了。</p>
 <p>如果你一路仔细地读下来，可能会有个疑惑： StoreLoad和 StoreStore再紧接着一个LoadLoad有什么不一样呢？毕竟，StoreStore 将修改push到仓库中，然而LoadLoad 把远程的修改pull回来。然而，那两种barrier类型是不够的。记住，push操作可能会因为任意数量的指令而延迟， pull操作可能不会从主干版本中pull数据。 这也解释了为什么owerPC的lwsync指令–充当所有LoadLoad, LoadStore和StoreStore memory barrier,但不是StoreLoad–是不足够来阻止例子中的r1 = r2 = 0 这种结果的。</p>
 <p>拿类比来说，StoreLoad barrier能通过push所有局部修改到仓库中来实现，等待那个操作完成，然后pull 仓库中绝对的、最近的主干修订版本。在大部分处理器上，充当StoreLoad barrier的指令比充当其它类型barrier的指令开销更大。</p>
-<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png" alt=""></p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png" alt=""></p>
 <p>如果在那个操作中放置一个LoadStore barrier,也没什么大不了的, 之后我们得到的是一个完整的memory fence–一次性充当所有四种barrier 类型。 正如<a href="http://g.oswego.edu/dl/jmm/cookbook.html" target="_blank" rel="external">Doug</a>指出的那样，在目前所有处理器上都是这样，每个充当StoreLoad barrier的指令也充当完整的memory fence.</p>
 <h2 id="类比给你带来了什么？"><a href="#类比给你带来了什么？" class="headerlink" title="类比给你带来了什么？"></a>类比给你带来了什么？</h2><p>正如我之前提到的那样，在处理内存执行顺序时，每个处理器都有不同的<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/" target="_blank" rel="external">特点</a>。具体来说，在x86/64家族中有一种强内存模型。这是为了让内存乱序的发生降到最低。PowerPC和ARM有着弱的内存模型。Alpha因自成一派而出名。幸运的是，这篇文章的类比对应一种弱的<a href="http://preshing.com/20120930/weak-vs-strong-memory-models/" target="_blank" rel="external">内存模型</a>。 如果你能用心对待它，并使用这里提供的fence指令来实施正确的内存执行顺序，你就能处理大部分的CPU。</p>
