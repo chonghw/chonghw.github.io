@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-19T17:17:37.000Z</updated>
+  <updated>2016-09-19T17:18:00.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,9 +20,10 @@
     <link href="http://yoursite.com/blog/2016/09/19/sourcecontrol/"/>
     <id>http://yoursite.com/blog/2016/09/19/sourcecontrol/</id>
     <published>2016-09-19T17:16:57.000Z</published>
-    <updated>2016-09-19T17:17:37.000Z</updated>
+    <updated>2016-09-19T17:18:00.000Z</updated>
     
     <content type="html">&lt;p&gt;当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;在上一篇文章中，我们介绍了&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/05/compilermemoryreorder/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;编译期间的内存乱序&lt;/a&gt;，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也就是说，当共享内存在线程之间不是互斥量时，乱序现象才会变得显露无疑。然而，与编译器乱序不同的是，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/08/11/memoryreorder/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;处理器乱序只在多核和多处理器系统中才可见&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;你可以使用任意能充当memory barrier的指令来确保执行正确的内存顺序。某种程度上来说，这是你需要了解的唯一技术，因为当你使用这类指令时，能自动处理好编译器执行顺序问题。充当memory barrier的指令包括(但不局限于)以下情况&lt;sup&gt;注1&lt;/sup&gt;：&lt;/p&gt;
 &lt;blockquote&gt;
@@ -107,7 +108,6 @@
     <summary type="html">
     
       &lt;p&gt;当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。&lt;/p&gt;
-&lt;p&gt;在上一篇文章中，我们介绍了&lt;a href=&quot;http://www.chongh.wiki/blog/2016
     
     </summary>
     

@@ -82,14 +82,12 @@
 
 
 
-<meta name="description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。
-在上一篇文章中，我们介绍了编译期间的内存乱序，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也">
+<meta name="description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="sourcecontrol">
 <meta property="og:url" content="http://yoursite.com/blog/2016/09/19/sourcecontrol/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。
-在上一篇文章中，我们介绍了编译期间的内存乱序，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也">
+<meta property="og:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol3.png">
@@ -99,11 +97,10 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png">
-<meta property="og:updated_time" content="2016-09-19T17:17:37.000Z">
+<meta property="og:updated_time" content="2016-09-19T17:18:00.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="sourcecontrol">
-<meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。
-在上一篇文章中，我们介绍了编译期间的内存乱序，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也">
+<meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
 <meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol1.png">
 
 
@@ -355,6 +352,7 @@
 
       
         <p>当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。</p>
+<a id="more"></a>
 <p>在上一篇文章中，我们介绍了<a href="http://www.chongh.wiki/blog/2016/09/05/compilermemoryreorder/" target="_blank" rel="external">编译期间的内存乱序</a>，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也就是说，当共享内存在线程之间不是互斥量时，乱序现象才会变得显露无疑。然而，与编译器乱序不同的是，<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">处理器乱序只在多核和多处理器系统中才可见</a>.</p>
 <p>你可以使用任意能充当memory barrier的指令来确保执行正确的内存顺序。某种程度上来说，这是你需要了解的唯一技术，因为当你使用这类指令时，能自动处理好编译器执行顺序问题。充当memory barrier的指令包括(但不局限于)以下情况<sup>注1</sup>：</p>
 <blockquote>
