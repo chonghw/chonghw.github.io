@@ -277,6 +277,205 @@
             
               
                 
+                <a class="post-title-link" href="/blog/2016/09/19/sourcecontrol/" itemprop="url">
+                  sourcecontrol
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-19T13:16:57-04:00" content="2016-09-19">
+              2016-09-19
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/09/19/sourcecontrol/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/09/19/sourcecontrol/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。</p>
+<p>在上一篇文章中，我们介绍了<a href="http://www.chongh.wiki/blog/2016/09/05/compilermemoryreorder/" target="_blank" rel="external">编译期间的内存乱序</a>，这一部分内容构成内存执行顺序问题的一部分。这篇文章讲述另一部分：处理器本身在运行期间的内存执行顺序。与编译器乱序一样，处理器乱序对于单线程来说也是不可见的。只有在使用无锁(lock-free)技术时-也就是说，当共享内存在线程之间不是互斥量时，乱序现象才会变得显露无疑。然而，与编译器乱序不同的是，<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">处理器乱序只在多核和多处理器系统中才可见</a>.</p>
+<p>你可以使用任意能充当memory barrier的指令来确保执行正确的内存顺序。某种程度上来说，这是你需要了解的唯一技术，因为当你使用这类指令时，能自动处理好编译器执行顺序问题。充当memory barrier的指令包括(但不局限于)以下情况<sup>注1</sup>：</p>
+<blockquote>
+<ul>
+<li>GCC中的内联汇编指令，比如PowerPC平台下的 asm volatile(“lwsync” ::: “memory”)</li>
+<li>除Xbox 360平台以外，任意的Win32 Interlocked操作，</li>
+<li>C++11原子类型操作，比如load(std::memory_order_acquire)</li>
+<li>POSIX 互斥量操作，比如 pthread_mutex_lock</li>
+</ul>
+</blockquote>
+<p>正因为有许多指令可以充当memory barrier，我们需要去了解许多不同类型的memory barrier. 实际上，上述的所有指令产生的memory barrier都属于不同类型，这会写lock-free代码时给你带来困惑。为了试图把事情说清楚，我会把那些有助于理解大部分(但不是全部)可能的memory barrier类型做一个类比。</p>
+<p>首先，考虑一种典型的多核系统结构。双核，每个核上有32KiB的L1数据缓存，两个核之间有1MiB的L2共享缓存, 主内存512MiB<sup>注2</sup>.</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol1.png" alt=""></p>
+<p>多核系统就有点像是一群程序员通过一种怪异的资源控制策略来合作一个项目。举个例子，上面的双核系统对应两个程序员合作的场景。将这两个程序员分别取名为Larry与Sergey.</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol2.png" alt=""></p>
+<p>右边有个共享的中心仓库-代表主内存和共享L2缓存的结合体。Larry和Sergey在本地机器中都有仓库的工作副本，分别是每个CPU核中的L1缓存。每台机器上有个临时存储区，用来记录寄存器和本地变量的值。现在两个程序员坐在那里，富有激情的编辑他们的工作副本和临时存储区，根据他们看见的数据决定下一步该做什么–就像是一个线程就在那个CPU核上工作一样。</p>
+<p>在这开始引入资源控制策略。在这个类比里，资源控制策略实际上是非常奇怪的。由于Larry和Sergey修改了仓库的工作副本，他们的修改在背后不断地从仓库中来回传播(leaking)，这种情况发生的次数都是随机的。只要larry编辑文件X，对文件的修改都会泄露到仓库中，但不能保证什么时候才会发生。有可能会立即发生，有可能会发生很多次，也有可能之后才发生。这时，他可能会继续编辑其它的文件，比如Y和Z，这些改变可能会在X泄露之前就已经传播了。这样一来，写操作在写进仓库的过程中就很容易发生乱序。</p>
+<p>类似的，在Sergey的机器上，不能保证那些修改从仓库到工作副本中来回传播的时间间隔和顺序。这样一来，从仓库读数据的过程中就很容易发生乱序。</p>
+<p>现在，如果每个程序员分别独自工作在仓库的隔离区域，他们都不会意识到背后的传播过程，甚至不知道另一个程序员的存在。这就好比两个正在运行的独立的单线程。在这个例子中，内存执行顺序的<a href="http://www.chongh.wiki/blog/2016/09/05/compilermemoryreorder/" target="_blank" rel="external">基本原则</a>还是能保证的。</p>
+<p>当程序员开始在仓库的同一区域工作时，上述的类比就显得更加重要了。再来看看<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">之前文章</a>中的例子。 X和Y是全局变量，且都初始化为0.</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol3.png" alt=""></p>
+<p>把X和Y想象成是Larry的工作副本，Sergey的工作副本以及仓库本身中的文件。Larry将1写入工作副本中的X，sergey同时将1写进工作副本中的Y。 如果每个程序员在查询工作副本中的其它文件之前，两者的修改都能传回到仓库中，最后都会得到这个结果：r1 = 0 和 r2 = 0<br>。起初可能会觉得这种结果与直觉上相反，但对照下资源控制的类比方式，就觉得很明显了。<br><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol4.png" alt=""></p>
+<h2 id="Memory-Barrier类型"><a href="#Memory-Barrier类型" class="headerlink" title="Memory Barrier类型"></a>Memory Barrier类型</h2><p>幸运的是，Larry和Sergey不完全是对这种随机性与在背后发生的不可预计的传播无能为力。他们能发出一些特殊指令，调用fence指令来充当memory barrier）. 对于上述类比方式，可以定义四种memory barrier，因此也对应四种fence指令。每种memory barrier都是以阻止不同类型的内存乱序能力来命名，比如，StoreLoad用来阻止写读类型。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol5.png" alt=""></p>
+<p>就像<a href="http://g.oswego.edu/dl/jmm/cookbook.html" target="_blank" rel="external">Doug</a>指出的那样，这四种类型可能并不能很好的对应真实CPU中的特殊指令。大部分情况，一条CPU指令能充当上述几种memory barrier类型的组合，可能也会附带一些其它的效果。不论在什么情况下，只要你以资源控制的类比方式理解了这四种memory barrier，就容易理解真实CPU中的大多数的指令与一些高级编程语言的构造。</p>
+<h3 id="LoadLoad"><a href="#LoadLoad" class="headerlink" title="LoadLoad"></a>LoadLoad</h3><p>一个LoadLoad barrier能有效地阻止在barrier之前执行的读与在barrier之后执行的读造成的乱序。</p>
+<p>在我们的类比中，LoadLoad fence 指令基本等价于仓库的的pull操作。想象git pull, hg pull, p4 sync, svn update 或者cvs update， 所有操作都在仓库工作。如果本地的修改有任何的merge冲突，我们就说他们被随机的决议(resolved)。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png" alt=""></p>
+<p>要提醒你的是，不能保证LoadLoad会pull整个仓库的最近(或主干)的修订版本。只要主干版本至少是从中心仓库传播到本地机器的最新值，就能pull比主干版本更老的版本。</p>
+<p>这听起来可能像一个较弱的保证，但仍然是一个完美的方案来阻止读取过时的数据。考虑一个经典的例子，Sergey检查共享flag来看Larry是不是发布了一些数据。如果flag为真，在读取发布的数据之前，Sergey发出一个LoadLoad barrier 。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (IsPublished)                   <span class="comment">// Load and check shared flag</span></span><br><span class="line">&#123;</span><br><span class="line">    LOADLOAD_FENCE();              <span class="comment">// Prevent reordering of loads</span></span><br><span class="line">    return Value;                  <span class="comment">// Load published value</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>显然，这个例子依赖于IsPublished标志位是否传播到了Sergey的工作副本。不用去关心这些是什么时候发生的。只要发现了传播的flag，它就发出一个LOadLoad fence来阻止读取Value的值（这个值比flag本身还要老).</p>
+<h3 id="StoreStore"><a href="#StoreStore" class="headerlink" title="StoreStore"></a>StoreStore</h3><p>一个StoreStore barrier能有效的阻止在barrier之前的写操作与在barrier之后的写操作之间的乱序。</p>
+<p>在我们的类比中，StoreStore fence指令对应仓库的push操作。想象git push, hg push, p4 submit, svn commit or cvs commit 都发生在整个仓库中。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png" alt=""></p>
+<p>跟绕口令一样,假设StoreStore指令不是即时的，而是以异步的方式延后执行。因此，尽管Larry执行了StoreStore指令，我们对于他之前所有的写操作什么时候能再在仓库中出现不能做任何的假设。</p>
+<p>这听起来可能也像是弱的保证，但是，已经足够来阻止Sergey收到Larry发布的任何过时的数据。 回到上面同样的例子， 这时Larry只需要发布一些数据到共享内存，发出一个 StoreStore barrier，然后将共享flag设置为true</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Value = x;                         <span class="comment">// Publish some data</span></span><br><span class="line">STORESTORE_FENCE();</span><br><span class="line">IsPublished = <span class="number">1</span>;                   <span class="comment">// Set shared flag to indicate availability of data</span></span><br></pre></td></tr></table></figure>
+<p>再说一次，我们依赖从Larry的工作副本中传播到Sergey的Ispublished值. 一旦Sergey检测到，他相信自己看到了Value的正确值。有趣的是，在这种工作模式中，Value不用是原子类型，也可以是有许多元素的大结构体。</p>
+<h3 id="LoadStore"><a href="#LoadStore" class="headerlink" title="LoadStore"></a>LoadStore</h3><p>不像LoadLoad和StoreStore，就资源控制操作来看，LoadStore没有比较合适的类比。 理解LoadStore的最好方法很简单，就是考虑指令乱序。</p>
+<p>想象Larry有一系列指令要执行。某些指令让他从自己的工作副本读取数据到寄存器中，以及某些指令从寄存器中写数据到工作副本中。Larry具备欺骗指令的能力，但只限于一些特殊场合。只要他遇到读操作时，他就会先检测读操作之后的任何写操作。如果写操作和当前的读操作完全不相关，他会先略过读操作，先进行写操作，结束后在进行读操作。在这种场景下，内存执行顺序的基本原则–绝不修改单程序的行为–仍然是遵守了的。</p>
+<p>对于真实CPU，如果某些处理器中有一个缓存错过了读操作(紧接着缓存命中的写操作)，这种指令乱序就可能会发生。为了理解这个类比，硬件细节并不重要。我们只当做Larry的工作很繁琐，而这正是他能创新的机会（这种机会很有限)。 不管他是否选择这么做都是完全不可预计的。幸运的是，阻止这种乱序类型的开销并不大。当Larry遇到一个LoadStore barrier, 他就能简单的避免barrier附近的乱序。</p>
+<p>在我们的类比中，尽管在读写之间有个LoadLoad或者StoreStore barrier时，Larry执行这种类型的LoadStore乱序也是有效的。 然而，在真实的CPU中，充当LoadStore barrier的指令至少能充当其它两种类型的barrier。</p>
+<h3 id="StoreLoad"><a href="#StoreLoad" class="headerlink" title="StoreLoad"></a>StoreLoad</h3><p>StoreLoad barrier能确保其它处理器遇到barrier之前执行所有的写操作，另外，barrier之后执行的所有读操作能收到最近能被barrier可见的值。 .换句话说，它能在barrier处理所有的读操作之前有效地阻止所有的写操作乱序，尊重顺序一致性多处理器执行那些操作的方式。</p>
+<p>StoreLoad是唯一的。这是唯一的一种memory barrier类型可以阻止<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">前文</a>提到的这种结果：r1 = r2 = 0，这个例子我在前面的文章中提到过很多次了。</p>
+<p>如果你一路仔细地读下来，可能会有个疑惑： StoreLoad和 StoreStore再紧接着一个LoadLoad有什么不一样呢？毕竟，StoreStore 将修改push到仓库中，然而LoadLoad 把远程的修改pull回来。然而，那两种barrier类型是不够的。记住，push操作可能会因为任意数量的指令而延迟， pull操作可能不会从主干版本中pull数据。 这也解释了为什么owerPC的lwsync指令–充当所有LoadLoad, LoadStore和StoreStore memory barrier,但不是StoreLoad–是不足够来阻止例子中的r1 = r2 = 0 这种结果的。</p>
+<p>拿类比来说，StoreLoad barrier能通过push所有局部修改到仓库中来实现，等待那个操作完成，然后pull 仓库中绝对的、最近的主干修订版本。在大部分处理器上，充当StoreLoad barrier的指令比充当其它类型barrier的指令开销更大。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png" alt=""></p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png" alt=""></p>
+<p>如果在那个操作中放置一个LoadStore barrier,也没什么大不了的, 之后我们得到的是一个完整的memory fence–一次性充当所有四种barrier 类型。 正如<a href="http://g.oswego.edu/dl/jmm/cookbook.html" target="_blank" rel="external">Doug</a>指出的那样，在目前所有处理器上都是这样，每个充当StoreLoad barrier的指令也充当完整的memory fence.</p>
+<h2 id="类比给你带来了什么？"><a href="#类比给你带来了什么？" class="headerlink" title="类比给你带来了什么？"></a>类比给你带来了什么？</h2><p>正如我之前提到的那样，在处理内存执行顺序时，每个处理器都有不同的<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/" target="_blank" rel="external">特点</a>。具体来说，在x86/64家族中有一种强内存模型。这是为了让内存乱序的发生降到最低。PowerPC和ARM有着弱的内存模型。Alpha因自成一派而出名。幸运的是，这篇文章的类比对应一种弱的<a href="http://preshing.com/20120930/weak-vs-strong-memory-models/" target="_blank" rel="external">内存模型</a>。 如果你能用心对待它，并使用这里提供的fence指令来实施正确的内存执行顺序，你就能处理大部分的CPU。</p>
+<p>这种类比同样对应针对C++11和C11的抽象机器。因此，如果你使用那些语言的标准库写无锁(lock-free)代码，同时将上述的类比记在脑里，就更有可能在任何平台下正确执行。</p>
+<p>在这种类比中，我说过，每个程序员代表在一个核心中正在运行的单线程。在一个真实的操作系统中，线程更倾向在生命周期中在不同的核心里移动，这时上述的类比仍然有效。我也在机器语言和C/C++语言不断变换来举例。显然，我们更倾向使用C/C++，或者另外更高级的语言。这是有可能的，因为任何充当memory barrier的操作也能阻止编译器乱序。</p>
+<p>我还没有写关于每种memory barrier类型的文章。例如，也存在数据依赖(data dependency )barriers<sup>注3</sup>。 我会在以后的文章中讲这些内容。然而，上面给出的四种类型仍是最重要的。</p>
+<p>如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及为什么它们为什么会发生内存乱序<sup>注4</sup>，我推荐Paul Paul McKenney &amp; David Howell的<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt" target="_blank" rel="external">工作</a>。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。</p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：gcc+x86下，编译器级别的memory barrier和CPU级别的memory barrier可以如下实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">define <span class="title">COMPILER_BARRIER</span><span class="params">()</span> __asm__ __<span class="title">volatile__</span><span class="params">(<span class="string">""</span> : : : <span class="string">"memory"</span>)</span></span><br><span class="line">define <span class="title">CPU_BARRIER</span><span class="params">()</span> __sync_synchronize</span></span><br></pre></td></tr></table></figure>
+<p>其中，<code>CPU_BARRIER()</code>可以防止CPU写读、写写、读写、读读乱序。如你所知，CPU级别的memory barrier同时约束CPU和编译器的乱序；而编译器级别的memory barrier只约束编译器的乱序，不影响CPU。</p>
+<p>注2：现在用的很多的cpu一般有三级cache。</p>
+<p>注3：为了演示data dependency barrier，考虑以下例子：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">初始化</span><br><span class="line"><span class="keyword">int</span> A = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">int</span> B = <span class="number">2</span>;</span><br><span class="line"><span class="keyword">int</span> C = <span class="number">3</span>;</span><br><span class="line"><span class="keyword">int</span> *P = &amp;A;</span><br><span class="line"><span class="keyword">int</span> *Q = &amp;B;</span><br><span class="line"><span class="comment">//cpu1</span></span><br><span class="line">B = <span class="number">4</span>;</span><br><span class="line">CPU_BARRIER();</span><br><span class="line">P = &amp;B;</span><br><span class="line"><span class="comment">//cpu2</span></span><br><span class="line">Q = P;</span><br><span class="line">D = *Q</span><br></pre></td></tr></table></figure>
+<p>从直觉上说，Q最后要么等于&amp;A，要么等于&amp;B。也就是说：</p>
+<p>Q == &amp;A， D == 1 </p>
+<p>或者</p>
+<p>Q == &amp;B， D == 4  </p>
+<p>但是，让人吃惊的是，在某些CPU体系结构例如DEC Alpha下，可能出现</p>
+<p>Q == &amp;B， D == 2的情形，也就是说执行顺序（total order，global order）是：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">D = *Q</span><br><span class="line">B = <span class="number">4</span>;</span><br><span class="line">P = &amp;B;</span><br><span class="line">Q = P;</span><br></pre></td></tr></table></figure>
+<p>也就是说CPU2的两行赋值发生了乱序，而我们知道，这里是存在数据依赖的，顺序非常关键。因此，这里需要加一个data dependency barrier。</p>
+<p>注4：为什么CPU乱序只在多核多线程下才可能会暴露出问题？为什么X86体系结构的Intel CPU要对写读进行乱序？</p>
+<p>要明白这两个问题，我们首先得知道cache coherency，也就是所谓的cache一致性。</p>
+<p>在现代计算机里，一般包含至少三种角色：cpu、cache、内存。一般说来，内存只有一个；CPU Core有多个；cache有多级，cache的基本块单位是cacheline，大小一般是64B-256B。</p>
+<p>每个cpu core有自己的私有的cache(有一级cache是共享的，如文中所示)，而cache只是内存的副本。那么这就带来一个问题：如何保证每个cpu core中的cache是一致的？</p>
+<p>在广泛使用的cache一致性协议即MESI协议中，cacheline有四种状态：Modified、Exclusive、Shared、Invalid，分别表示修改、独占、共享、无效。</p>
+<p>当某个cpu core写一个内存变量时，往往是（先）只修改cache，那么这就会导致不一致。为了保证一致，需要先把其他core的对应的cacheline都invalid掉，给其他core们发送invalid消息，然后等待它们的response。</p>
+<p>这个过程是耗时的，需要执行写变量的core等待，阻塞了它后面的操作。为了解决这个问题，cpu core往往有自己专属的store buffer。</p>
+<p>等待其他core给它response的时候，就可以先写store buffer，然后继续后面的读操作，对外表现就是写读乱序。</p>
+<p>因为写操作是写到store buffer中的，而store buffer是私有的，对其他core是透明的，core1无法访问core2的store buffer。因此其他core读不到这样的修改。</p>
+<p>这就是大概的原理。MESI协议非常复杂，背后的技术也很有意思。</p>
+
+          
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/blog/2016/09/05/compilermemoryreorder/" itemprop="url">
                   深入探索并发编程系列(六)-编译期间内存乱序
                 </a>
@@ -1354,134 +1553,11 @@
 
 
     
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-            
-            
-              
-                
-                <a class="post-title-link" href="/blog/2016/05/03/linux-memory-alloc/" itemprop="url">
-                  深入理解Linux内存分配
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-05-03T15:41:45-04:00" content="2016-05-03">
-              2016-05-03
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/operating-system/" itemprop="url" rel="index">
-                    <span itemprop="name">operating-system</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-              <span class="post-comments-count">
-                &nbsp; | &nbsp;
-                <a href="/blog/2016/05/03/linux-memory-alloc/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/05/03/linux-memory-alloc/" itemprop="commentsCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-
-          
-          
-
-          
-        </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>没有目录，希望能一口气读完</p>
-<p>为了写一个用户层程序，你也许会声明一个全局变量，这个全局变量可能是一个int类型也可能是一个数组，而声明之后你有可能会先初始化它，也有可能放在之后用到它的时候再初始化。除此之外，你有可能会选择在函数内部去声明局部变量，又或者为变量动态申请内存。</p>
-          <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2016/05/03/linux-memory-alloc/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-        
-      
-    </div>
-    
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
   </section>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right"></i></a>
   </nav>
 
 
@@ -1522,7 +1598,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/">
-              <span class="site-state-item-count">30</span>
+              <span class="site-state-item-count">31</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
