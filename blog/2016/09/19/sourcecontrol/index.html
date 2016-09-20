@@ -96,7 +96,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png">
-<meta property="og:updated_time" content="2016-09-20T01:26:03.000Z">
+<meta property="og:updated_time" content="2016-09-20T01:32:25.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(七)-内存屏障:资源控制操作">
 <meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
@@ -405,7 +405,7 @@
 <p>这种类比同样对应针对C++11和C11的抽象机器。因此，如果你使用那些语言的标准库写无锁(lock-free)代码，同时将上述的类比记在脑里，就更有可能在任何平台下正确执行。</p>
 <p>在这种类比中，我说过，每个程序员代表在一个核心中正在运行的单线程。在一个真实的操作系统中，线程更倾向在生命周期中在不同的核心里移动，这时上述的类比仍然有效。我也在机器语言和C/C++语言不断变换来举例。显然，我们更倾向使用C/C++，或者另外更高级的语言。这是有可能的，因为任何充当memory barrier的操作也能阻止编译器乱序。</p>
 <p>我还没有写关于每种memory barrier类型的文章。例如，也存在数据依赖(data dependency )barriers<sup>注3</sup>。 我会在以后的文章中讲这些内容。然而，上面给出的四种类型仍是最重要的。</p>
-<p>如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及它们为什么会发生内存乱序<sup>注4</sup>，我推荐Paul Paul McKenney &amp; David Howell的<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt" target="_blank" rel="external">工作</a>。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。</p>
+<p>如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及它们为什么会发生内存乱序<sup>注4</sup>，我推荐Paul McKenney &amp; David Howell的<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt" target="_blank" rel="external">工作</a>。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。</p>
 <h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：gcc+x86下，编译器级别的memory barrier和CPU级别的memory barrier可以如下实现：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">define <span class="title">COMPILER_BARRIER</span><span class="params">()</span> __asm__ __<span class="title">volatile__</span><span class="params">(<span class="string">""</span> : : : <span class="string">"memory"</span>)</span></span><br><span class="line">define <span class="title">CPU_BARRIER</span><span class="params">()</span> __sync_synchronize</span></span><br></pre></td></tr></table></figure></p>
 <p>其中，<code>CPU_BARRIER()</code>可以防止CPU写读、写写、读写、读读乱序。如你所知，CPU级别的memory barrier同时约束CPU和编译器的乱序；而编译器级别的memory barrier只约束编译器的乱序，不影响CPU。</p>
 <p>注2：现在用的很多的cpu一般有三级cache。</p>
