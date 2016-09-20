@@ -96,7 +96,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png">
-<meta property="og:updated_time" content="2016-09-20T01:32:25.000Z">
+<meta property="og:updated_time" content="2016-09-20T02:16:37.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(七)-内存屏障:资源控制操作">
 <meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
@@ -416,9 +416,7 @@
 <p>或者</p>
 <p>Q == &amp;B， D == 4  </p>
 <p>但是，让人吃惊的是，在某些CPU体系结构例如DEC Alpha下，可能出现</p>
-<p>Q == &amp;B， D == 2的情形，也就是说执行顺序（total order，global order）是：</p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">D = *Q</span><br><span class="line">B = <span class="number">4</span>;</span><br><span class="line">P = &amp;B;</span><br><span class="line">Q = P;</span><br></pre></td></tr></table></figure>
-<p>也就是说CPU2的两行赋值发生了乱序，而我们知道，这里是存在数据依赖的，顺序非常关键。因此，这里需要加一个data dependency barrier。</p>
+<p>Q == &amp;B， D == 2的情形，原因是，虽然CPU1按照顺序执行完两条语句先后对B和P进行了修改，但CPU2可能先感知到P的变化，读到了P的新值，然后才是B的新值。因此，为了防止这样的问题，需要加一个data dependency barrier。</p>
 <p>注4：为什么CPU乱序只在多核多线程下才可能会暴露出问题？为什么X86体系结构的Intel CPU要对写读进行乱序？</p>
 <p>要明白这两个问题，我们首先得知道cache coherency，也就是所谓的cache一致性。</p>
 <p>在现代计算机里，一般包含至少三种角色：cpu、cache、内存。一般说来，内存只有一个；CPU Core有多个；cache有多级，cache的基本块单位是cacheline，大小一般是64B-256B。</p>
