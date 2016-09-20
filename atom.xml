@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-20T01:25:01.000Z</updated>
+  <updated>2016-09-20T01:26:03.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/09/19/sourcecontrol/"/>
     <id>http://yoursite.com/blog/2016/09/19/sourcecontrol/</id>
     <published>2016-09-19T17:16:57.000Z</published>
-    <updated>2016-09-20T01:25:01.000Z</updated>
+    <updated>2016-09-20T01:26:03.000Z</updated>
     
     <content type="html">&lt;p&gt;当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -52,7 +52,7 @@
 &lt;h3 id=&quot;LoadLoad&quot;&gt;&lt;a href=&quot;#LoadLoad&quot; class=&quot;headerlink&quot; title=&quot;LoadLoad&quot;&gt;&lt;/a&gt;LoadLoad&lt;/h3&gt;&lt;p&gt;一个LoadLoad barrier能有效地阻止在barrier之前执行的读与在barrier之后执行的读造成的乱序。&lt;/p&gt;
 &lt;p&gt;在我们的类比中，LoadLoad fence 指令基本等价于仓库的的pull操作。想象git pull, hg pull, p4 sync, svn update 或者cvs update， 所有操作都在仓库工作。如果本地的修改有任何的merge冲突，我们就说他们被随机的决议(resolved)。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
-&lt;p&gt;要提醒你的是，不能保证LoadLoad会pull整个仓库的最近(或主干)的修订版本。只要HEAD版本至少是从中心仓库传播到本地机器的最新值，就能pull比HEAD版本更老的版本。&lt;/p&gt;
+&lt;p&gt;要提醒你的是，不能保证LoadLoad会pull整个仓库的最近(或HEAD)的修订版本。只要HEAD版本至少是从中心仓库传播到本地机器的最新值，就能pull比HEAD版本更老的版本。&lt;/p&gt;
 &lt;p&gt;这听起来可能像一个较弱的保证，但仍然是一个完美的方案来阻止读取过时的数据。考虑一个经典的例子，Sergey检查共享flag来看Larry是不是发布了一些数据。如果flag为真，在读取发布的数据之前，Sergey发出一个LoadLoad barrier 。&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt; (IsPublished)                   &lt;span class=&quot;comment&quot;&gt;// Load and check shared flag&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    LOADLOAD_FENCE();              &lt;span class=&quot;comment&quot;&gt;// Prevent reordering of loads&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    return Value;                  &lt;span class=&quot;comment&quot;&gt;// Load published value&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
 &lt;p&gt;显然，这个例子依赖于IsPublished标志位是否传播到了Sergey的工作副本。不用去关心这些是什么时候发生的。只要发现了传播的flag，它就发出一个LOadLoad fence来阻止读取Value的值（这个值比flag本身还要老).&lt;/p&gt;
