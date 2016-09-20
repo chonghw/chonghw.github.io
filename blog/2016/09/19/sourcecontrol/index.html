@@ -96,7 +96,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol7.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png">
-<meta property="og:updated_time" content="2016-09-19T23:20:59.000Z">
+<meta property="og:updated_time" content="2016-09-20T01:25:01.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(七)-内存屏障:资源控制操作">
 <meta name="twitter:description" content="当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。">
@@ -380,7 +380,7 @@
 <h3 id="LoadLoad"><a href="#LoadLoad" class="headerlink" title="LoadLoad"></a>LoadLoad</h3><p>一个LoadLoad barrier能有效地阻止在barrier之前执行的读与在barrier之后执行的读造成的乱序。</p>
 <p>在我们的类比中，LoadLoad fence 指令基本等价于仓库的的pull操作。想象git pull, hg pull, p4 sync, svn update 或者cvs update， 所有操作都在仓库工作。如果本地的修改有任何的merge冲突，我们就说他们被随机的决议(resolved)。</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol6.png" alt=""></p>
-<p>要提醒你的是，不能保证LoadLoad会pull整个仓库的最近(或主干)的修订版本。只要主干版本至少是从中心仓库传播到本地机器的最新值，就能pull比主干版本更老的版本。</p>
+<p>要提醒你的是，不能保证LoadLoad会pull整个仓库的最近(或主干)的修订版本。只要HEAD版本至少是从中心仓库传播到本地机器的最新值，就能pull比HEAD版本更老的版本。</p>
 <p>这听起来可能像一个较弱的保证，但仍然是一个完美的方案来阻止读取过时的数据。考虑一个经典的例子，Sergey检查共享flag来看Larry是不是发布了一些数据。如果flag为真，在读取发布的数据之前，Sergey发出一个LoadLoad barrier 。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (IsPublished)                   <span class="comment">// Load and check shared flag</span></span><br><span class="line">&#123;</span><br><span class="line">    LOADLOAD_FENCE();              <span class="comment">// Prevent reordering of loads</span></span><br><span class="line">    return Value;                  <span class="comment">// Load published value</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>显然，这个例子依赖于IsPublished标志位是否传播到了Sergey的工作副本。不用去关心这些是什么时候发生的。只要发现了传播的flag，它就发出一个LOadLoad fence来阻止读取Value的值（这个值比flag本身还要老).</p>
@@ -397,7 +397,7 @@
 <p>在我们的类比中，尽管在读写之间有个LoadLoad或者StoreStore barrier时，Larry执行这种类型的LoadStore乱序也是有效的。 然而，在真实的CPU中，充当LoadStore barrier的指令至少能充当其它两种类型的barrier。</p>
 <h3 id="StoreLoad"><a href="#StoreLoad" class="headerlink" title="StoreLoad"></a>StoreLoad</h3><p>StoreLoad barrier能确保其它处理器遇到barrier之前执行所有的写操作，另外，barrier之后执行的所有读操作能收到最近能被barrier可见的值。 .换句话说，它能在barrier处理所有的读操作之前有效地阻止所有的写操作乱序，尊重顺序一致性多处理器执行那些操作的方式。</p>
 <p>StoreLoad是唯一的。这是唯一的一种memory barrier类型可以阻止<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">前文</a>提到的这种结果：r1 = r2 = 0，这个例子我在前面的文章中提到过很多次了。</p>
-<p>如果你一路仔细地读下来，可能会有个疑惑： StoreLoad和 StoreStore再紧接着一个LoadLoad有什么不一样呢？毕竟，StoreStore 将修改push到仓库中，然而LoadLoad 把远程的修改pull回来。然而，那两种barrier类型是不够的。记住，push操作可能会因为任意数量的指令而延迟， pull操作可能不会从主干版本中pull数据。 这也解释了为什么owerPC的lwsync指令–充当所有LoadLoad, LoadStore和StoreStore memory barrier,但不是StoreLoad–是不足够来阻止例子中的r1 = r2 = 0 这种结果的。</p>
+<p>如果你一路仔细地读下来，可能会有个疑惑： StoreLoad和 StoreStore再紧接着一个LoadLoad有什么不一样呢？毕竟，StoreStore 将修改push到仓库中，然而LoadLoad 把远程的修改pull回来。然而，那两种barrier类型是不够的。记住，push操作可能会因为任意数量的指令而延迟， pull操作可能不会从HEAD版本中pull数据。 这也解释了为什么owerPC的lwsync指令–充当所有LoadLoad, LoadStore和StoreStore memory barrier,但不是StoreLoad–是不足够来阻止例子中的r1 = r2 = 0 这种结果的。</p>
 <p>拿类比来说，StoreLoad barrier能通过push所有局部修改到仓库中来实现，等待那个操作完成，然后pull 仓库中绝对的、最近的主干修订版本。在大部分处理器上，充当StoreLoad barrier的指令比充当其它类型barrier的指令开销更大。</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol8.png" alt=""></p>
 <p>如果在那个操作中放置一个LoadStore barrier,也没什么大不了的, 之后我们得到的是一个完整的memory fence–一次性充当所有四种barrier 类型。 正如<a href="http://g.oswego.edu/dl/jmm/cookbook.html" target="_blank" rel="external">Doug</a>指出的那样，在目前所有处理器上都是这样，每个充当StoreLoad barrier的指令也充当完整的memory fence.</p>
@@ -405,7 +405,7 @@
 <p>这种类比同样对应针对C++11和C11的抽象机器。因此，如果你使用那些语言的标准库写无锁(lock-free)代码，同时将上述的类比记在脑里，就更有可能在任何平台下正确执行。</p>
 <p>在这种类比中，我说过，每个程序员代表在一个核心中正在运行的单线程。在一个真实的操作系统中，线程更倾向在生命周期中在不同的核心里移动，这时上述的类比仍然有效。我也在机器语言和C/C++语言不断变换来举例。显然，我们更倾向使用C/C++，或者另外更高级的语言。这是有可能的，因为任何充当memory barrier的操作也能阻止编译器乱序。</p>
 <p>我还没有写关于每种memory barrier类型的文章。例如，也存在数据依赖(data dependency )barriers<sup>注3</sup>。 我会在以后的文章中讲这些内容。然而，上面给出的四种类型仍是最重要的。</p>
-<p>如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及为什么它们为什么会发生内存乱序<sup>注4</sup>，我推荐Paul Paul McKenney &amp; David Howell的<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt" target="_blank" rel="external">工作</a>。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。</p>
+<p>如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及它们为什么会发生内存乱序<sup>注4</sup>，我推荐Paul Paul McKenney &amp; David Howell的<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt" target="_blank" rel="external">工作</a>。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。</p>
 <h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：gcc+x86下，编译器级别的memory barrier和CPU级别的memory barrier可以如下实现：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">define <span class="title">COMPILER_BARRIER</span><span class="params">()</span> __asm__ __<span class="title">volatile__</span><span class="params">(<span class="string">""</span> : : : <span class="string">"memory"</span>)</span></span><br><span class="line">define <span class="title">CPU_BARRIER</span><span class="params">()</span> __sync_synchronize</span></span><br></pre></td></tr></table></figure></p>
 <p>其中，<code>CPU_BARRIER()</code>可以防止CPU写读、写写、读写、读读乱序。如你所知，CPU级别的memory barrier同时约束CPU和编译器的乱序；而编译器级别的memory barrier只约束编译器的乱序，不影响CPU。</p>
 <p>注2：现在用的很多的cpu一般有三级cache。</p>
