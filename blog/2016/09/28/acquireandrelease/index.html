@@ -1,0 +1,758 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入探索并发编程系列(八)-Acquire与Release语义">
+<meta property="og:url" content="http://yoursite.com/blog/2016/09/28/acquireandrelease/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire5.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire6.png">
+<meta property="og:updated_time" content="2016-09-28T15:14:58.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入探索并发编程系列(八)-Acquire与Release语义">
+<meta name="twitter:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 深入探索并发编程系列(八)-Acquire与Release语义 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                深入探索并发编程系列(八)-Acquire与Release语义
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-09-28T11:11:52-04:00" content="2016-09-28">
+              2016-09-28
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/09/28/acquireandrelease/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/09/28/acquireandrelease/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一般来说，在无锁(lock-free)<sup>注1</sup>编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。</p>
+<a id="more"></a>
+<p>在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency" target="_blank" rel="external">顺序一致性</a>的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。</p>
+<p>不幸的是，你会发Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx" target="_blank" rel="external">white paper</a>提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 </p>
+<ul>
+<li>Acquire语义的性质只能应用于共享内存中的读操作，不管是read-modify-write操作还是普通的读数据。这种操作被认为是read-acquire。 Acquire 语义能阻止read-acquire和它之后的任何读写操作的乱序。</li>
+</ul>
+<ul>
+<li>Release语义的性质只能应用于共享内存中的写操作，而不管是read-modify-write操作还是普通的写操作。这种操作被认为是write-release. Release 语义能阻止write-release和它之前的任何读写操作的乱序。</li>
+</ul>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png" alt=""><br><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png" alt=""><br>只要你能消化上述的概念，就不难知道Acquire与Release 语义可以通过我在上一篇文章中提到的memory barrier类型的组合来实现。Barrier必须放置在read-acquire操作之后与write-release操作之前。[更新：请注意这些barrier在技术上比单个内存操作上对Acquire与Release 语义的需求更加严格，但能达到理想中的效果]</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png" alt=""></p>
+<p>有趣的是不管是Acquire还是Release语义都要用到一种开销比较昂贵的memory barrier-StoreLoad barrier, 。举个例子，在PowerPC中，lwsync(lightweight sync的简写)指令同时充当LoadLoad barrier, LoadStore barrier和StoreStore barrier三种角色，所以比sync指令(包含了StoreLoad barrier)的开销要昂贵.</p>
+<h3 id="显式平台特定的fence指令"><a href="#显式平台特定的fence指令" class="headerlink" title="显式平台特定的fence指令"></a>显式平台特定的fence指令</h3><p>获取期望的memory barrier的一种方式就是发出显式的fence指令。我们以一个例子开始。假设我们在PowerPC平台下写代码，__lwsync()是一种编译器内置函数，能发出lwsync指令。由于lwsync提供了许多种memory barrier，因此我们可以在下面的代码中用它来建立所需的Acquire或者Release语义。在线程1中，对Ready的写操作变成了一个write-release，在线程2中，对Ready的读操作变成了一个read-acquire。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png" alt=""></p>
+<p>如果让两个线程都运行，会发现，<code>r1==1</code>可以作为A的值从线程1成功传递到线程2中的确认标志。如此一来，我们可以保证<code>r2==42</code>。在上一篇文章中，我已经针对LoadLoad 和 StoreStore给出了一个很长的类比来阐述其是如何工作的，我在这里就不再解释了。</p>
+<p>在正式的定义中，我们说对Ready的写操作与读操作是同步的。在<a href="http://preshing.com/20130823/the-synchronizes-with-relation/" target="_blank" rel="external">这里</a>我对<code>synchronizes-with</code>专门写了一篇文章。目前为止，我们已经可以来说明要让这技术能通用，Acquire与Release 语义必须应用在同一个变量中（在这个例子中是Ready变量），读和写操作必须都是原子操作。在这里，Ready是个简单的已经对齐的整型变量，所以这些读写在PowerPC中就已经是原子操作了<sup>注2</sup>。</p>
+<h3 id="在可移植性C-11中使用Fences"><a href="#在可移植性C-11中使用Fences" class="headerlink" title="在可移植性C++11中使用Fences"></a>在可移植性C++11中使用Fences</h3><p>上述的例子是依赖编译器和处理器的。要支持多平台的一种方法就是将代码转化成C++11. 所有的C++11标识符都存在std空间中，所以为了将下面的例子变得简单一些，我们假设<code>using namespace  std;</code>语句提前放在代码的某处了。</p>
+<p>C++11的原子库标准定义了一个可移植的函数<code>atomic_thread_fence()</code>，函数采用一个参数来指定fence的类型。这个参数有很多种可能的值，但我们在这里最感兴趣的是<code>memory_order_acquire</code>与<code>memory_order_release</code>. 我们用这个函数来替代__lwsync()</p>
+<p>在让这个例子变得更完整之前，还需要作一点修改。在PowerPC平台上，我们知道对Ready变量的两个操作都是原子的，但不是每个平台上都这样。我们可以将Ready变量从整型改为<code>atomic&lt;int&gt;</code>。 考虑到针对对齐的整型，读写操作在现今所有的CPU中都是原子的，我知道这是个傻瓜式的修改。我会在synchronizes-with文章中描述更多关于这方面的内容，现在，我们姑且认为理论上能确保100%的准确率。另外， 不必对A做任何修改。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire5.png" alt=""></p>
+<p><code>memory_order_relaxed</code>参数意味着“确保这些操作是原子的，但对那些本身不在那里的操作不作任何的顺序限制或者强加memory barrier”</p>
+<p>再说一次，上述的<code>atomic_thread_fence()</code> 调用可以在PowerPC中实现像lwsync一样的效果。类似的，他们都能在ARM上发出dmb指令，这点我相信至少是和在PowerPC平台上能有同样效果的。在X86/X64平台上，<code>atomic_thread_fence()</code>调用可以简单的实现成和compiler barrier一样的效果，因为一般来说，x86/x64上的每个读操作已经包含了Acquire语义，并且每个写操作都包含了Release 语义。这就是为什么x86/x64经常被说成是强内存模型<sup>注3</sup>.</p>
+<h3 id="在可移植C-11上不用fences"><a href="#在可移植C-11上不用fences" class="headerlink" title="在可移植C++11上不用fences"></a>在可移植C++11上不用fences</h3><p>在C++11中，只要在对Ready上的操作中指定内存执行顺序的限制，就可以不发出显式的fence指令来达到Acquire与Release语义。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire6.png" alt=""></p>
+<p>考虑每个在Ready上的fence指令。[更新:请注意这种形式和使用独立的fences版本是不完全一样的，技术上来说，没有那么严格]。 编译器会发出必要的指令，来取得和memory barrier一样的所需的效果。具体来说，在Itanium上，每个操作都能简单的实现成一个单指令:<code>ld.acq</code> 与 <code>st.rel</code>. 如之前那样，r1 == 1意味着一种<br>synchronizes-with关系，作为对r2 == 42的确认。</p>
+<p>在C++11中，这实际上是一种更好的方式来表达Acquire与 Release语义。前面例子中使用的<code>atomic_thread_fence()</code> 函数在标准的制定中是添加的相对较晚的。</p>
+<h3 id="Acquire-and-Release-While-Locking"><a href="#Acquire-and-Release-While-Locking" class="headerlink" title="Acquire and Release While Locking"></a>Acquire and Release While Locking</h3><p>如你所见，这篇文章中没有一个例子能利用Acquire与Release 语义提供的LoadStore barrier优势。 实际上，只有LoadLoad和StoreStore 就足矣。这就是为什么在这篇文章中，我选一个简单的列子来让我们能集中关注API和语义。</p>
+<p>必须用到LoadStore一个例子是当使用Acquire与 Release语义来实现(mutex) 锁。<br>实际上，这就是名字的由来: 获取一个锁意味着Acquire 语义，释放锁意味着Release语义。 之间所有的内存操作都包含在了一个小的barrier的三明治中，用来阻止任何要跨越界限的内存乱序。</p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1:lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。</p>
+<p>注2:在X86体系结构下，对于64位架构，只要同时满足以下两个条件，那么对该基础内置数据类型变量（int、bool、指针等）的普通读写都是原子的：</p>
+<p>条件1:该变量按cache line对齐</p>
+<p>条件2:该变量sizeof值不超过64</p>
+<p>所以，要注意的是，32位cpu和系统中，即使64位例如int64_t类型变量不保证是原子的。对这些的原子操作可以使用<code>__sync_fech_and_add</code>等gcc提供的内置原子操作。</p>
+<p>注3:即使这样，读者诸君还是得注意，虽然store自带release语义，load自带acquire语义，但是X86还是会对写读不同变量进行乱序。（当然，这点和release 、acquire语义不矛盾）。为什么不矛盾？因为</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> t = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">int</span> c = a;</span><br></pre></td></tr></table></figure>
+<p>这里是写变量t，读另外一个变量a，因此可能乱序。但是不矛盾。因为写t提供release语义是说它之前的代码不会和它乱序，却没有保证它之后的代码不和它乱序；同理，对于读a提供acquire语义，只保证它之后的代码不会和它乱序，却没有保证它之前的代码不和它乱序。这里的之前之后都是针对program order，也请读者诸君务必注意理解。</p>
+<p>注4:一般说来，锁要提供三种语义：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++;</span><br></pre></td></tr></table></figure>
+<p>语义1:当线程1更新完a(也包括d)的值之后释放锁，线程2进入临界区必须读到a(也包括d)的新值，也就是线程1更新完之后的值。可以认为是acquire release或者happen before语义。</p>
+<p>语义2:同一时刻，<code>a++</code>这条语句只能有一个线程在执行。可以认为是临界语义或者互斥语义。</p>
+<p>语义3:必须保证a++不会被乱序到b++处执行，也不能乱序到c++处执行。这个自然也是临界语义或者互斥语义的一部分，因为如果乱序，那么无临界区可言了。但是读者诸君要注意到，以下这样的乱序是完全可以的、合法的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">d++;</span><br><span class="line">a++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++;</span><br></pre></td></tr></table></figure>
+<p>或者：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lock.lock();</span><br><span class="line">b++;</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">c++;</span><br><span class="line">lock.unlock();</span><br></pre></td></tr></table></figure>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20120913/acquire-and-release-semantics/" target="_blank" rel="external">http://preshing.com/20120913/acquire-and-release-semantics/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/09/19/sourcecontrol/" rel="next" title="深入探索并发编程系列(七)-内存屏障:资源控制操作">
+                <i class="fa fa-chevron-left"></i> 深入探索并发编程系列(七)-内存屏障:资源控制操作
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/09/28/acquireandrelease/"
+           data-title="深入探索并发编程系列(八)-Acquire与Release语义" data-url="http://yoursite.com/blog/2016/09/28/acquireandrelease/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">32</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#显式平台特定的fence指令"><span class="nav-number">1.</span> <span class="nav-text">显式平台特定的fence指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在可移植性C-11中使用Fences"><span class="nav-number">2.</span> <span class="nav-text">在可移植性C++11中使用Fences</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在可移植C-11上不用fences"><span class="nav-number">3.</span> <span class="nav-text">在可移植C++11上不用fences</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acquire-and-Release-While-Locking"><span class="nav-number">4.</span> <span class="nav-text">Acquire and Release While Locking</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注释"><span class="nav-number"></span> <span class="nav-text">注释</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">1.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

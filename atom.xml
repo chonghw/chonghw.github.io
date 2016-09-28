@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-20T02:16:37.000Z</updated>
+  <updated>2016-09-28T15:14:58.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,75 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>深入探索并发编程系列(八)-Acquire与Release语义</title>
+    <link href="http://yoursite.com/blog/2016/09/28/acquireandrelease/"/>
+    <id>http://yoursite.com/blog/2016/09/28/acquireandrelease/</id>
+    <published>2016-09-28T15:11:52.000Z</published>
+    <updated>2016-09-28T15:14:58.000Z</updated>
+    
+    <content type="html">&lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非&lt;a href=&quot;http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;顺序一致性&lt;/a&gt;的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。&lt;/p&gt;
+&lt;p&gt;不幸的是，你会发Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;white paper&lt;/a&gt;提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Acquire语义的性质只能应用于共享内存中的读操作，不管是read-modify-write操作还是普通的读数据。这种操作被认为是read-acquire。 Acquire 语义能阻止read-acquire和它之后的任何读写操作的乱序。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+&lt;li&gt;Release语义的性质只能应用于共享内存中的写操作，而不管是read-modify-write操作还是普通的写操作。这种操作被认为是write-release. Release 语义能阻止write-release和它之前的任何读写操作的乱序。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png&quot; alt=&quot;&quot;&gt;&lt;br&gt;只要你能消化上述的概念，就不难知道Acquire与Release 语义可以通过我在上一篇文章中提到的memory barrier类型的组合来实现。Barrier必须放置在read-acquire操作之后与write-release操作之前。[更新：请注意这些barrier在技术上比单个内存操作上对Acquire与Release 语义的需求更加严格，但能达到理想中的效果]&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;有趣的是不管是Acquire还是Release语义都要用到一种开销比较昂贵的memory barrier-StoreLoad barrier, 。举个例子，在PowerPC中，lwsync(lightweight sync的简写)指令同时充当LoadLoad barrier, LoadStore barrier和StoreStore barrier三种角色，所以比sync指令(包含了StoreLoad barrier)的开销要昂贵.&lt;/p&gt;
+&lt;h3 id=&quot;显式平台特定的fence指令&quot;&gt;&lt;a href=&quot;#显式平台特定的fence指令&quot; class=&quot;headerlink&quot; title=&quot;显式平台特定的fence指令&quot;&gt;&lt;/a&gt;显式平台特定的fence指令&lt;/h3&gt;&lt;p&gt;获取期望的memory barrier的一种方式就是发出显式的fence指令。我们以一个例子开始。假设我们在PowerPC平台下写代码，__lwsync()是一种编译器内置函数，能发出lwsync指令。由于lwsync提供了许多种memory barrier，因此我们可以在下面的代码中用它来建立所需的Acquire或者Release语义。在线程1中，对Ready的写操作变成了一个write-release，在线程2中，对Ready的读操作变成了一个read-acquire。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;如果让两个线程都运行，会发现，&lt;code&gt;r1==1&lt;/code&gt;可以作为A的值从线程1成功传递到线程2中的确认标志。如此一来，我们可以保证&lt;code&gt;r2==42&lt;/code&gt;。在上一篇文章中，我已经针对LoadLoad 和 StoreStore给出了一个很长的类比来阐述其是如何工作的，我在这里就不再解释了。&lt;/p&gt;
+&lt;p&gt;在正式的定义中，我们说对Ready的写操作与读操作是同步的。在&lt;a href=&quot;http://preshing.com/20130823/the-synchronizes-with-relation/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这里&lt;/a&gt;我对&lt;code&gt;synchronizes-with&lt;/code&gt;专门写了一篇文章。目前为止，我们已经可以来说明要让这技术能通用，Acquire与Release 语义必须应用在同一个变量中（在这个例子中是Ready变量），读和写操作必须都是原子操作。在这里，Ready是个简单的已经对齐的整型变量，所以这些读写在PowerPC中就已经是原子操作了&lt;sup&gt;注2&lt;/sup&gt;。&lt;/p&gt;
+&lt;h3 id=&quot;在可移植性C-11中使用Fences&quot;&gt;&lt;a href=&quot;#在可移植性C-11中使用Fences&quot; class=&quot;headerlink&quot; title=&quot;在可移植性C++11中使用Fences&quot;&gt;&lt;/a&gt;在可移植性C++11中使用Fences&lt;/h3&gt;&lt;p&gt;上述的例子是依赖编译器和处理器的。要支持多平台的一种方法就是将代码转化成C++11. 所有的C++11标识符都存在std空间中，所以为了将下面的例子变得简单一些，我们假设&lt;code&gt;using namespace  std;&lt;/code&gt;语句提前放在代码的某处了。&lt;/p&gt;
+&lt;p&gt;C++11的原子库标准定义了一个可移植的函数&lt;code&gt;atomic_thread_fence()&lt;/code&gt;，函数采用一个参数来指定fence的类型。这个参数有很多种可能的值，但我们在这里最感兴趣的是&lt;code&gt;memory_order_acquire&lt;/code&gt;与&lt;code&gt;memory_order_release&lt;/code&gt;. 我们用这个函数来替代__lwsync()&lt;/p&gt;
+&lt;p&gt;在让这个例子变得更完整之前，还需要作一点修改。在PowerPC平台上，我们知道对Ready变量的两个操作都是原子的，但不是每个平台上都这样。我们可以将Ready变量从整型改为&lt;code&gt;atomic&amp;lt;int&amp;gt;&lt;/code&gt;。 考虑到针对对齐的整型，读写操作在现今所有的CPU中都是原子的，我知道这是个傻瓜式的修改。我会在synchronizes-with文章中描述更多关于这方面的内容，现在，我们姑且认为理论上能确保100%的准确率。另外， 不必对A做任何修改。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire5.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;memory_order_relaxed&lt;/code&gt;参数意味着“确保这些操作是原子的，但对那些本身不在那里的操作不作任何的顺序限制或者强加memory barrier”&lt;/p&gt;
+&lt;p&gt;再说一次，上述的&lt;code&gt;atomic_thread_fence()&lt;/code&gt; 调用可以在PowerPC中实现像lwsync一样的效果。类似的，他们都能在ARM上发出dmb指令，这点我相信至少是和在PowerPC平台上能有同样效果的。在X86/X64平台上，&lt;code&gt;atomic_thread_fence()&lt;/code&gt;调用可以简单的实现成和compiler barrier一样的效果，因为一般来说，x86/x64上的每个读操作已经包含了Acquire语义，并且每个写操作都包含了Release 语义。这就是为什么x86/x64经常被说成是强内存模型&lt;sup&gt;注3&lt;/sup&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;在可移植C-11上不用fences&quot;&gt;&lt;a href=&quot;#在可移植C-11上不用fences&quot; class=&quot;headerlink&quot; title=&quot;在可移植C++11上不用fences&quot;&gt;&lt;/a&gt;在可移植C++11上不用fences&lt;/h3&gt;&lt;p&gt;在C++11中，只要在对Ready上的操作中指定内存执行顺序的限制，就可以不发出显式的fence指令来达到Acquire与Release语义。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire6.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;考虑每个在Ready上的fence指令。[更新:请注意这种形式和使用独立的fences版本是不完全一样的，技术上来说，没有那么严格]。 编译器会发出必要的指令，来取得和memory barrier一样的所需的效果。具体来说，在Itanium上，每个操作都能简单的实现成一个单指令:&lt;code&gt;ld.acq&lt;/code&gt; 与 &lt;code&gt;st.rel&lt;/code&gt;. 如之前那样，r1 == 1意味着一种&lt;br&gt;synchronizes-with关系，作为对r2 == 42的确认。&lt;/p&gt;
+&lt;p&gt;在C++11中，这实际上是一种更好的方式来表达Acquire与 Release语义。前面例子中使用的&lt;code&gt;atomic_thread_fence()&lt;/code&gt; 函数在标准的制定中是添加的相对较晚的。&lt;/p&gt;
+&lt;h3 id=&quot;Acquire-and-Release-While-Locking&quot;&gt;&lt;a href=&quot;#Acquire-and-Release-While-Locking&quot; class=&quot;headerlink&quot; title=&quot;Acquire and Release While Locking&quot;&gt;&lt;/a&gt;Acquire and Release While Locking&lt;/h3&gt;&lt;p&gt;如你所见，这篇文章中没有一个例子能利用Acquire与Release 语义提供的LoadStore barrier优势。 实际上，只有LoadLoad和StoreStore 就足矣。这就是为什么在这篇文章中，我选一个简单的列子来让我们能集中关注API和语义。&lt;/p&gt;
+&lt;p&gt;必须用到LoadStore一个例子是当使用Acquire与 Release语义来实现(mutex) 锁。&lt;br&gt;实际上，这就是名字的由来: 获取一个锁意味着Acquire 语义，释放锁意味着Release语义。 之间所有的内存操作都包含在了一个小的barrier的三明治中，用来阻止任何要跨越界限的内存乱序。&lt;/p&gt;
+&lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1:lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。&lt;/p&gt;
+&lt;p&gt;注2:在X86体系结构下，对于64位架构，只要同时满足以下两个条件，那么对该基础内置数据类型变量（int、bool、指针等）的普通读写都是原子的：&lt;/p&gt;
+&lt;p&gt;条件1:该变量按cache line对齐&lt;/p&gt;
+&lt;p&gt;条件2:该变量sizeof值不超过64&lt;/p&gt;
+&lt;p&gt;所以，要注意的是，32位cpu和系统中，即使64位例如int64_t类型变量不保证是原子的。对这些的原子操作可以使用&lt;code&gt;__sync_fech_and_add&lt;/code&gt;等gcc提供的内置原子操作。&lt;/p&gt;
+&lt;p&gt;注3:即使这样，读者诸君还是得注意，虽然store自带release语义，load自带acquire语义，但是X86还是会对写读不同变量进行乱序。（当然，这点和release 、acquire语义不矛盾）。为什么不矛盾？因为&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; t = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; c = a;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;这里是写变量t，读另外一个变量a，因此可能乱序。但是不矛盾。因为写t提供release语义是说它之前的代码不会和它乱序，却没有保证它之后的代码不和它乱序；同理，对于读a提供acquire语义，只保证它之后的代码不会和它乱序，却没有保证它之前的代码不和它乱序。这里的之前之后都是针对program order，也请读者诸君务必注意理解。&lt;/p&gt;
+&lt;p&gt;注4:一般说来，锁要提供三种语义：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;语义1:当线程1更新完a(也包括d)的值之后释放锁，线程2进入临界区必须读到a(也包括d)的新值，也就是线程1更新完之后的值。可以认为是acquire release或者happen before语义。&lt;/p&gt;
+&lt;p&gt;语义2:同一时刻，&lt;code&gt;a++&lt;/code&gt;这条语句只能有一个线程在执行。可以认为是临界语义或者互斥语义。&lt;/p&gt;
+&lt;p&gt;语义3:必须保证a++不会被乱序到b++处执行，也不能乱序到c++处执行。这个自然也是临界语义或者互斥语义的一部分，因为如果乱序，那么无临界区可言了。但是读者诸君要注意到，以下这样的乱序是完全可以的、合法的：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;或者：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文由 &lt;a href=&quot;http://weibo.com/2767520802/profile?topnav=1&amp;amp;wvr=6&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Diting0x&lt;/a&gt; 与 &lt;a href=&quot;http://weibo.com/yebangyu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;睡眼惺忪的小叶先森&lt;/a&gt; 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。&lt;/p&gt;
+&lt;p&gt;感谢好友&lt;a href=&quot;http://weibo.com/u/1707881862?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;小伙伴-小伙伴儿 &lt;/a&gt;阅读了初稿，并给出宝贵的意见。&lt;/p&gt;
+&lt;p&gt;原文： &lt;a href=&quot;http://preshing.com/20120913/acquire-and-release-semantics/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://preshing.com/20120913/acquire-and-release-semantics/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;br&gt;仅为学习使用，未经博主同意，请勿转载&lt;br&gt;本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="High-performance" scheme="http://yoursite.com/categories/High-performance/"/>
+    
+    
+  </entry>
   
   <entry>
     <title>深入探索并发编程系列(七)-内存屏障:资源控制操作</title>
@@ -742,9 +811,9 @@ sudo update-alternatives --config gcc
     
       <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
-      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
+    
+      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -1770,248 +1839,9 @@ rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission den
     
       <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
     
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
-    
       <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
     
-  </entry>
-  
-  <entry>
-    <title>A Comprehensive Virtualized Enviroment Setup and Analysis</title>
-    <link href="http://yoursite.com/blog/2016/03/30/virt-setup-analysis/"/>
-    <id>http://yoursite.com/blog/2016/03/30/virt-setup-analysis/</id>
-    <published>2016-03-31T02:17:12.000Z</published>
-    <updated>2016-06-14T14:22:13.000Z</updated>
-    
-    <content type="html">&lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;0x00 全文环境 &lt;/li&gt;
-&lt;li&gt;0x01 虚拟机创建KVM/QEMU &lt;/li&gt;
-&lt;li&gt;0x02 虚拟机管理Libvirt&lt;/li&gt;
-&lt;li&gt;0x03 虚拟机监控Libvmi&lt;/li&gt;
-&lt;li&gt;0x04 虚拟机监控Volatility&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;h3 id=&quot;0x00-全文环境&quot;&gt;&lt;a href=&quot;#0x00-全文环境&quot; class=&quot;headerlink&quot; title=&quot;0x00 全文环境&quot;&gt;&lt;/a&gt;0x00 全文环境&lt;/h3&gt;&lt;p&gt;Ubuntu12.04 + Kvm-kmod-3.8 + Qemu-kvm-1.1.2+ Libvirt 1.3.2 + Libvmi + Volatility &lt;/p&gt;
-&lt;h3 id=&quot;Ox01-虚拟机创建KVM-QEMU&quot;&gt;&lt;a href=&quot;#Ox01-虚拟机创建KVM-QEMU&quot; class=&quot;headerlink&quot; title=&quot;Ox01 虚拟机创建KVM/QEMU&quot;&gt;&lt;/a&gt;Ox01 虚拟机创建KVM/QEMU&lt;/h3&gt;&lt;p&gt;Kvm需要CPU的支持（Intel VT 或者 AMD SVM)，在安装KVM之前，可先检查CPU是否支持硬件虚拟化技术。基于Intel的系统，可运行 ‘grep vmx /proc/cpuinfo’ 查看是否含有vmx的关键字，如果有，则表示支持；基于AMD的系统，可运行 ‘grep svm /proc/cpuinfo’ 查看是否含有svm的关键字。&lt;br&gt;另外，CPU若支持硬件虚拟化，还得确保BLOS开启了VT选项（有些厂商默认是禁用的，如thinkpad t450). 可以下载 cpu-checker 工具（apt-get install cpu-checker)，之后运行kvm-ok， 如果提示 kvm acceleration can not be used，则可能是blos禁用了kvm虚拟化，在blos设置中开启即可。&lt;/p&gt;
-&lt;p&gt;可执行：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;modprobe kvm 
-modprobe kvm_intel 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;开启内核自带的kvm&lt;/p&gt;
-&lt;p&gt;关于源码安装kvm-kmod以及qemu-kvm的详细过程可参考 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/01/01/kvm-qemu-bytalk/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章。kvm-kmod安装成功后，运行lsmod | grep kvm， 会显示两个module:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;kvm_intel             137721  3 
-kvm                   415549  1 kvm_intel
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;qemu-kvm安装成功后会在/your-confiure-location/bin/qemu-system-x86_64等可执行文件。&lt;/p&gt;
-&lt;p&gt;安装完KVM/QEMU后，创建虚拟机的时候，虚拟机的网络方式是比较关心的问题，KVM/QEMU有两种网络配置方式。&lt;/p&gt;
-&lt;p&gt;其一，用户模式（User Networking): 即NAT方式，也是默认的网络模式。让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机。既然无法访问客户机，那宿主机与客户机该如何传输文件呢？默认的，客户机得到的ip空间为10.0.2.0/24，宿主机提供了ip为10.0.2.2的地址让虚拟机访问。可以ssh到宿主机(10.0.2.2)，用scp来拷贝文件。&lt;/p&gt;
-&lt;p&gt;其二，桥接模式（Bridge Networking): 这种模式允许客户机就像一台独立的主机一样拥有网络。这种方式要比用户网络复杂一些，但是设置好后客户机与互联网，客户机与主机之间的通信都很容易。桥接网络需要网卡支持，一般的有线网卡都支持，绝大部分的无线网卡都不支持。&lt;/p&gt;
-&lt;p&gt;NAT方式是KVM/QEMU提供的默认方式，要设置桥接模式，首先在宿主机上安装桥接相关的包，&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apt-get install bridge-utils. 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;修改/etc/network/interfaces&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;auto lo
-iface lo inet loopback
-auto eth0
-iface eth0 inet manual
-auto br0
-iface br0 inet dhcp
-   bridge_ports eth0
-   bridge_stp off
-   bridge_fd 9
-   bridge_hello 2
-   bridge_maxwait 0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/etc/init.d/networking restart
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;配置好后，可运行brctl show命令，会显示：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;bridge name      bridge id              STP enabled interfaces
-br0              8000.68f728eddb0d      no          eth0
-                                              vnet0
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后在创建虚拟机的时候可添加-net nic -net tap参数，如&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/usr/local/bin/qemu-system-x86_64 -hda imgname.img -vnc :1 -m 1024 -net nic -net tap -monitor stdio    
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;之后创建的虚拟机便工作在网桥模式中。&lt;/p&gt;
-&lt;h3 id=&quot;0x02-虚拟机管理Libvirt&quot;&gt;&lt;a href=&quot;#0x02-虚拟机管理Libvirt&quot; class=&quot;headerlink&quot; title=&quot;0x02 虚拟机管理Libvirt&quot;&gt;&lt;/a&gt;0x02 虚拟机管理Libvirt&lt;/h3&gt;&lt;p&gt;除了用qemu命令行的方式创建与管理虚拟机，也可将一些命令行参数保存为xml配置文件，用libvirt来管理。libvirt是一套管理虚拟机的工具，包括管理虚拟机的API、一个守护进程（libvirtd)和一个命令行工具（virsh). Libvirt 的主要目标是提供一个单一途径以管理多种不同虚拟化方案已经虚拟化主机，包括KVM/QEMU,Xen,LXC等。安装libvirt后，会产生libvirtd进程以及virsh工具，要利用libvirt做开发，可调用其中的API。libvirt, libvirtd 以及virsh的关系如下图：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png&quot; alt=&quot;libvirt-internal&quot;&gt;&lt;/p&gt;
-&lt;p&gt;详细介绍可参考：&lt;a href=&quot;http://libvirt.org/internals.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvirt internals&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;安装libvirt: &lt;/p&gt;
-&lt;p&gt;先安装libvirt所依赖的包&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apt-get install libnl-dev libxml2 libxml2-dev  libpciaccess-dev libyajl-dev libdevmapper-dev libgnutls-dev
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;如出现以下错误，都可以检查上述这些包是否安装好&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;error: Could not find libxml2 anywhere
-
-error: You must install the GnuTLS library in order to compile and run libvirt
-
-error: You must install device-mapper-devel/libdevmapper &amp;gt;= 1.0.0 to compile libvirt
-
-error: libnl-devel &amp;gt;= 1.1 is required for macvtap support
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下载 libvirt1.3.2.tar.gz&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;tar xvf libvirt1.3.2.tar.gz
-./configure
-make &amp;amp;&amp;amp; make install
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装完成后，执行ldconfig同步链接库，否则会出现以下错误：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;virsh: error while loading shared libraries: libvirt.so.0: cannot open shared object file: No such file or directory
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;执行检查libvirt安装成功&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;which libvirtd
-libvirtd –version
-which virsh
-virsh –version
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若出现此类错误：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;error: Failed to reconnect to the hypervisor
-error: no valid connection
-error: Failed to connect socket to &amp;apos;/usr/local/var/run/libvirt/libvirt-sock&amp;apos;: No such file or directory
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;则很有可能是libvirtd进程没有开启，这时需要手动开启libvirtd,执行libvirtd -d 即可。(libvirtd具体参数可参考：&lt;a href=&quot;http://linux.die.net/man/8/libvirtd&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvirtd manual&lt;/a&gt; ）&lt;/p&gt;
-&lt;p&gt;另外注意，libvirt从1.3版本后增加了virtlogd特性，需要执行virtlogd -d手动开启virtlogd进程（virtlogd具体参数可参看：&lt;a href=&quot;https://www.mankier.com/8/virtlogd&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;virtlogd manual&lt;/a&gt; ）. 否则会出现以下错误：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;error: Failed to connect socket to &amp;apos;/usr/local/var/run/libvirt/virtlogd-sock&amp;apos;: No such file or directory
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装好libvirt后，便可配置好xml文件，用virsh来管理。具体virsh命令这里不做介绍，可参考其中一个配置文件：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;domain type=&amp;apos;kvm&amp;apos;&amp;gt;
-&amp;lt;name&amp;gt;ubuntudemo&amp;lt;/name&amp;gt;&amp;lt;!--虚拟机名称--&amp;gt;
-&amp;lt;memory&amp;gt;1048576&amp;lt;/memory&amp;gt;&amp;lt;!--最大内存，单位KB--&amp;gt;
-&amp;lt;currentMemory&amp;gt;1048576&amp;lt;/currentMemory&amp;gt;&amp;lt;!--可用内存，单位k--&amp;gt;
-&amp;lt;uuid&amp;gt;87d5b3d2-3618-4a59-9efb-aa869ff34999&amp;lt;/uuid&amp;gt;
-
-&amp;lt;vcpu&amp;gt;1&amp;lt;/vcpu&amp;gt;&amp;lt;!--虚拟cpu个数--&amp;gt;
-&amp;lt;os&amp;gt;
-    &amp;lt;type arch=&amp;apos;x86_64&amp;apos;,machine=&amp;apos;pc&amp;apos;&amp;gt;hvm&amp;lt;/type&amp;gt;
-    &amp;lt;boot dev=&amp;apos;hd&amp;apos;/&amp;gt;&amp;lt;!--光盘启动--&amp;gt;
-&amp;lt;/os&amp;gt;
-&amp;lt;features&amp;gt;
-    &amp;lt;acpi/&amp;gt;
-    &amp;lt;apic/&amp;gt;
-    &amp;lt;pae/&amp;gt;
-&amp;lt;/features&amp;gt;
-&amp;lt;clock offset=&amp;apos;localtime&amp;apos;/&amp;gt;
-&amp;lt;on_poweroff&amp;gt;destroy&amp;lt;/on_poweroff&amp;gt;
-&amp;lt;on_reboot&amp;gt;restart&amp;lt;/on_reboot&amp;gt;
-&amp;lt;on_crash&amp;gt;destroy&amp;lt;/on_crash&amp;gt;
-&amp;lt;devices&amp;gt;
-    &amp;lt;emulator&amp;gt;/usr/bin/qemu&amp;lt;/emulator&amp;gt; &amp;lt;!--先创建好软链接   ln -s /use/local/qemukvm1.1.2/bin/qemu-system-x86_64 /usr/bin/qemu--&amp;gt;
-    &amp;lt;disk type=&amp;apos;file&amp;apos; device=&amp;apos;disk&amp;apos;&amp;gt;
-        &amp;lt;driver name=&amp;apos;qemu&amp;apos; type=&amp;apos;qcow2&amp;apos;/&amp;gt;
-        &amp;lt;source file=&amp;apos;/home/os.img/server12041.img&amp;apos;/&amp;gt;&amp;lt;!--目的镜像路径--&amp;gt;
-        &amp;lt;target dev=&amp;apos;vda&amp;apos; bus=&amp;apos;virtio&amp;apos;/&amp;gt;
-    &amp;lt;/disk&amp;gt;
-
-    &amp;lt;interface type=&amp;apos;bridge&amp;apos;&amp;gt;&amp;lt;!--虚拟机网络连接方式--&amp;gt;
-        &amp;lt;source bridge=&amp;apos;br0&amp;apos;/&amp;gt;&amp;lt;!--当前主机网桥的名称--&amp;gt;
-        &amp;lt;mac address=&amp;quot;00:16:3e:5d:aa:a8&amp;quot;/&amp;gt;&amp;lt;!--为虚拟机分配mac地址，务必唯一，否则dhcp获得同样ip,引起冲突--&amp;gt;
-    &amp;lt;/interface&amp;gt;
-    &amp;lt;input type=&amp;apos;mouse&amp;apos; bus=&amp;apos;ps2&amp;apos;/&amp;gt;
-    &amp;lt;!--vnc方式登录，端口号自动分配，自动加1，可以通过virsh vncdisplay ubuntudemo来查询（实际端口为显示结果+5900）--&amp;gt; 
-    &amp;lt;graphics type=&amp;apos;vnc&amp;apos; port=&amp;apos;-1&amp;apos; autoport=&amp;apos;yes&amp;apos; listen=&amp;apos;0.0.0.0&amp;apos; keymap=&amp;apos;en-us&amp;apos;/&amp;gt;
-&amp;lt;/devices&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;/p&gt;
-&lt;h3 id=&quot;0x03-虚拟机监控Libvmi&quot;&gt;&lt;a href=&quot;#0x03-虚拟机监控Libvmi&quot; class=&quot;headerlink&quot; title=&quot;0x03 虚拟机监控Libvmi&quot;&gt;&lt;/a&gt;0x03 虚拟机监控Libvmi&lt;/h3&gt;&lt;p&gt;Libvmi是一套能从底层二进制信息重构虚拟机上层语义的C语言API。由于hypervisor(VMM)获取的全是客户机的二进制比特，用户为了从外部（比如宿主机)监控客户机的行为需要理解客户机上层的语义，比如客户机正在运行的进程列表、模块列表等信息，这种二进制到上层语义之间的gap称之为语义鸿沟（semantic gap)，从外部监控客户机的行为称之为虚拟机自省（VM Introspection）。 Libvmi提供的API，能够读取物理内存、虚拟内存、符号表（System.map）、暂停/打开虚拟机、接收内存与寄存器事件的通知等，让用户能很方便的构建插件，来读取进程列表、模块列表等信息（大部分linux原生监控工具都可以通过libvmi来构建). &lt;/p&gt;
-&lt;p&gt;Libvmi目前支持Intel,AMD64以及ARM系统结构，支持的虚拟机平台包括XEN与KVM/QEMU，支持的被监控系统类型包括windows和linux. Libvmi从Xenaccess发展而来，要了解其详细原理，可参考论文&lt;a href=&quot;https://www.acsac.org/2007/papers/138.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Secure and Flexible Monitoring of Virtual Machines&lt;/a&gt;以及官方主页&lt;a href=&quot;http://libvmi.com/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvmi&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;安装libvmi:&lt;/p&gt;
-&lt;p&gt;先安装其依赖的包，注，这里针对KVM/QEMU，关于XEN依赖的包，会有所不同，可参考&lt;a href=&quot;http://libvmi.com/docs/gcode-install.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libvmi-installation&lt;/a&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apt-get install automake autoconf
-apt-get install libtool
-apt-get install flex bison
-apt-get install check
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下载libvmi-0.10.1.tar.gz&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;tar xvf libvmi-0.10.1.tar.gz
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;安装    &lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;cd libvmi-0.10.1
-./autogen.sh
-./congfigure
-make 
-make install
-ldconfig
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;libvmi提供了很多plugin examples在/libvmi/examples文件夹中，&lt;br&gt;要运行其中的plugin（比如process-list，列举客户机中进程信息，类似linux的原生ls命令), 首先要找出客户机符号表中的一些偏移信息. libvmi提供了获取偏移信息的工具在/libvmi/tools/linux-offset-finder/ 文件夹中，将其拷贝到虚拟机中，make编译，生成了一个内核模块findoffset.ko，执行insmod findoffset.ko将其插入内核中，&lt;br&gt; 再执行dmesg 将得到的偏移信息，如：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;ostype = &amp;quot;Linux&amp;quot;;
-sysmap = &amp;quot;/boot/System.map-3.2.0-29-generic&amp;quot;;
-linux_name = 0x470;
-linux_tasks = 0x248;
-linux_mm=0x280;
-linux_pid=0x2bc;
-linux_pgd=0x58;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;写进宿主机的/libvmi/etc/libvmi-example.conf中，将libvmi-example.conf拷贝到/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中,注，这里libvmi会在/etc/libvmi.conf或者\$HOME/etc/libvmi.conf中读取偏移信息。另外，这里的sysmap路径是host主机的路径，需要把guest中的System.map文件拷贝到host主机上。(还发现一个问题，虚拟机的名字不能全以数字命名，比如120432,不然在读取libvmi.conf配置文件时会出错).&lt;/p&gt;
-&lt;p&gt;之后运行&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/libvmi/examples/process-list ubuntudemo 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这里ubuntudemo是创建的虚拟机名字。以下是列出的部分信息：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Process listing for VM ubuntudemo (id=3)
-Next list entry is at: ffff88003d638248
-[    0] swapper/0 (struct addr:ffffffff81c0d020)
-[    1] init (struct addr:ffff88003d638000)
-[    2] kthreadd (struct addr:ffff88003d639700)
-[    3] ksoftirqd/0 (struct addr:ffff88003d63ae00)
-[    6] migration/0 (struct addr:ffff88003d658000)
-[    7] watchdog/0 (struct addr:ffff88003d659700)
-[    8] cpuset (struct addr:ffff88003d65ae00)
-[    9] khelper (struct addr:ffff88003d65c500)
-[   10] kdevtmpfs (struct addr:ffff88003d65dc00)
-[   11] netns (struct addr:ffff88003d698000)
-[   12] sync_supers (struct addr:ffff88003d699700)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Libvmi提供的plugins有限，用户可根据需要编写，也可利用取证工具volatlity做更高层次语义的分析。Libvmi支持python绑定，提供了与volatility绑定的接口，具体可见下文。&lt;/p&gt;
-&lt;h3 id=&quot;0x04-虚拟机监控Volatility&quot;&gt;&lt;a href=&quot;#0x04-虚拟机监控Volatility&quot; class=&quot;headerlink&quot; title=&quot;0x04 虚拟机监控Volatility&quot;&gt;&lt;/a&gt;0x04 虚拟机监控Volatility&lt;/h3&gt;&lt;p&gt;Volatility是一个用python编写的内存分析工具，与libvmi（利用sysystem.map符号表信息)不同的是，volatility利用可执行文件elf中的调试信息（dwarf格式）以及system.map符号表信息来获取更丰富的变量和函数语义。其支持windows， linux以及mac。 文中以Linux为例。&lt;/p&gt;
-&lt;p&gt;Get Started:&lt;/p&gt;
-&lt;p&gt;下载volatility包&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;git clone https://github.com/volatilityfoundation/volatility.git
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;创建Linux profile&lt;/p&gt;
-&lt;p&gt;profile是个zip文件，包含内核数据结构以及调试信息，也就是dwarf文件（volatility称之为vtypes)与system.map的压缩包。&lt;/p&gt;
-&lt;p&gt;volatility提供了一个内核模块在/volatility/tools/linux文件夹下来获取vtypes信息，将文件夹内容拷贝到要分析的客户机中，编译make，生成module.dwarf文件。在此之前请确保客户机中以及安装dwarfdump (apt-get install dwarfdump）。之后执行 head module.dwarf，会显示以下内容:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;.debug_info
-
-&amp;lt;0&amp;gt;&amp;lt;0+11&amp;gt;&amp;lt;DW_TAG_compile_unit&amp;gt; DW_AT_producer&amp;lt;GNU C 4.6.3&amp;gt; DW_AT_language&amp;lt;DW_LANG_C89&amp;gt;.....
-
-&amp;lt;1&amp;gt;&amp;lt;45&amp;gt;&amp;lt;DW_TAG_typedef&amp;gt; DW_AT_name&amp;lt;__s8&amp;gt; DW_AT_decl_file&amp;lt;1 include/asm-generic/int-ll64.h&amp;gt;.....
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;生成&lt;/p&gt;
-&lt;p&gt;接着将module.dwarf文件以及/boot/System.map-3.2.0-99-generic 文件（不同系统文件名不同）压缩成一个zip文件，如Ubuntu1204.zip。执行：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;zip volatility/volatility/plugins/overlays/linux/Ubuntu1204.zip volatility/tools/linux/module.dwarf /boot/System.map-3.2.0-99-generic
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;使用profile&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;python vol.py --info | grep Linux 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt; 这时会显示之前创建的profile名，Linuxubuntu1204x64.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;LinuxUbuntu1204x64    - A Profile for Linux Ubuntu1204 x64 &amp;lt;=== This is the one we just created
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;绑定libvmi的python接口&lt;/p&gt;
-&lt;p&gt;在./volatility/plugins/addrspaces 有针对不同内存快照的物理地址空间，如vmware.py,lime.py，crash.py等。libvmi则提供了pyvmi接口，在/libvmi/tools/pyvmi文件夹中有个pyvmiaddressspace.py文件可供volatility使用，（若需要自己编写python程序，则需要build pyvmi，build过程可参见其中的README文件，若出现编译错误，请确保安装 apt-get install build-essentials, apt-get install python2.7-dev).&lt;br&gt;将pyvmiaddressspace.py文件拷贝至./volatility/plugins/addrespaces文件夹中便可以利用volatility的plugins来分析虚拟机的内存了。以linux_pslist plugin为例，执行：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;python vol.py -l vmi://ubuntudemo --profile=Linuxubuntu1204x64 linux_pslist  
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;若出现distorm3（反编译库)相关错误，请确保已经安装distorm3&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;apt-get install python-pip
-pip install distorm3
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;绑定pyvmi接口后，volatility所有的plugins都可以用来分析虚拟机内存。 &lt;/p&gt;
-&lt;p&gt;完&lt;/p&gt;
-&lt;hr&gt;
-&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;br&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;] &lt;/p&gt;
-&lt;hr&gt;
-&lt;h3 id=&quot;0x0A-References&quot;&gt;&lt;a href=&quot;#0x0A-References&quot; class=&quot;headerlink&quot; title=&quot;0x0A References&quot;&gt;&lt;/a&gt;0x0A References&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://libvmi.com/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Libvmi&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://libvirt.org/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Libvirt&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://github.com/volatilityfoundation/volatility/wiki&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Volatility wiki&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://www.acsac.org/2007/papers/138.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Secure and Flexible Monitoring of Virtual Machines&lt;/a&gt;&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;0x00 全文环境 &lt;/li&gt;
-&lt;li&gt;0x01 虚拟机创建KVM/QEMU &lt;/li&gt;
-&lt;li&gt;0x02 虚拟机管理Libvirt&lt;/li&gt;
-&lt;li&gt;0x03 虚拟机监控Libvmi&lt;/li&gt;
-&lt;li&gt;0x04 虚拟机监控Volatility&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-    
-    </summary>
-    
-      <category term="virtualization" scheme="http://yoursite.com/categories/virtualization/"/>
-    
-    
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Binary" scheme="http://yoursite.com/tags/Binary/"/>
-    
-      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
-    
-      <category term="KVM" scheme="http://yoursite.com/tags/KVM/"/>
-    
-      <category term="QEMU" scheme="http://yoursite.com/tags/QEMU/"/>
-    
-      <category term="Libvmi" scheme="http://yoursite.com/tags/Libvmi/"/>
-    
-      <category term="Volatility" scheme="http://yoursite.com/tags/Volatility/"/>
+      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
   </entry>
   
