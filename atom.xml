@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-28T17:58:22.000Z</updated>
+  <updated>2016-09-29T00:19:37.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,12 +20,11 @@
     <link href="http://yoursite.com/blog/2016/09/28/acquireandrelease/"/>
     <id>http://yoursite.com/blog/2016/09/28/acquireandrelease/</id>
     <published>2016-09-28T15:11:52.000Z</published>
-    <updated>2016-09-28T17:58:22.000Z</updated>
+    <updated>2016-09-29T00:19:37.000Z</updated>
     
     <content type="html">&lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非&lt;a href=&quot;http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;顺序一致性&lt;/a&gt;的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。&lt;/p&gt;
-&lt;p&gt;不幸的是，你会发Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;white paper&lt;/a&gt;提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 &lt;/p&gt;
+&lt;p&gt;不幸的是，你会发现Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;white paper&lt;/a&gt;提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 &lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Acquire语义的性质只能应用于共享内存中的读操作，不管是read-modify-write操作还是普通的读数据。这种操作被认为是read-acquire。 Acquire 语义能阻止read-acquire和它之后的任何读写操作的乱序。&lt;/li&gt;
 &lt;/ul&gt;
@@ -34,7 +33,7 @@
 &lt;/ul&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png&quot; alt=&quot;&quot;&gt;&lt;br&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png&quot; alt=&quot;&quot;&gt;&lt;br&gt;只要你能消化上述的概念，就不难知道Acquire与Release 语义可以通过我在上一篇文章中提到的memory barrier类型的组合来实现。Barrier必须放置在read-acquire操作之后与write-release操作之前。[更新：请注意这些barrier在技术上比单个内存操作上对Acquire与Release 语义的需求更加严格，但能达到理想中的效果]&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
-&lt;p&gt;有趣的是不管是Acquire还是Release语义都要用到一种开销比较昂贵的memory barrier-StoreLoad barrier, 。举个例子，在PowerPC中，lwsync(lightweight sync的简写)指令同时充当LoadLoad barrier, LoadStore barrier和StoreStore barrier三种角色，所以比sync指令(包含了StoreLoad barrier)的开销要昂贵.&lt;/p&gt;
+&lt;p&gt;有趣的是不管是Acquire还是Release语义都不需要用到一种开销比较昂贵的memory barrier-StoreLoad barrier, 。举个例子，在PowerPC中，lwsync(lightweight sync的简写)指令同时充当LoadLoad barrier, LoadStore barrier和StoreStore barrier三种角色，所以比sync指令(包含了StoreLoad barrier)的开销要昂贵.&lt;/p&gt;
 &lt;h3 id=&quot;显式平台特定的fence指令&quot;&gt;&lt;a href=&quot;#显式平台特定的fence指令&quot; class=&quot;headerlink&quot; title=&quot;显式平台特定的fence指令&quot;&gt;&lt;/a&gt;显式平台特定的fence指令&lt;/h3&gt;&lt;p&gt;获取期望的memory barrier的一种方式就是发出显式的fence指令。我们以一个例子开始。假设我们在PowerPC平台下写代码，__lwsync()是一种编译器内置函数，能发出lwsync指令。由于lwsync提供了许多种memory barrier，因此我们可以在下面的代码中用它来建立所需的Acquire或者Release语义。在线程1中，对Ready的写操作变成了一个write-release，在线程2中，对Ready的读操作变成了一个read-acquire。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
 &lt;p&gt;如果让两个线程都运行，会发现，&lt;code&gt;r1==1&lt;/code&gt;可以作为A的值从线程1成功传递到线程2中的确认标志。如此一来，我们可以保证&lt;code&gt;r2==42&lt;/code&gt;。在上一篇文章中，我已经针对LoadLoad 和 StoreStore给出了一个很长的类比来阐述其是如何工作的，我在这里就不再解释了。&lt;/p&gt;
@@ -55,7 +54,7 @@
 &lt;p&gt;注2:在X86体系结构下，对于64位架构，只要同时满足以下两个条件，那么对该基础内置数据类型变量（int、bool、指针等）的普通读写都是原子的：&lt;/p&gt;
 &lt;p&gt;条件1:该变量按cache line对齐&lt;/p&gt;
 &lt;p&gt;条件2:该变量sizeof值不超过64&lt;/p&gt;
-&lt;p&gt;所以，要注意的是，32位cpu和系统中，即使64位例如int64_t类型变量不保证是原子的。对这些的原子操作可以使用&lt;code&gt;__sync_fech_and_add&lt;/code&gt;等gcc提供的内置原子操作。&lt;/p&gt;
+&lt;p&gt;所以，要注意的是，32位cpu和系统中，即使64位例如int64_t类型变量即使是对齐也不保证是原子的。这种情况可以使用&lt;code&gt;__sync_fech_and_add&lt;/code&gt;等gcc提供的内置原子操作。&lt;/p&gt;
 &lt;p&gt;注3:即使这样，读者诸君还是得注意，虽然store自带release语义，load自带acquire语义，但是X86还是会对写读不同变量进行乱序。（当然，这点和release 、acquire语义不矛盾）。为什么不矛盾？因为&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; t = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; c = a;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
 &lt;p&gt;这里是写变量t，读另外一个变量a，因此可能乱序。但是不矛盾。因为写t提供release语义是说它之前的代码不会和它乱序，却没有保证它之后的代码不和它乱序；同理，对于读a提供acquire语义，只保证它之后的代码不会和它乱序，却没有保证它之前的代码不和它乱序。这里的之前之后都是针对program order，也请读者诸君务必注意理解。&lt;/p&gt;
@@ -68,13 +67,14 @@
 &lt;p&gt;或者：&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
 &lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文由 &lt;a href=&quot;http://weibo.com/2767520802/profile?topnav=1&amp;amp;wvr=6&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Diting0x&lt;/a&gt; 与 &lt;a href=&quot;http://weibo.com/yebangyu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;睡眼惺忪的小叶先森&lt;/a&gt; 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。&lt;/p&gt;
+&lt;p&gt;感谢好友&lt;a href=&quot;http://weibo.com/u/1707881862?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;小伙伴-小伙伴儿 &lt;/a&gt;阅读了初稿，并给出宝贵的意见。&lt;/p&gt;
 &lt;p&gt;原文： &lt;a href=&quot;http://preshing.com/20120913/acquire-and-release-semantics/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://preshing.com/20120913/acquire-and-release-semantics/&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;br&gt;仅为学习使用，未经博主同意，请勿转载&lt;br&gt;本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有&lt;/p&gt;
 </content>
     
     <summary type="html">
     
-      &lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
+      &lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acq
     
     </summary>
     

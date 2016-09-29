@@ -346,12 +346,57 @@
 
       
         
-          <p>一般来说，在无锁(lock-free)<sup>注1</sup>编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。</p>
-          <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2016/09/28/acquireandrelease/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
+          
+            <p>一般来说，在无锁(lock-free)<sup>注1</sup>编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。</p>
+<p>在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency" target="_blank" rel="external">顺序一致性</a>的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。</p>
+<p>不幸的是，你会发现Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx" target="_blank" rel="external">white paper</a>提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 </p>
+<ul>
+<li>Acquire语义的性质只能应用于共享内存中的读操作，不管是read-modify-write操作还是普通的读数据。这种操作被认为是read-acquire。 Acquire 语义能阻止read-acquire和它之后的任何读写操作的乱序。</li>
+</ul>
+<ul>
+<li>Release语义的性质只能应用于共享内存中的写操作，而不管是read-modify-write操作还是普通的写操作。这种操作被认为是write-release. Release 语义能阻止write-release和它之前的任何读写操作的乱序。</li>
+</ul>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png" alt=""><br><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png" alt=""><br>只要你能消化上述的概念，就不难知道Acquire与Release 语义可以通过我在上一篇文章中提到的memory barrier类型的组合来实现。Barrier必须放置在read-acquire操作之后与write-release操作之前。[更新：请注意这些barrier在技术上比单个内存操作上对Acquire与Release 语义的需求更加严格，但能达到理想中的效果]</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png" alt=""></p>
+<p>有趣的是不管是Acquire还是Release语义都不需要用到一种开销比较昂贵的memory barrier-StoreLoad barrier, 。举个例子，在PowerPC中，lwsync(lightweight sync的简写)指令同时充当LoadLoad barrier, LoadStore barrier和StoreStore barrier三种角色，所以比sync指令(包含了StoreLoad barrier)的开销要昂贵.</p>
+<h3 id="显式平台特定的fence指令"><a href="#显式平台特定的fence指令" class="headerlink" title="显式平台特定的fence指令"></a>显式平台特定的fence指令</h3><p>获取期望的memory barrier的一种方式就是发出显式的fence指令。我们以一个例子开始。假设我们在PowerPC平台下写代码，__lwsync()是一种编译器内置函数，能发出lwsync指令。由于lwsync提供了许多种memory barrier，因此我们可以在下面的代码中用它来建立所需的Acquire或者Release语义。在线程1中，对Ready的写操作变成了一个write-release，在线程2中，对Ready的读操作变成了一个read-acquire。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png" alt=""></p>
+<p>如果让两个线程都运行，会发现，<code>r1==1</code>可以作为A的值从线程1成功传递到线程2中的确认标志。如此一来，我们可以保证<code>r2==42</code>。在上一篇文章中，我已经针对LoadLoad 和 StoreStore给出了一个很长的类比来阐述其是如何工作的，我在这里就不再解释了。</p>
+<p>在正式的定义中，我们说对Ready的写操作与读操作是同步的。在<a href="http://preshing.com/20130823/the-synchronizes-with-relation/" target="_blank" rel="external">这里</a>我对<code>synchronizes-with</code>专门写了一篇文章。目前为止，我们已经可以来说明要让这技术能通用，Acquire与Release 语义必须应用在同一个变量中（在这个例子中是Ready变量），读和写操作必须都是原子操作。在这里，Ready是个简单的已经对齐的整型变量，所以这些读写在PowerPC中就已经是原子操作了<sup>注2</sup>。</p>
+<h3 id="在可移植性C-11中使用Fences"><a href="#在可移植性C-11中使用Fences" class="headerlink" title="在可移植性C++11中使用Fences"></a>在可移植性C++11中使用Fences</h3><p>上述的例子是依赖编译器和处理器的。要支持多平台的一种方法就是将代码转化成C++11. 所有的C++11标识符都存在std空间中，所以为了将下面的例子变得简单一些，我们假设<code>using namespace  std;</code>语句提前放在代码的某处了。</p>
+<p>C++11的原子库标准定义了一个可移植的函数<code>atomic_thread_fence()</code>，函数采用一个参数来指定fence的类型。这个参数有很多种可能的值，但我们在这里最感兴趣的是<code>memory_order_acquire</code>与<code>memory_order_release</code>. 我们用这个函数来替代__lwsync()</p>
+<p>在让这个例子变得更完整之前，还需要作一点修改。在PowerPC平台上，我们知道对Ready变量的两个操作都是原子的，但不是每个平台上都这样。我们可以将Ready变量从整型改为<code>atomic&lt;int&gt;</code>。 考虑到针对对齐的整型，读写操作在现今所有的CPU中都是原子的，我知道这是个傻瓜式的修改。我会在synchronizes-with文章中描述更多关于这方面的内容，现在，我们姑且认为理论上能确保100%的准确率。另外， 不必对A做任何修改。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire5.png" alt=""></p>
+<p><code>memory_order_relaxed</code>参数意味着“确保这些操作是原子的，但对那些本身不在那里的操作不作任何的顺序限制或者强加memory barrier”</p>
+<p>再说一次，上述的<code>atomic_thread_fence()</code> 调用可以在PowerPC中实现像lwsync一样的效果。类似的，他们都能在ARM上发出dmb指令，这点我相信至少是和在PowerPC平台上能有同样效果的。在X86/X64平台上，<code>atomic_thread_fence()</code>调用可以简单的实现成和compiler barrier一样的效果，因为一般来说，x86/x64上的每个读操作已经包含了Acquire语义，并且每个写操作都包含了Release 语义。这就是为什么x86/x64经常被说成是强内存模型<sup>注3</sup>.</p>
+<h3 id="在可移植C-11上不用fences"><a href="#在可移植C-11上不用fences" class="headerlink" title="在可移植C++11上不用fences"></a>在可移植C++11上不用fences</h3><p>在C++11中，只要在对Ready上的操作中指定内存执行顺序的限制，就可以不发出显式的fence指令来达到Acquire与Release语义。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/acquire6.png" alt=""></p>
+<p>考虑每个在Ready上的fence指令。[更新:请注意这种形式和使用独立的fences版本是不完全一样的，技术上来说，没有那么严格]。 编译器会发出必要的指令，来取得和memory barrier一样的所需的效果。具体来说，在Itanium上，每个操作都能简单的实现成一个单指令:<code>ld.acq</code> 与 <code>st.rel</code>. 如之前那样，r1 == 1意味着一种<br>synchronizes-with关系，作为对r2 == 42的确认。</p>
+<p>在C++11中，这实际上是一种更好的方式来表达Acquire与 Release语义。前面例子中使用的<code>atomic_thread_fence()</code> 函数在标准的制定中是添加的相对较晚的。</p>
+<h3 id="Acquire-and-Release-While-Locking"><a href="#Acquire-and-Release-While-Locking" class="headerlink" title="Acquire and Release While Locking"></a>Acquire and Release While Locking</h3><p>如你所见，这篇文章中没有一个例子能利用Acquire与Release 语义提供的LoadStore barrier优势。 实际上，只有LoadLoad和StoreStore 就足矣。这就是为什么在这篇文章中，我选一个简单的列子来让我们能集中关注API和语义。</p>
+<p>必须用到LoadStore一个例子是当使用Acquire与 Release语义来实现(mutex) 锁。<br>实际上，这就是名字的由来: 获取一个锁意味着Acquire 语义，释放锁意味着Release语义。 之间所有的内存操作都包含在了一个小的barrier的三明治中，用来阻止任何要跨越界限的内存乱序。</p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1:lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。</p>
+<p>注2:在X86体系结构下，对于64位架构，只要同时满足以下两个条件，那么对该基础内置数据类型变量（int、bool、指针等）的普通读写都是原子的：</p>
+<p>条件1:该变量按cache line对齐</p>
+<p>条件2:该变量sizeof值不超过64</p>
+<p>所以，要注意的是，32位cpu和系统中，即使64位例如int64_t类型变量即使是对齐也不保证是原子的。这种情况可以使用<code>__sync_fech_and_add</code>等gcc提供的内置原子操作。</p>
+<p>注3:即使这样，读者诸君还是得注意，虽然store自带release语义，load自带acquire语义，但是X86还是会对写读不同变量进行乱序。（当然，这点和release 、acquire语义不矛盾）。为什么不矛盾？因为</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> t = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">int</span> c = a;</span><br></pre></td></tr></table></figure>
+<p>这里是写变量t，读另外一个变量a，因此可能乱序。但是不矛盾。因为写t提供release语义是说它之前的代码不会和它乱序，却没有保证它之后的代码不和它乱序；同理，对于读a提供acquire语义，只保证它之后的代码不会和它乱序，却没有保证它之前的代码不和它乱序。这里的之前之后都是针对program order，也请读者诸君务必注意理解。</p>
+<p>注4:一般说来，锁要提供三种语义：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++;</span><br></pre></td></tr></table></figure>
+<p>语义1:当线程1更新完a(也包括d)的值之后释放锁，线程2进入临界区必须读到a(也包括d)的新值，也就是线程1更新完之后的值。可以认为是acquire release或者happen before语义。</p>
+<p>语义2:同一时刻，<code>a++</code>这条语句只能有一个线程在执行。可以认为是临界语义或者互斥语义。</p>
+<p>语义3:必须保证a++不会被乱序到b++处执行，也不能乱序到c++处执行。这个自然也是临界语义或者互斥语义的一部分，因为如果乱序，那么无临界区可言了。但是读者诸君要注意到，以下这样的乱序是完全可以的、合法的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">d++;</span><br><span class="line">a++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++;</span><br></pre></td></tr></table></figure>
+<p>或者：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lock.lock();</span><br><span class="line">b++;</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">c++;</span><br><span class="line">lock.unlock();</span><br></pre></td></tr></table></figure>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20120913/acquire-and-release-semantics/" target="_blank" rel="external">http://preshing.com/20120913/acquire-and-release-semantics/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+          
         
       
     </div>
