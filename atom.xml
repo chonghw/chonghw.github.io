@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-29T00:19:37.000Z</updated>
+  <updated>2016-09-29T17:21:32.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,9 +20,10 @@
     <link href="http://yoursite.com/blog/2016/09/28/acquireandrelease/"/>
     <id>http://yoursite.com/blog/2016/09/28/acquireandrelease/</id>
     <published>2016-09-28T15:11:52.000Z</published>
-    <updated>2016-09-29T00:19:37.000Z</updated>
+    <updated>2016-09-29T17:21:32.000Z</updated>
     
     <content type="html">&lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
 &lt;p&gt;在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非&lt;a href=&quot;http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;顺序一致性&lt;/a&gt;的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。&lt;/p&gt;
 &lt;p&gt;不幸的是，你会发现Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过&lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;white paper&lt;/a&gt;提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 &lt;/p&gt;
 &lt;ul&gt;
@@ -74,7 +75,7 @@
     
     <summary type="html">
     
-      &lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acq
+      &lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
     
     </summary>
     

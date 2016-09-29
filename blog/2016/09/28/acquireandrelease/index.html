@@ -82,25 +82,22 @@
 
 
 
-<meta name="description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。
-在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的">
+<meta name="description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入探索并发编程系列(八)-Acquire与Release语义">
 <meta property="og:url" content="http://yoursite.com/blog/2016/09/28/acquireandrelease/index.html">
 <meta property="og:site_name" content="Diting0x">
-<meta property="og:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。
-在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的">
+<meta property="og:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire3.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire4.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire5.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire6.png">
-<meta property="og:updated_time" content="2016-09-29T00:19:37.000Z">
+<meta property="og:updated_time" content="2016-09-29T17:21:32.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(八)-Acquire与Release语义">
-<meta name="twitter:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。
-在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的">
+<meta name="twitter:description" content="一般来说，在无锁(lock-free)注1编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。">
 <meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/acquire1.png">
 
 
@@ -352,6 +349,7 @@
 
       
         <p>一般来说，在无锁(lock-free)<sup>注1</sup>编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。</p>
+<a id="more"></a>
 <p>在这篇文章中，我会去探讨许多在C++中获得Acquire与Release 语义的方法。还会简单介绍一下C++11原子库标准。所以，你事先不必具备这方面的知识。简明起见，这里的讨论仅限于非<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/#sequential-consistency" target="_blank" rel="external">顺序一致性</a>的无锁编程。我们要关注的是多核或者多处理器环境下的内存执行顺序。</p>
 <p>不幸的是，你会发现Acquire与Release语义甚至比lock-free更难理解。关于这个词，如果你在网上搜索的越多，越会感觉与它的定义更矛盾。 得益于Herb Sutter，Bruce Dawson通过<a href="https://msdn.microsoft.com/en-us/library/windows/desktop/ee418650.aspx" target="_blank" rel="external">white paper</a>提供了一些好的定义。紧密结合C++11原子性背后的原则，我想给出一些我自己的定义。 </p>
 <ul>
