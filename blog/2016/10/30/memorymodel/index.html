@@ -1,0 +1,757 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="存在许多种内存乱序注1，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入探索并发编程系列(九)-弱/强内存模型">
+<meta property="og:url" content="http://yoursite.com/blog/2016/10/30/memorymodel/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="存在许多种内存乱序注1，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel1.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel2.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel3.png">
+<meta property="og:updated_time" content="2016-10-30T13:26:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入探索并发编程系列(九)-弱/强内存模型">
+<meta name="twitter:description" content="存在许多种内存乱序注1，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel1.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 深入探索并发编程系列(九)-弱/强内存模型 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                深入探索并发编程系列(九)-弱/强内存模型
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-10-30T09:21:50-04:00" content="2016-10-30">
+              2016-10-30
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/10/30/memorymodel/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/10/30/memorymodel/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>存在许多种内存乱序<sup>注1</sup>，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。</p>
+<a id="more"></a>
+<p>对于特定的处理器和工具链，内存模型能告诉你的源代码在运行时可能会发生哪种类型的内存乱序。在脑海中一定要时刻记住，只有在使用无锁编程技术时，内存乱序的效果才能显现出来。</p>
+<p>学习了一段时间的内存模型后(大部分是通过阅读网上的资源并进行实验来验证)，我将它们概括为以下四种类型。下图中，每种内存模型都囊括涵盖它左边的内存模型所能提供的所有保证，并提供了更多的保证<sup>注2</sup>。 根据大部分使用弱内存模型与强内存模型这些术语的方式，我在它们之间划了一条明显的界限。继续往下读就能知道我为什么这么做了。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel1.png" alt=""></p>
+<p>上图中每个物理设备代表一种硬件内存模型。硬件内存模型能告诉你对于汇编(或者机器)代码在运行期间会出现哪种内存执行顺序</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel2.png" alt=""></p>
+<p>对于内存乱序情况，每种处理器家族都有不同的处理习惯，而那些习惯只有在多核或多处理器的配置环境下才能显现出来。考虑到现在的主流都是多核的，它们之间会有很多相似性。</p>
+<p>同样也存在许多软件内存模型。从技术上来说，只要你用C11,C++11或Java编写（调试)代码，与之关联的是软件内存模型。尽管如此，对硬件内存模型的一般理解也迟早会派上用场。它能帮助你解释调试过程中不可预料的行为（可能正因为它很重要），能识别错误代码在不走运的情况下是如何在特定处理器与工具链上运行正确的。</p>
+<h3 id="弱内存模型"><a href="#弱内存模型" class="headerlink" title="弱内存模型"></a>弱内存模型</h3><p>在弱内存模型中，有可能会出现我在上一篇文章中用资源控制类比来描述的所有<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">四种内存乱序</a>. 只要不改变单个独立线程的行为，任何的读/写操作与其它的读/写操作都有可能发生乱序。实际上，编译器或者处理器都可能产生乱序。</p>
+<p>当处理器是弱硬件内存模型时，我们更倾向于说它是<code>weakly ordered</code>或<code>weak ordering</code>。 我们也可以说它有个宽松的内存模型。提到弱内存模型处理器，令人敬仰的DEC Alpha处理器是人人爱用的例子。现在主流的处理器中，没有比它更弱的内存模型了。</p>
+<p>受Alpha多方面的影响，C11与C++11编程语言是一种弱的软件内存模型。如果你正在用x86/64等强类型处理器家族，当在这些语言中使用底层的原子操作时并不会受到影响<sup>注3</sup>。我之前说过，只要是为了阻止编译器乱序，你必须要指定正确的<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">内存执行顺序限制</a>.</p>
+<h3 id="带有数据依赖执行顺序的弱内存模型"><a href="#带有数据依赖执行顺序的弱内存模型" class="headerlink" title="带有数据依赖执行顺序的弱内存模型"></a>带有数据依赖执行顺序的弱内存模型</h3><p>随着时间变化，尽管Alpha已经变得无关紧要了，现代的CPU家族仍有保留了一些会执行弱硬件执行顺序的传统：</p>
+<ul>
+<li><strong>ARM</strong> 成千上万的智能手机和平板电脑都在使用，在多核环境下变得越来越受欢迎</li>
+<li><strong>PowerPC</strong> xbox 360已经在多核环境下贡献了七千万的生存空间</li>
+<li><strong>Itanium</strong> 微软在Windows下不再支持，但在HP服务器上仍能被Linux支持</li>
+</ul>
+<p>除了程序员特别感兴趣的常识细节也就是它们能保持数据依赖执行顺序这点之外，这些处理器家族在不同的方式上都和Alpha有着一样弱的内存模型。这是什么意思呢？意味着如果你用C/C++写A-&gt;B,你能一直确保B的值至少和A的值一样新。Alpha却不能确保<sup>注4</sup>。在这里我不过多叙述这种数据依赖执行顺序，只提一提Linux RCU机制非常依赖这个性质。</p>
+<h3 id="强内存模型"><a href="#强内存模型" class="headerlink" title="强内存模型"></a>强内存模型</h3><p>我们首先来看看硬件内存模型。强内存模型与弱内存模型最大的差别在哪里呢？在这个问题上大家可能会有一些分歧,但我的感觉是80%的场合下，人们说的都是同一件事。因此，我给出下面这个定义：</p>
+<p>强内存模型意味着每个机器指令都能隐式的包含Acquire与Release语义。结果是，当一个CPU核执行一系列的写操作时，其它的每一个CPU核看见的都是那些值都以它们被写入时的顺序在改变。</p>
+<p>这些都不难理解。只要想象资源控制类比中的核心观点,所有的修改有序地提交给共享内存(没有写写乱序)，有序地从共享内存取出(没有读读乱序)，并且指令总有序的执行(没有写读乱序)。然而写读乱序还是有可能发生。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel3.png" alt=""></p>
+<p>从上述的定义可以看出，x86/64处理器家族一向是强内存模型(strong ordered）的。有时候有例外，但在大部分情况下，对于程序员来说，这些例子都可以忽略。x86/x64处理器能乱序执行指令，但那属于硬件实现的范畴。而真正有意义的是它仍能保证内存的交互是有序的，因此在多核环境下，我们仍然可以把它认为是强内存模型的。从历史角度来看，标准在不断地发展，可能会给大家带来一些困扰。</p>
+<p>很明显，当SPARC处理器运行在TSO模式中，是另一种强硬件内存模型的例子。TSO代表Total Store Order，相比我上面给出的定义来看，这是一种微妙的方式，意味着对所有cpu核来说，关于写内存操作，都有一个单一确定的全序<sup>注5</sup>。X86/X64也有这个性质，可以参考Intel x86/x64系统结构手册中Volume 3, §8.2.3.6-8的例子。从那里我可以得出结论，TSO性质不总是lock-free程序员对底层感兴趣的最直接部分，但这在对顺序一致性的理解上又迈进了一步。</p>
+<h3 id="顺序一致性"><a href="#顺序一致性" class="headerlink" title="顺序一致性"></a>顺序一致性</h3><p>在顺序一致性内存模型中，没有内存乱序。这看起来就像是整个程序的执行被缩减到每个线程中指令的顺序交错。具体来说，<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">这篇文章</a>中r1 = r2 = 0 的结果就变得不可能了<sup>注6</sup>。</p>
+<p>如今你很难找到一个现代的多核设备能在硬件级别保证顺序一致性。然而，似乎在1989年至少有一种能保证顺序一致性的多处理器机器：基于386的<a href="http://www.vogons.org/viewtopic.php?t=23842#178666" target="_blank" rel="external">Compaq SystemPro</a>。根据Intel文档，386还不够先进到能在运行期间执行任意的内存乱序。</p>
+<p>在任何情况下，当使用高级编程语言，顺序一致性只有在作为软件内存模型时才变得有趣。在Java5或更高版本中，你可以将共享变量声明为volatile。在C++11中,当在原子数据类型执行操作的时候，可以使用默认的顺序约束，也就是memory_order_seq_cst<sup>注7</sup>。如果这么做了，工具链会限制编译器乱序并发出CPU特定的指令来充当合适的memory barrier。在这种方式下，尽管是在弱内存模型的多核设备上,也会模拟出顺序一致性的内存模型。如果你读了Herlihy &amp; Shavit’s的 <a href="https://www.amazon.com/gp/product/0123973376/ref=as_li_ss_tl?ie=UTF8&amp;tag=preshonprogr-20&amp;linkCode=as2&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0123973376" target="_blank" rel="external">The Art of Multiprocessor Programming</a>,要注意那里的大部分例子都假设顺序一致性的软件内存模型。</p>
+<h3 id="更多细节"><a href="#更多细节" class="headerlink" title="更多细节"></a>更多细节</h3><p>要填完有关内存模型的坑，还有许多其它微妙的细节，但以我的经验来看，当在应用层上写无锁代码时，这些都变得没什么意思了。存在一些控制依赖，因果一致性和不同的内存乱序类型。然而，大部分的讨论都能归于我上面总结的四种主要类型里。</p>
+<p>如果你真的想探究处理器内存模型的细节，并且你能在吃早餐的时候还想琢磨一些正式的逻辑，你可以看看剑桥大学的非常精细的<a href="http://www.cl.cam.ac.uk/~pes20/weakmemory/" target="_blank" rel="external">工作</a><br>Paul McKenney写了它们的工作和相关工具的一些<a href="http://lwn.net/Articles/470681/" target="_blank" rel="external">概览</a><sup>注8</sup></p>
+<p>注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。</p>
+<p>注2：也就是说从右到左模型越来越弱，限制越来越松，乱序发生的越来越多。</p>
+<p>注3：即使在X86/X64下，还是得注意可能的写读乱序。</p>
+<p>注4：举个关于data dependency的例子，来说明在DEC Alpha下编程有多么的困难和tricky。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">初始化</span><br><span class="line"><span class="keyword">int</span> A = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">int</span> B = <span class="number">2</span>;</span><br><span class="line"><span class="keyword">int</span> C = <span class="number">3</span>;</span><br><span class="line"><span class="keyword">int</span> *P = &amp;A;</span><br><span class="line"><span class="keyword">int</span> *Q = &amp;B;</span><br><span class="line"><span class="comment">//cpu1</span></span><br><span class="line">B = <span class="number">4</span>;</span><br><span class="line">CPU_BARRIER();</span><br><span class="line">P = &amp;B;</span><br><span class="line"><span class="comment">//cpu2</span></span><br><span class="line">Q = P;</span><br><span class="line">D = *Q</span><br></pre></td></tr></table></figure>
+<p>从直觉上说，Q最后要么等于&amp;A，要么等于&amp;B。也就是说：</p>
+<p>Q == &amp;A， D == 1</p>
+<p>或者</p>
+<p>Q == &amp;B， D == 4</p>
+<p>但是，让人吃惊的是，DEC Alpha下，可能出现</p>
+<p>Q == &amp;B， D == 2的情形，原因是，虽然CPU1按照顺序执行完两条语句先后对B和P进行了修改，但CPU2可能先感知到P的变化，读到了P的新值，然后才是B的新值。因此，为了防止这样的问题，需要加一个data dependency barrier。</p>
+<p>注5：偏序、全序什么意思？读者诸君如果忘记，可以简单复习下大学的离散数学教材。</p>
+<p>注6：对顺序一致性(Sequential Consistency)感兴趣的读者，可以参考我们写的<a href="http://www.yebangyu.org/blog/2016/01/09/memoryconsistencyandcachecoherence/" target="_blank" rel="external">这篇</a>博客。</p>
+<p>注7：C++11引入的feature。在C++11中，除了这里提到的<code>std::memory_order_seq_cst</code>之外，还有如下的内存序选项：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">memory_order_relaxed,</span><br><span class="line">memory_order_consume,</span><br><span class="line">memory_order_acquire,</span><br><span class="line">memory_order_release,</span><br><span class="line">memory_order_acq_rel,</span><br></pre></td></tr></table></figure>
+<p>关于它们的语义和用法，请继续关注我们的深入探索并发编程系列，或者参考《C++ Concurrency In Action》这本书第五章。</p>
+<p>注8：谈到C++ memory model，很难绕开一个大牛：Mark John Batty。对C++11的memory model感兴趣的读者，如果想深入研究其中的理论和形式化部分，可以参考他的<a href="http://www.sigplan.org/Awards/Dissertation/2015_batty.pdf" target="_blank" rel="external">论文</a>。</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>本文由 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20120930/weak-vs-strong-memory-models/" target="_blank" rel="external">http://preshing.com/20120930/weak-vs-strong-memory-models/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/09/28/acquireandrelease/" rel="next" title="深入探索并发编程系列(八)-Acquire与Release语义">
+                <i class="fa fa-chevron-left"></i> 深入探索并发编程系列(八)-Acquire与Release语义
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/10/30/memorymodel/"
+           data-title="深入探索并发编程系列(九)-弱/强内存模型" data-url="http://yoursite.com/blog/2016/10/30/memorymodel/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">33</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#弱内存模型"><span class="nav-number">1.</span> <span class="nav-text">弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#带有数据依赖执行顺序的弱内存模型"><span class="nav-number">2.</span> <span class="nav-text">带有数据依赖执行顺序的弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#强内存模型"><span class="nav-number">3.</span> <span class="nav-text">强内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顺序一致性"><span class="nav-number">4.</span> <span class="nav-text">顺序一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更多细节"><span class="nav-number">5.</span> <span class="nav-text">更多细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">6.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

