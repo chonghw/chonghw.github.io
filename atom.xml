@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-10-30T13:26:06.000Z</updated>
+  <updated>2016-10-31T14:19:29.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/10/30/memorymodel/"/>
     <id>http://yoursite.com/blog/2016/10/30/memorymodel/</id>
     <published>2016-10-30T13:21:50.000Z</published>
-    <updated>2016-10-30T13:26:06.000Z</updated>
+    <updated>2016-10-31T14:19:29.000Z</updated>
     
     <content type="html">&lt;p&gt;存在许多种内存乱序&lt;sup&gt;注1&lt;/sup&gt;，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -43,7 +43,7 @@
 &lt;p&gt;除了程序员特别感兴趣的常识细节也就是它们能保持数据依赖执行顺序这点之外，这些处理器家族在不同的方式上都和Alpha有着一样弱的内存模型。这是什么意思呢？意味着如果你用C/C++写A-&amp;gt;B,你能一直确保B的值至少和A的值一样新。Alpha却不能确保&lt;sup&gt;注4&lt;/sup&gt;。在这里我不过多叙述这种数据依赖执行顺序，只提一提Linux RCU机制非常依赖这个性质。&lt;/p&gt;
 &lt;h3 id=&quot;强内存模型&quot;&gt;&lt;a href=&quot;#强内存模型&quot; class=&quot;headerlink&quot; title=&quot;强内存模型&quot;&gt;&lt;/a&gt;强内存模型&lt;/h3&gt;&lt;p&gt;我们首先来看看硬件内存模型。强内存模型与弱内存模型最大的差别在哪里呢？在这个问题上大家可能会有一些分歧,但我的感觉是80%的场合下，人们说的都是同一件事。因此，我给出下面这个定义：&lt;/p&gt;
 &lt;p&gt;强内存模型意味着每个机器指令都能隐式的包含Acquire与Release语义。结果是，当一个CPU核执行一系列的写操作时，其它的每一个CPU核看见的都是那些值都以它们被写入时的顺序在改变。&lt;/p&gt;
-&lt;p&gt;这些都不难理解。只要想象资源控制类比中的核心观点,所有的修改有序地提交给共享内存(没有写写乱序)，有序地从共享内存取出(没有读读乱序)，并且指令总有序的执行(没有写读乱序)。然而写读乱序还是有可能发生。&lt;/p&gt;
+&lt;p&gt;这些都不难理解。只要想象资源控制类比中的核心观点,所有的修改有序地提交给共享内存(没有写写乱序)，有序地从共享内存取出(没有读读乱序)，并且指令总有序的执行(没有读写乱序)。然而写读乱序还是有可能发生。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/memorymodel3.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
 &lt;p&gt;从上述的定义可以看出，x86/64处理器家族一向是强内存模型(strong ordered）的。有时候有例外，但在大部分情况下，对于程序员来说，这些例子都可以忽略。x86/x64处理器能乱序执行指令，但那属于硬件实现的范畴。而真正有意义的是它仍能保证内存的交互是有序的，因此在多核环境下，我们仍然可以把它认为是强内存模型的。从历史角度来看，标准在不断地发展，可能会给大家带来一些困扰。&lt;/p&gt;
 &lt;p&gt;很明显，当SPARC处理器运行在TSO模式中，是另一种强硬件内存模型的例子。TSO代表Total Store Order，相比我上面给出的定义来看，这是一种微妙的方式，意味着对所有cpu核来说，关于写内存操作，都有一个单一确定的全序&lt;sup&gt;注5&lt;/sup&gt;。X86/X64也有这个性质，可以参考Intel x86/x64系统结构手册中Volume 3, §8.2.3.6-8的例子。从那里我可以得出结论，TSO性质不总是lock-free程序员对底层感兴趣的最直接部分，但这在对顺序一致性的理解上又迈进了一步。&lt;/p&gt;
