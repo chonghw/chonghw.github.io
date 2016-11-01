@@ -91,7 +91,7 @@
     <link href="http://yoursite.com/blog/2016/09/28/acquireandrelease/"/>
     <id>http://yoursite.com/blog/2016/09/28/acquireandrelease/</id>
     <published>2016-09-28T15:11:52.000Z</published>
-    <updated>2016-09-29T17:21:32.000Z</updated>
+    <updated>2016-11-01T16:59:16.000Z</updated>
     
     <content type="html">&lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -122,7 +122,7 @@
 &lt;p&gt;在C++11中，这实际上是一种更好的方式来表达Acquire与 Release语义。前面例子中使用的&lt;code&gt;atomic_thread_fence()&lt;/code&gt; 函数在标准的制定中是添加的相对较晚的。&lt;/p&gt;
 &lt;h3 id=&quot;Acquire-and-Release-While-Locking&quot;&gt;&lt;a href=&quot;#Acquire-and-Release-While-Locking&quot; class=&quot;headerlink&quot; title=&quot;Acquire and Release While Locking&quot;&gt;&lt;/a&gt;Acquire and Release While Locking&lt;/h3&gt;&lt;p&gt;如你所见，这篇文章中没有一个例子能利用Acquire与Release 语义提供的LoadStore barrier优势。 实际上，只有LoadLoad和StoreStore 就足矣。这就是为什么在这篇文章中，我选一个简单的列子来让我们能集中关注API和语义。&lt;/p&gt;
 &lt;p&gt;必须用到LoadStore一个例子是当使用Acquire与 Release语义来实现(mutex) 锁。&lt;br&gt;实际上，这就是名字的由来: 获取一个锁意味着Acquire 语义，释放锁意味着Release语义。 之间所有的内存操作都包含在了一个小的barrier的三明治中，用来阻止任何要跨越界限的内存乱序。&lt;/p&gt;
-&lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1:lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。&lt;/p&gt;
+&lt;h2 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h2&gt;&lt;p&gt;注1:lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。&lt;/p&gt;
 &lt;p&gt;注2:在X86体系结构下，对于64位架构，只要同时满足以下两个条件，那么对该基础内置数据类型变量（int、bool、指针等）的普通读写都是原子的：&lt;/p&gt;
 &lt;p&gt;条件1:该变量按cache line对齐&lt;/p&gt;
 &lt;p&gt;条件2:该变量sizeof值不超过64&lt;/p&gt;
@@ -160,7 +160,7 @@
     <link href="http://yoursite.com/blog/2016/09/19/sourcecontrol/"/>
     <id>http://yoursite.com/blog/2016/09/19/sourcecontrol/</id>
     <published>2016-09-19T17:16:57.000Z</published>
-    <updated>2016-09-20T02:16:37.000Z</updated>
+    <updated>2016-11-01T16:59:36.000Z</updated>
     
     <content type="html">&lt;p&gt;当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -218,7 +218,7 @@
 &lt;p&gt;在这种类比中，我说过，每个程序员代表在一个核心中正在运行的单线程。在一个真实的操作系统中，线程更倾向在生命周期中在不同的核心里移动，这时上述的类比仍然有效。我也在机器语言和C/C++语言不断变换来举例。显然，我们更倾向使用C/C++，或者另外更高级的语言。这是有可能的，因为任何充当memory barrier的操作也能阻止编译器乱序。&lt;/p&gt;
 &lt;p&gt;我还没有写关于每种memory barrier类型的文章。例如，也存在数据依赖(data dependency )barriers&lt;sup&gt;注3&lt;/sup&gt;。 我会在以后的文章中讲这些内容。然而，上面给出的四种类型仍是最重要的。&lt;/p&gt;
 &lt;p&gt;如果你对CPU在底层是如何工作的很感兴趣–像写缓存，缓存一致性协议(cache coherency protocol)以及硬件实施细节相关的东西–以及它们为什么会发生内存乱序&lt;sup&gt;注4&lt;/sup&gt;，我推荐Paul McKenney &amp;amp; David Howell的&lt;a href=&quot;https://www.kernel.org/doc/Documentation/memory-barriers.txt&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;工作&lt;/a&gt;。 实际上，我认为能成功写好无锁(lock-free)代码的大部分程序员都至少都对这种硬件细节有点熟悉。&lt;/p&gt;
-&lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1：gcc+x86下，编译器级别的memory barrier和CPU级别的memory barrier可以如下实现：&lt;br&gt;&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;define &lt;span class=&quot;title&quot;&gt;COMPILER_BARRIER&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; __asm__ __&lt;span class=&quot;title&quot;&gt;volatile__&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt; : : : &lt;span class=&quot;string&quot;&gt;&quot;memory&quot;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;define &lt;span class=&quot;title&quot;&gt;CPU_BARRIER&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; __sync_synchronize&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;&lt;/p&gt;
+&lt;h2 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h2&gt;&lt;p&gt;注1：gcc+x86下，编译器级别的memory barrier和CPU级别的memory barrier可以如下实现：&lt;br&gt;&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;define &lt;span class=&quot;title&quot;&gt;COMPILER_BARRIER&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; __asm__ __&lt;span class=&quot;title&quot;&gt;volatile__&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;string&quot;&gt;&quot;&quot;&lt;/span&gt; : : : &lt;span class=&quot;string&quot;&gt;&quot;memory&quot;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;define &lt;span class=&quot;title&quot;&gt;CPU_BARRIER&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;()&lt;/span&gt; __sync_synchronize&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;&lt;/p&gt;
 &lt;p&gt;其中，&lt;code&gt;CPU_BARRIER()&lt;/code&gt;可以防止CPU写读、写写、读写、读读乱序。如你所知，CPU级别的memory barrier同时约束CPU和编译器的乱序；而编译器级别的memory barrier只约束编译器的乱序，不影响CPU。&lt;/p&gt;
 &lt;p&gt;注2：现在用的很多的cpu一般有三级cache。&lt;/p&gt;
 &lt;p&gt;注3：为了演示data dependency barrier，考虑以下例子：&lt;/p&gt;
@@ -261,7 +261,7 @@
     <link href="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/"/>
     <id>http://yoursite.com/blog/2016/09/05/compilermemoryreorder/</id>
     <published>2016-09-05T21:44:17.000Z</published>
-    <updated>2016-09-07T03:30:20.000Z</updated>
+    <updated>2016-11-01T16:59:59.000Z</updated>
     
     <content type="html">&lt;p&gt;写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。&lt;br&gt;&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;&lt;br&gt;在众多资料中，preshing这个博客质量很高，经过和作者邮件沟通获得授权后，我们着手翻译了他的一系列文章并加上注释，构成了“深入探索并发编程系列”。翻译，力求精准又易懂；注释，力求全面又有益，希望对大家理解这个系列有所帮助，也希望可以为社区做点贡献。&lt;/p&gt;
 &lt;hr&gt;
@@ -314,7 +314,7 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;为什么有编译器乱序&quot;&gt;&lt;a href=&quot;#为什么有编译器乱序&quot; class=&quot;headerlink&quot; title=&quot;为什么有编译器乱序&quot;&gt;&lt;/a&gt;为什么有编译器乱序&lt;/h3&gt;&lt;p&gt;就像我在文章开头提到的那样，编译器会像处理器一样以同样的原因-性能优化-来修改内存执行顺序。这种优化是现代CPU复杂性的直接产物。&lt;/p&gt;
 &lt;p&gt;当CPU最多只有几十万个晶体管的时候，我有点怀疑编译器在80年代早期就已经做了很多指令乱序的工作。我这个说法可能有点惊世骇俗。那时候并没有太多关于编译器乱序的观点。从那时起，根据摩尔定律，CPU的设计者将晶体管的数目成10000倍的增长，那些晶体管设计了许多trick,比如流水线，内存预取，ILP以及最近的多核。这些特征的结果就是，我们可以看到程序中指令的执行顺序在性能上能产生很大的差异。&lt;/p&gt;
 &lt;p&gt;Intel在1993年发布的首个Pentium处理器，其所谓的U和V管道，是我记得的第一个人们经常说起关于&lt;a href=&quot;http://www.agner.org/optimize/microarchitecture.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;管道和指令乱序&lt;/a&gt;的处理器。最近，当我在Visual Studio上开始涉及X86汇编代码时。我对其中极少数的指令乱序情况感到非常惊讶。另一方面，我在Playstation 3平台上写SPU汇编代码时，发现编译器非常高效&lt;sup&gt;注11&lt;/sup&gt;。这只是一些有趣的经历，并不能反应其他人的情况，当然也不影响我们在lock-free的代码中保证内存执行顺序的手段和方法&lt;sup&gt;注12&lt;/sup&gt;。&lt;/p&gt;
-&lt;h3 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h3&gt;&lt;p&gt;注1：lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。&lt;/p&gt;
+&lt;h3 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h3&gt;&lt;p&gt;注1：lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。&lt;/p&gt;
 &lt;p&gt;注2：假设A、B的初始值都是0，那么对于单线程程序而言，foo执行完A的的值为1，B的值为0。保证这点的情况下，编译器可以随意优化。这里重要的是影响和效果。&lt;/p&gt;
 &lt;p&gt;注3：很多时候我们把barrier分为两种：compiler级别和cpu级别。compiler级别的memory barrier只阻止编译器乱序，不影响CPU乱序，不对CPU乱序执行进行约束；而CPU级别的memory barrier则束缚了编译器和cpu两者的乱序。&lt;/p&gt;
 &lt;p&gt;注4：在linux里，&lt;code&gt;barrier()&lt;/code&gt;是编译器级别的memory barrier；&lt;code&gt;smp_wb()&lt;/code&gt;是cpu级别的memory barrier。&lt;/p&gt;
@@ -376,7 +376,7 @@
     <link href="http://yoursite.com/blog/2016/08/11/memoryreorder/"/>
     <id>http://yoursite.com/blog/2016/08/11/memoryreorder/</id>
     <published>2016-08-11T15:03:27.000Z</published>
-    <updated>2016-08-12T01:38:22.000Z</updated>
+    <updated>2016-11-01T17:00:23.000Z</updated>
     
     <content type="html">&lt;p&gt;当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -413,8 +413,7 @@
 &lt;h3 id=&quot;类似指令与不同平台&quot;&gt;&lt;a href=&quot;#类似指令与不同平台&quot; class=&quot;headerlink&quot; title=&quot;类似指令与不同平台&quot;&gt;&lt;/a&gt;类似指令与不同平台&lt;/h3&gt;&lt;p&gt;有趣的是，&lt;code&gt;mfence&lt;/code&gt;并不是x86/x64平台中能唯一充当full memory barrier的指令。在这些处理器中，假设你不使用SSE指令或者写结合内存(Write-combined Memory)（例子中也并没有用到），任何带lock的指令，比如&lt;code&gt;xchg&lt;/code&gt;，也能作为一个full memory barrier。实际上，Microsoft C++编译器在你使用&lt;code&gt;MemoryBarrier&lt;/code&gt;时会生成&lt;code&gt;xchg&lt;/code&gt;指令，至少Visualstudio 2008是这么做的&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;mfence&lt;/code&gt;指令是x86/x64平台独有的&lt;sup&gt;注6&lt;/sup&gt;。如果你想让代码具有可移植性，可以将这种固有特性写成一个预处理的宏。Linux内核将其封装成一个叫做&lt;code&gt;smp_mb&lt;/code&gt;的宏，以及相关的宏&lt;code&gt;smp_rmb&lt;/code&gt;和&lt;code&gt;smp_wmb&lt;/code&gt;宏&lt;sup&gt;注7&lt;/sup&gt;，并提供了&lt;a href=&quot;http://lxr.free-electrons.com/ident?i=smp_mb&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;在不同架构中的不同实现方法&lt;/a&gt;。 例如，在PowerPC中，&lt;code&gt;smp_mb&lt;/code&gt;宏是通过&lt;code&gt;sync&lt;/code&gt;来实现的.&lt;/p&gt;
 &lt;p&gt;在这些不同的CPU家族中，每种CPU都有各自的指令来保证内存访问顺序，每个编译器通过不同的内置属性展现出来，每种跨平台的项目都会实现自己的可移植层。 然而，这些都不能让无锁编程变得更加简单。 这就是&lt;a href=&quot;http://www.open-std.org/JTC1/sc22/wg21/docs/papers/2007/n2427.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;C++11原子库标准&lt;/a&gt;在最近被提出来的部分原因。这是标准化的一次尝试，可能会让写可移植性的无锁代码变得更加简单。&lt;/p&gt;
-&lt;p&gt;注释&lt;/p&gt;
-&lt;p&gt;注1：注意，这里说的是写读乱序，而且是对不同变量的写读操作的乱序。在Intel x86/x64处理器中，读读、写写、读写、以及写读同一个内存变量，CPU是不会乱序的。&lt;/p&gt;
+&lt;h3 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h3&gt;&lt;p&gt;注1：注意，这里说的是写读乱序，而且是对不同变量的写读操作的乱序。在Intel x86/x64处理器中，读读、写写、读写、以及写读同一个内存变量，CPU是不会乱序的。&lt;/p&gt;
 &lt;p&gt;注2：&lt;code&gt;asm volatile(&amp;quot;&amp;quot; ::: &amp;quot;memory&amp;quot;)&lt;/code&gt;是一条编译器级别的Memory Barrier，可以防止编译器对相邻指令进行乱序，但是它对CPU乱序是没有影响的；也就是说它仅仅束缚了编译器的乱序优化，不会阻止CPU可能的乱序执行。这么做自然是将编译器的干扰和影响降到最低，好让我们专注观察CPU的执行行为。&lt;/p&gt;
 &lt;p&gt;注3：请务必注意，这里说的阻止乱序是指防止了向&lt;code&gt;sem_wait&lt;/code&gt;和&lt;code&gt;sem_post&lt;/code&gt;之外的乱序，不阻止它们之间的乱序。举个例子：&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;mutex.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a=&lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b=&lt;span class=&quot;number&quot;&gt;2&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;mutex.unlock;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
@@ -464,7 +463,7 @@
     <link href="http://yoursite.com/blog/2016/07/11/recursivemutex/"/>
     <id>http://yoursite.com/blog/2016/07/11/recursivemutex/</id>
     <published>2016-07-11T12:47:43.000Z</published>
-    <updated>2016-07-31T02:49:31.000Z</updated>
+    <updated>2016-11-01T17:00:43.000Z</updated>
     
     <content type="html">&lt;p&gt;当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。&lt;br&gt;虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -502,7 +501,7 @@
 &lt;p&gt;最后一点又是如何保证的呢？在非竞争情况下是通过原子操作来保证的(fast path)，而在有竞争的情况下，是通过信号量来保证的(slow path)。在X86和X64平台下，对&lt;code&gt;_InterlockedIncrement&lt;/code&gt;&lt;sup&gt;注5&lt;/sup&gt;的调用会生成&lt;code&gt;lock xadd&lt;/code&gt;指令，其充当一个完整的memory barrier&lt;sup&gt;注6&lt;/sup&gt;，以确保acquire和release语义。这是x86/x64独有的性质。如果你把这份代码放到多核的iOS设备上运行，比如说IPAD2，用&lt;code&gt;OSAtomicIncrement32&lt;/code&gt;替代&lt;code&gt;_InterlockedIncrement&lt;/code&gt;是远远不够的。你还必须要调用&lt;code&gt;OSAtomicIncrement32Barrier&lt;/code&gt;才能得到类似的保证。就算在Xbox360上，能共享Win32的API，但是却是运行在PowerPC上，正确的函数调用实际上是&lt;code&gt;InterlockedIncrementAcquire&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;读到这一章节，相信很多读者都已经懵逼了。希望这种懵逼是值得的。我会在&lt;a href=&quot;&quot;&gt;以后的文章&lt;/a&gt;中更多的谈谈内存访问语义。&lt;/p&gt;
 &lt;p&gt;对于那些还没有钻研过同步原语的读者来说，&lt;code&gt;RecursiveBenaphore&lt;/code&gt;类给大家展示了，可递归锁实现的代码是多么的微妙。 这里每个细节的存在都是有原因的，里面的执行顺序很关键，隐含的一些假设和保证都发挥着重要作用&lt;sup&gt;注7&lt;/sup&gt;。&lt;/p&gt;
-&lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1：lock free并不是说不含锁的意思。不包含锁的英文一般是lockless。实际上，lock free考察的是由一组线程构成的一个系统。不管如何，至少能保证一个线程make progress因此保证系统是在make progress，那么这个算法或者系统或者说实现是lock free的。&lt;/p&gt;
+&lt;h2 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h2&gt;&lt;p&gt;注1：lock free并不是说不含锁的意思。不包含锁的英文一般是lockless。实际上，lock free考察的是由一组线程构成的一个系统。不管如何，至少能保证一个线程make progress因此保证系统是在make progress，那么这个算法或者系统或者说实现是lock free的。&lt;/p&gt;
 &lt;p&gt;我们知道，基于mutex的实现里，如果持有锁的线程被调度出去，那么其他线程都得等待该线程被重新调度并且等待它释放锁；假如它crash了，那么系统将无法make progress。lock free是non blocking的，一个线程被阻塞或者crash，不会影响到其他线程的正常推进。&lt;/p&gt;
 &lt;p&gt;注2：non recursive，不可递归的；non reentrant，不可重入的。说一把锁是non reentrant和non recursive是一个意思。&lt;/p&gt;
 &lt;p&gt;注3：一般说来，在工业级C++项目里不会出现这样的代码：&lt;/p&gt;
@@ -542,7 +541,7 @@
     <link href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/07/04/writelightweightmutex/</id>
     <published>2016-07-04T13:16:31.000Z</published>
-    <updated>2016-07-28T13:49:05.000Z</updated>
+    <updated>2016-11-01T17:01:02.000Z</updated>
     
     <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -569,7 +568,7 @@
 &lt;p&gt;这种实现是不可递归的.如果一些线程试图将同一个Benaphore锁上两次，就会出现死锁情况。我会在&lt;a href=&quot;&quot;&gt;下一篇&lt;/a&gt;文章中，将这种实现扩展成可递归的.&lt;/p&gt;
 &lt;p&gt;如果将这些代码放到另一种CPU架构中运行，比如Xbox 360或者多核的i0S设备，必须把&lt;code&gt;_InterlockedIncrement&lt;/code&gt;宏替换成可以显示提供&lt;a href=&quot;http://preshing.com/20120913/acquire-and-release-semantics/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;acquire和release语义&lt;/a&gt;的东西。&lt;/p&gt;
 &lt;p&gt;最后，如果你将Benaphore应用到其它平台，要当心它可能会出现&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inversion&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级反转&lt;/a&gt;(priority inversion)问题&lt;sup&gt;注6&lt;/sup&gt;。举个例子，MacOS X和Linux在使用POSIX锁的时候通过&lt;a href=&quot;https://en.wikipedia.org/wiki/Priority_inheritance&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;优先级继承&lt;/a&gt;机制能避免优先级反转问题。 如果你使用的是Benaphore,会绕过这种操作系统机制，这并不会帮到你。但在Windows上情况是不一样的：不管你使用哪种同步原语，Windows都会通过提升饥饿进程的优先级来避免优先级反转问题。&lt;sup&gt;注7&lt;/sup&gt;&lt;/p&gt;
-&lt;h2 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h2&gt;&lt;p&gt;注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。&lt;/p&gt;
+&lt;h2 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h2&gt;&lt;p&gt;注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。&lt;/p&gt;
 &lt;p&gt;注意到作者说的是最坏的情况，实际上上述所说的这种情况一般不会出现，因为一般来说现代操作系统对线程的管理中，除了优先级之外还有时间片机制，不会出现A得不到调度的情况。&lt;/p&gt;
 &lt;p&gt;不知道作者所说的活锁是不是这种情况。如果我所说有错，恳请读者指正。&lt;/p&gt;
 &lt;p&gt;注2：一般说来，在实现spin lock的时候有一些优化的点。首先，需要区分单处理器和多处理器的情况；其次，在多处理器下，在自旋的过程中，随着尝试拿锁的失败次数越来越多，拿锁的间隔也应该越来越长，常用的是&lt;code&gt;Exponential Backoff&lt;/code&gt;策略，间隔呈指数级上升。&lt;code&gt;pause&lt;/code&gt;指令也常常在这个地方被使用，一是为了优化性能(和cpu指令预取有关)，二是节能减排。&lt;/p&gt;
@@ -606,7 +605,7 @@
     <link href="http://yoursite.com/blog/2016/06/27/lightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/06/27/lightweightmutex/</id>
     <published>2016-06-28T03:36:21.000Z</published>
-    <updated>2016-07-31T02:50:27.000Z</updated>
+    <updated>2016-11-01T17:01:22.000Z</updated>
     
     <content type="html">&lt;p&gt;在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -625,7 +624,7 @@
 &lt;p&gt;甚至连Playstation 3 SDK也提供了轻量级锁和重量级锁供大家选择。回想2007年，那时我参与开发的Playstation 3 游戏中，使用的还是重量级锁。当切换到轻量级锁的时候，游戏启动时间能加快17s. 对我来说，这种差异真是一针见血(hit home)。&lt;/p&gt;
 &lt;p&gt;在我 &lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/20/mutexperf/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt; 文章中，我为“锁是慢的”这个结论作了辩解并提供了一些支持我观点的数据。现在大家应该清楚，当你使用的不是轻量级锁的时候，整个观点便毫无意义了。我很清楚，由于重量级锁的存在让大家在过去几年对锁加深了一定的误解。&lt;/p&gt;
 &lt;p&gt;一些前辈可能会说在以前的老平台下，只有重量级锁的实现，或者说那时只能用信号量来完成任务。但现在大部分平台都提供了轻量级锁的实现。就算平台没有提供，你也可以在应用层实现自己的轻量级锁，如果你可以容忍一些弊端和警告的话，甚至还可以在进程间共享锁。我的下一篇文章将会告诉大家如何&lt;a href=&quot;&quot;&gt;自己动手实现轻量级锁&lt;/a&gt;.&lt;/p&gt;
-&lt;h3 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h3&gt;&lt;p&gt;注释1： 当然，合理的计时框架应该是这样的：&lt;/p&gt;
+&lt;h3 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h3&gt;&lt;p&gt;注释1： 当然，合理的计时框架应该是这样的：&lt;/p&gt;
 &lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;built_in&quot;&gt;log&lt;/span&gt; start time;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; i = &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;; i &amp;lt; &lt;span class=&quot;number&quot;&gt;1000000&lt;/span&gt;; i++)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;built_in&quot;&gt;log&lt;/span&gt; end time;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
 &lt;p&gt;不过这里的结果是墙上时钟(Wall Clock)，而不是CPU时间。&lt;/p&gt;
 &lt;p&gt;注释2： Linux下提供了两种轻量级锁，分别为&lt;code&gt;pthread_spinlock_t&lt;/code&gt;和&lt;code&gt;pthread_mutex_t&lt;/code&gt;。前者属于busy loop类型，当没有获得锁时会通过一个while循环进行等待；对于后者，当线程无法成功拿到锁时会调用&lt;code&gt;system_wait&lt;/code&gt;，当前线程加入到mutex对应的等待队列中。一般来说，当临界区较短或者一个core上只有一个线程时，和mutex相比，使用spin lock性能较佳，因为避免了上下文切换。&lt;/p&gt;
@@ -654,7 +653,7 @@
     <link href="http://yoursite.com/blog/2016/06/20/mutexperf/"/>
     <id>http://yoursite.com/blog/2016/06/20/mutexperf/</id>
     <published>2016-06-20T15:01:55.000Z</published>
-    <updated>2016-07-28T13:48:44.000Z</updated>
+    <updated>2016-11-01T17:01:40.000Z</updated>
     
     <content type="html">&lt;p&gt;锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -682,7 +681,7 @@
 &lt;p&gt;与此同时，结果表明当锁频率达到每秒钟32000次时（锁间隔是3.1us)也是可以接受的。在游戏开发中，内存分配器就可能会在加载过程中达到这个频率。如果锁间隔比较短暂，你仍然可以得到1.5X的并发度。&lt;/p&gt;
 &lt;p&gt;我们已经了解了一系列锁性能的例子：有性能表现的很好的时候，也有性能慢的跟爬虫似的时候。我已经证明了游戏引擎中的内存分配器一直都能保持非常好的性能。把这个例子运用到实际场景中，不能说锁是慢的。不得不承认，锁很容易被滥用，但你不必太害怕–只要经过仔细的分析，任何情况下都能找出导致性能瓶颈的因素。当你正在考虑锁有多可靠，并去理解锁的相关优化方法时(相比无锁编程)，锁有时候表现的真的非常出色。&lt;/p&gt;
 &lt;p&gt;写这篇文章的目的是为了让锁得到应有的尊敬–欢迎批评指正。锁在工业应用程序中有广泛的应用，至于锁的性能，并不总是能达到一个很好的均衡。如果你在自己的经验中发现类似这样的例子，非常乐意看到你的评论&lt;sup&gt;注4&lt;/sup&gt;。&lt;/p&gt;
-&lt;h3 id=&quot;注释&quot;&gt;&lt;a href=&quot;#注释&quot; class=&quot;headerlink&quot; title=&quot;注释&quot;&gt;&lt;/a&gt;注释&lt;/h3&gt;&lt;p&gt;注释1:一种避免或者降低锁冲突的科学思想是partition，避免资源集中。例如，对于hashtable，可以由之前的一个hashtable对应一把锁，改为每个bucket配置一把锁，这样冲突将大大降低。再例如，计数程序，如果大家都对同一个全局变量进行读写而加一把锁，那么冲突严重，可以适当的选择多个计数器，不同的线程累加对应的计数器，一个线程负责将这些计数器的值求和。等等等等。&lt;/p&gt;
+&lt;h3 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h3&gt;&lt;p&gt;注释1:一种避免或者降低锁冲突的科学思想是partition，避免资源集中。例如，对于hashtable，可以由之前的一个hashtable对应一把锁，改为每个bucket配置一把锁，这样冲突将大大降低。再例如，计数程序，如果大家都对同一个全局变量进行读写而加一把锁，那么冲突严重，可以适当的选择多个计数器，不同的线程累加对应的计数器，一个线程负责将这些计数器的值求和。等等等等。&lt;/p&gt;
 &lt;p&gt;注释2: 这里的无锁编程，原文为lock free。不含锁编程，原文为lockless。但是需要注意的是，lock free并不是无锁的意思，它的本质是说一组线程，总有（至少）一个线程能make progress，和有没有锁没有本质联系。lock free目前一般都翻译为无锁（有些地方也翻译为锁无关），因此本文也采用这种译法，但是读者需要特别注意。另外lockless就是真正的无锁、不包含锁的编程。&lt;/p&gt;
 &lt;p&gt;注释3: Doug Lea是并发编程的大牛，《Java并发编程实战》的作者之一，非常乐意分享。他写的这个分配器非常出名，glibc所采用的内存分配器实现就是基于他设计的算法。&lt;/p&gt;
 &lt;p&gt;注释4: 本文的描述和试验可能让人有点迷糊，这里提供一下Paul E. McKenney大叔在他的著作《Is Parallel Programming Hard, And, If So, What Can You Do About It?》中第4章中的例子来解释，让读者更好的理解：&lt;/p&gt;

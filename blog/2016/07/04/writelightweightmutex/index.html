@@ -90,7 +90,7 @@
 <meta property="og:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/ownlightwightmutex1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/ownlightweightmutex2.png">
-<meta property="og:updated_time" content="2016-07-28T13:49:05.000Z">
+<meta property="og:updated_time" content="2016-11-01T17:01:02.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(三)-自己动手实现轻量级锁">
 <meta name="twitter:description" content="在上一篇文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。">
@@ -369,7 +369,7 @@
 <p>这种实现是不可递归的.如果一些线程试图将同一个Benaphore锁上两次，就会出现死锁情况。我会在<a href="">下一篇</a>文章中，将这种实现扩展成可递归的.</p>
 <p>如果将这些代码放到另一种CPU架构中运行，比如Xbox 360或者多核的i0S设备，必须把<code>_InterlockedIncrement</code>宏替换成可以显示提供<a href="http://preshing.com/20120913/acquire-and-release-semantics/" target="_blank" rel="external">acquire和release语义</a>的东西。</p>
 <p>最后，如果你将Benaphore应用到其它平台，要当心它可能会出现<a href="https://en.wikipedia.org/wiki/Priority_inversion" target="_blank" rel="external">优先级反转</a>(priority inversion)问题<sup>注6</sup>。举个例子，MacOS X和Linux在使用POSIX锁的时候通过<a href="https://en.wikipedia.org/wiki/Priority_inheritance" target="_blank" rel="external">优先级继承</a>机制能避免优先级反转问题。 如果你使用的是Benaphore,会绕过这种操作系统机制，这并不会帮到你。但在Windows上情况是不一样的：不管你使用哪种同步原语，Windows都会通过提升饥饿进程的优先级来避免优先级反转问题。<sup>注7</sup></p>
-<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。</p>
+<h2 id="译者注"><a href="#译者注" class="headerlink" title="译者注"></a>译者注</h2><p>注1：考虑单处理器上运行两个线程A和B，其中A持有spin lock；而B的优先级较高，当B在自旋时，由于它具有较高的优先级，导致A得不到调度因此无法释放锁，于是B也无法获得锁，出现活锁。</p>
 <p>注意到作者说的是最坏的情况，实际上上述所说的这种情况一般不会出现，因为一般来说现代操作系统对线程的管理中，除了优先级之外还有时间片机制，不会出现A得不到调度的情况。</p>
 <p>不知道作者所说的活锁是不是这种情况。如果我所说有错，恳请读者指正。</p>
 <p>注2：一般说来，在实现spin lock的时候有一些优化的点。首先，需要区分单处理器和多处理器的情况；其次，在多处理器下，在自旋的过程中，随着尝试拿锁的失败次数越来越多，拿锁的间隔也应该越来越长，常用的是<code>Exponential Backoff</code>策略，间隔呈指数级上升。<code>pause</code>指令也常常在这个地方被使用，一是为了优化性能(和cpu指令预取有关)，二是节能减排。</p>
@@ -597,7 +597,7 @@
               
             
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#性能与弊端"><span class="nav-number">1.</span> <span class="nav-text">性能与弊端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注释"><span class="nav-number">2.</span> <span class="nav-text">注释</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">2.1.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#性能与弊端"><span class="nav-number">1.</span> <span class="nav-text">性能与弊端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#译者注"><span class="nav-number">2.</span> <span class="nav-text">译者注</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">2.1.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></li></ol></div>
             
           </div>
         </section>

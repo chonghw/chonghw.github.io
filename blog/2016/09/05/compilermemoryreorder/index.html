@@ -89,7 +89,7 @@
 <meta property="og:site_name" content="Diting0x">
 <meta property="og:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/compilerreorder1.png">
-<meta property="og:updated_time" content="2016-09-07T03:30:20.000Z">
+<meta property="og:updated_time" content="2016-11-01T16:59:59.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(六)-编译期间内存乱序">
 <meta name="twitter:description" content="写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。">
@@ -394,7 +394,7 @@
 </code></pre><h3 id="为什么有编译器乱序"><a href="#为什么有编译器乱序" class="headerlink" title="为什么有编译器乱序"></a>为什么有编译器乱序</h3><p>就像我在文章开头提到的那样，编译器会像处理器一样以同样的原因-性能优化-来修改内存执行顺序。这种优化是现代CPU复杂性的直接产物。</p>
 <p>当CPU最多只有几十万个晶体管的时候，我有点怀疑编译器在80年代早期就已经做了很多指令乱序的工作。我这个说法可能有点惊世骇俗。那时候并没有太多关于编译器乱序的观点。从那时起，根据摩尔定律，CPU的设计者将晶体管的数目成10000倍的增长，那些晶体管设计了许多trick,比如流水线，内存预取，ILP以及最近的多核。这些特征的结果就是，我们可以看到程序中指令的执行顺序在性能上能产生很大的差异。</p>
 <p>Intel在1993年发布的首个Pentium处理器，其所谓的U和V管道，是我记得的第一个人们经常说起关于<a href="http://www.agner.org/optimize/microarchitecture.pdf" target="_blank" rel="external">管道和指令乱序</a>的处理器。最近，当我在Visual Studio上开始涉及X86汇编代码时。我对其中极少数的指令乱序情况感到非常惊讶。另一方面，我在Playstation 3平台上写SPU汇编代码时，发现编译器非常高效<sup>注11</sup>。这只是一些有趣的经历，并不能反应其他人的情况，当然也不影响我们在lock-free的代码中保证内存执行顺序的手段和方法<sup>注12</sup>。</p>
-<h3 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h3><p>注1：lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。</p>
+<h3 id="译者注"><a href="#译者注" class="headerlink" title="译者注"></a>译者注</h3><p>注1：lock free虽然翻译为无锁，但是它并不是“没有锁”的意思，“没有锁”在英文里一般是lockless。lock free考察的是若干个线程组成的系统，不管如何，总能保证至少有一个线程能make progress，因此保证系统，从整体上看，是make progress的。这样的系统或者算法实现就是lock free的。</p>
 <p>注2：假设A、B的初始值都是0，那么对于单线程程序而言，foo执行完A的的值为1，B的值为0。保证这点的情况下，编译器可以随意优化。这里重要的是影响和效果。</p>
 <p>注3：很多时候我们把barrier分为两种：compiler级别和cpu级别。compiler级别的memory barrier只阻止编译器乱序，不影响CPU乱序，不对CPU乱序执行进行约束；而CPU级别的memory barrier则束缚了编译器和cpu两者的乱序。</p>
 <p>注4：在linux里，<code>barrier()</code>是编译器级别的memory barrier；<code>smp_wb()</code>是cpu级别的memory barrier。</p>
@@ -647,7 +647,7 @@
               
             
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#编译器指令乱序"><span class="nav-number">1.</span> <span class="nav-text">编译器指令乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#显式Compiler-Barriers"><span class="nav-number">2.</span> <span class="nav-text">显式Compiler Barriers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#隐式Compiler-Barrier"><span class="nav-number">3.</span> <span class="nav-text">隐式Compiler Barrier</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#横空出现的写操作"><span class="nav-number">4.</span> <span class="nav-text">横空出现的写操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么有编译器乱序"><span class="nav-number">5.</span> <span class="nav-text">为什么有编译器乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注释"><span class="nav-number">6.</span> <span class="nav-text">注释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">7.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#编译器指令乱序"><span class="nav-number">1.</span> <span class="nav-text">编译器指令乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#显式Compiler-Barriers"><span class="nav-number">2.</span> <span class="nav-text">显式Compiler Barriers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#隐式Compiler-Barrier"><span class="nav-number">3.</span> <span class="nav-text">隐式Compiler Barrier</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#横空出现的写操作"><span class="nav-number">4.</span> <span class="nav-text">横空出现的写操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么有编译器乱序"><span class="nav-number">5.</span> <span class="nav-text">为什么有编译器乱序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#译者注"><span class="nav-number">6.</span> <span class="nav-text">译者注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">7.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
             
           </div>
         </section>
