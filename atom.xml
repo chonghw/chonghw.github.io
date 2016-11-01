@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-10-31T14:19:29.000Z</updated>
+  <updated>2016-11-01T16:58:10.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/10/30/memorymodel/"/>
     <id>http://yoursite.com/blog/2016/10/30/memorymodel/</id>
     <published>2016-10-30T13:21:50.000Z</published>
-    <updated>2016-10-31T14:19:29.000Z</updated>
+    <updated>2016-11-01T16:58:10.000Z</updated>
     
     <content type="html">&lt;p&gt;存在许多种内存乱序&lt;sup&gt;注1&lt;/sup&gt;，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。&lt;/p&gt;
 &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
@@ -52,7 +52,7 @@
 &lt;p&gt;在任何情况下，当使用高级编程语言，顺序一致性只有在作为软件内存模型时才变得有趣。在Java5或更高版本中，你可以将共享变量声明为volatile。在C++11中,当在原子数据类型执行操作的时候，可以使用默认的顺序约束，也就是memory_order_seq_cst&lt;sup&gt;注7&lt;/sup&gt;。如果这么做了，工具链会限制编译器乱序并发出CPU特定的指令来充当合适的memory barrier。在这种方式下，尽管是在弱内存模型的多核设备上,也会模拟出顺序一致性的内存模型。如果你读了Herlihy &amp;amp; Shavit’s的 &lt;a href=&quot;https://www.amazon.com/gp/product/0123973376/ref=as_li_ss_tl?ie=UTF8&amp;amp;tag=preshonprogr-20&amp;amp;linkCode=as2&amp;amp;camp=1789&amp;amp;creative=390957&amp;amp;creativeASIN=0123973376&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;The Art of Multiprocessor Programming&lt;/a&gt;,要注意那里的大部分例子都假设顺序一致性的软件内存模型。&lt;/p&gt;
 &lt;h3 id=&quot;更多细节&quot;&gt;&lt;a href=&quot;#更多细节&quot; class=&quot;headerlink&quot; title=&quot;更多细节&quot;&gt;&lt;/a&gt;更多细节&lt;/h3&gt;&lt;p&gt;要填完有关内存模型的坑，还有许多其它微妙的细节，但以我的经验来看，当在应用层上写无锁代码时，这些都变得没什么意思了。存在一些控制依赖，因果一致性和不同的内存乱序类型。然而，大部分的讨论都能归于我上面总结的四种主要类型里。&lt;/p&gt;
 &lt;p&gt;如果你真的想探究处理器内存模型的细节，并且你能在吃早餐的时候还想琢磨一些正式的逻辑，你可以看看剑桥大学的非常精细的&lt;a href=&quot;http://www.cl.cam.ac.uk/~pes20/weakmemory/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;工作&lt;/a&gt;&lt;br&gt;Paul McKenney写了它们的工作和相关工具的一些&lt;a href=&quot;http://lwn.net/Articles/470681/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;概览&lt;/a&gt;&lt;sup&gt;注8&lt;/sup&gt;&lt;/p&gt;
-&lt;p&gt;注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。&lt;/p&gt;
+&lt;h3 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h3&gt;&lt;p&gt;注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。&lt;/p&gt;
 &lt;p&gt;注2：也就是说从右到左模型越来越弱，限制越来越松，乱序发生的越来越多。&lt;/p&gt;
 &lt;p&gt;注3：即使在X86/X64下，还是得注意可能的写读乱序。&lt;/p&gt;
 &lt;p&gt;注4：举个关于data dependency的例子，来说明在DEC Alpha下编程有多么的困难和tricky。&lt;/p&gt;

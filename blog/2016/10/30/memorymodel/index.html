@@ -91,7 +91,7 @@
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel1.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel2.png">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/memorymodel3.png">
-<meta property="og:updated_time" content="2016-10-31T14:19:29.000Z">
+<meta property="og:updated_time" content="2016-11-01T16:58:10.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入探索并发编程系列(九)-弱/强内存模型">
 <meta name="twitter:description" content="存在许多种内存乱序注1，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。">
@@ -375,7 +375,7 @@
 <p>在任何情况下，当使用高级编程语言，顺序一致性只有在作为软件内存模型时才变得有趣。在Java5或更高版本中，你可以将共享变量声明为volatile。在C++11中,当在原子数据类型执行操作的时候，可以使用默认的顺序约束，也就是memory_order_seq_cst<sup>注7</sup>。如果这么做了，工具链会限制编译器乱序并发出CPU特定的指令来充当合适的memory barrier。在这种方式下，尽管是在弱内存模型的多核设备上,也会模拟出顺序一致性的内存模型。如果你读了Herlihy &amp; Shavit’s的 <a href="https://www.amazon.com/gp/product/0123973376/ref=as_li_ss_tl?ie=UTF8&amp;tag=preshonprogr-20&amp;linkCode=as2&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0123973376" target="_blank" rel="external">The Art of Multiprocessor Programming</a>,要注意那里的大部分例子都假设顺序一致性的软件内存模型。</p>
 <h3 id="更多细节"><a href="#更多细节" class="headerlink" title="更多细节"></a>更多细节</h3><p>要填完有关内存模型的坑，还有许多其它微妙的细节，但以我的经验来看，当在应用层上写无锁代码时，这些都变得没什么意思了。存在一些控制依赖，因果一致性和不同的内存乱序类型。然而，大部分的讨论都能归于我上面总结的四种主要类型里。</p>
 <p>如果你真的想探究处理器内存模型的细节，并且你能在吃早餐的时候还想琢磨一些正式的逻辑，你可以看看剑桥大学的非常精细的<a href="http://www.cl.cam.ac.uk/~pes20/weakmemory/" target="_blank" rel="external">工作</a><br>Paul McKenney写了它们的工作和相关工具的一些<a href="http://lwn.net/Articles/470681/" target="_blank" rel="external">概览</a><sup>注8</sup></p>
-<p>注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。</p>
+<h3 id="译者注"><a href="#译者注" class="headerlink" title="译者注"></a>译者注</h3><p>注1：比如说写写乱序、写读乱序、读读乱序、读写乱序等等。</p>
 <p>注2：也就是说从右到左模型越来越弱，限制越来越松，乱序发生的越来越多。</p>
 <p>注3：即使在X86/X64下，还是得注意可能的写读乱序。</p>
 <p>注4：举个关于data dependency的例子，来说明在DEC Alpha下编程有多么的困难和tricky。</p>
@@ -601,7 +601,7 @@
               
             
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#弱内存模型"><span class="nav-number">1.</span> <span class="nav-text">弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#带有数据依赖执行顺序的弱内存模型"><span class="nav-number">2.</span> <span class="nav-text">带有数据依赖执行顺序的弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#强内存模型"><span class="nav-number">3.</span> <span class="nav-text">强内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顺序一致性"><span class="nav-number">4.</span> <span class="nav-text">顺序一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更多细节"><span class="nav-number">5.</span> <span class="nav-text">更多细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">6.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#弱内存模型"><span class="nav-number">1.</span> <span class="nav-text">弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#带有数据依赖执行顺序的弱内存模型"><span class="nav-number">2.</span> <span class="nav-text">带有数据依赖执行顺序的弱内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#强内存模型"><span class="nav-number">3.</span> <span class="nav-text">强内存模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顺序一致性"><span class="nav-number">4.</span> <span class="nav-text">顺序一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更多细节"><span class="nav-number">5.</span> <span class="nav-text">更多细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#译者注"><span class="nav-number">6.</span> <span class="nav-text">译者注</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgement"><span class="nav-number">7.</span> <span class="nav-text">Acknowledgement</span></a></li></ol></div>
             
           </div>
         </section>
