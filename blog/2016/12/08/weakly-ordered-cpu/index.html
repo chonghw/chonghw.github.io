@@ -1,0 +1,833 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="在这一系列博客中，我已经详细讨论了lock-free编程相关的一系列主题，比如Acquire与Release语义以及Weakly-ordered CPUs. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入探索并发编程系列(十)-Weakly-ordered CPU的由来">
+<meta property="og:url" content="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="在这一系列博客中，我已经详细讨论了lock-free编程相关的一系列主题，比如Acquire与Release语义以及Weakly-ordered CPUs. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered1.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered2.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered3.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered4.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered5.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered6.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered7.png">
+<meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered8.png">
+<meta property="og:updated_time" content="2016-12-08T13:36:19.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入探索并发编程系列(十)-Weakly-ordered CPU的由来">
+<meta name="twitter:description" content="在这一系列博客中，我已经详细讨论了lock-free编程相关的一系列主题，比如Acquire与Release语义以及Weakly-ordered CPUs. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。">
+<meta name="twitter:image" content="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered1.png">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> 深入探索并发编程系列(十)-Weakly-ordered CPU的由来 | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                深入探索并发编程系列(十)-Weakly-ordered CPU的由来
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-12-08T21:34:28+08:00" content="2016-12-08">
+              2016-12-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/High-performance/" itemprop="url" rel="index">
+                    <span itemprop="name">High-performance</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/12/08/weakly-ordered-cpu/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/12/08/weakly-ordered-cpu/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。</p>
+<a id="more"></a>
+<p>如果要概括weakly-ordered CPU，可以这么说:一个CPU core按照一定的顺序修改变量，然而其他的CPU core却可以看到对该变量不同的修改顺序<sup>注1</sup>. 这就是我要在这篇文章中使用纯C++11来讲述的内容。</p>
+<p>对于一般程序来说，x86/64处理器家族从Intel到AMD都不具备这种特性。因此我们别想着在现有的桌面系统或者笔记本上来阐述这种问题了。我们需要的只是一个weakly-ordered的多核设备。幸运的是，在我口袋里恰好就有这么一台设备。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered1.png" alt=""></p>
+<p>Iphone4s就能满足要求。它运行在一个多核ARM处理器上，而这种ARM架构就是weakly-ordered.</p>
+<h3 id="实验"><a href="#实验" class="headerlink" title="实验"></a>实验</h3><p>我们的实验由一个整型变量<code>sharedValue</code>以及保护它的锁(mutex)组成。我们来生成两个线程，并且每个线程都会对<code>sharedValue</code>做递增操作1千万次。</p>
+<p>我们不要让线程一直等待锁(mutex)而阻塞，而是让每个线程都会忙碌地重复做一些事情(比如只是等待CPU时钟)，并试着在随机的时间里加锁。如果加锁成功，那线程就会将<code>shareValue</code>递增，否则，就会返回到原处继续做一些忙碌地工作。下面是其伪代码:</p>
+<pre><code>count = 0
+while count &lt; 10000000:
+doRandomAmountOfBusyWork()
+if tryLockMutex():
+    // The lock succeeded
+    sharedValue++
+    unlockMutex()
+    count++
+endif
+endwhile
+</code></pre><p>每个线程都运行在不同的CPU核中，timeline应该是像下图这样的。每个红色区域代表一个成功的上锁和递增操作，灰色代表加锁失败，因为这时另一个线程已经拥有这把锁了。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered2.png" alt=""></p>
+<p>需要强调的是，<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/" target="_blank" rel="external">锁只是一个概念</a>，有<a href="http://www.chongh.wiki/blog/2016/07/04/writelightweightmutex/" target="_blank" rel="external">许多</a>实现锁的方法。我们采用std::mutex中提供的实现方法，当然了，保证其中一切都会运行正确。倘若真是那样，我就没什么可以跟你们讲的了。不如这样，我们来实现一个常规的锁-我们来看看<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">弱硬件执行顺序</a>的结果。直观上来看，当在线程间有个“close shave”时，内存乱序发生的可能性是最高的。举个例子，在上图中，当一个线程正好就在另一个线程释放锁的那一时刻获取锁，这种现象就叫做”close shave”。</p>
+<p>Xcode的最新版本对C++11线程和原子类型支持非常好，那我们就用它吧。所有的C++标识符都定义在<code>std</code>命名空间中，我们假设<code>using namespace std</code>提前定义在了代码中某处。</p>
+<h3 id="一把诡异的简单锁"><a href="#一把诡异的简单锁" class="headerlink" title="一把诡异的简单锁"></a>一把诡异的简单锁</h3><p>我们的锁由一个整型<code>flag</code>组成，1表示锁被持有，0表示不被持有。为了保证锁的独占权，一个线程只能在<code>flag</code>值为0的时候才能将其设置成1，而且这种操作必须保证原子性。为了做到这些，我们将<code>flag</code>定义为C++11的原子类型，<code>atomic&lt;int&gt;</code>，并采用<a href="http://preshing.com/20120612/an-introduction-to-lock-free-programming/#atomic-rmw" target="_blank" rel="external">read-modify-write</a>操作:</p>
+<pre><code>int expected = 0;
+if (flag.compare_exchange_strong(expected, 1, memory_order_acquire))
+{
+    // The lock succeeded
+}
+</code></pre><p>上面代码中用的<code>memory_order_acquire</code>参数被认为是执行顺序约束的(ordering constraint）.我们在操作中采用acquire语义，用来保证我们能从持有锁的前一个线程中获取最新的共享值<sup>注2</sup>。</p>
+<p>为了释放锁，我们执行下面的操作:</p>
+<pre><code>flag.store(0, memory_order_release);
+</code></pre><p>上面操作使用<code>memory_order_acquire</code>执行顺序约束将<code>flag</code>设置回0了，其采用了release语义。<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>必须成对使用,用来确保共享值能从一个线程中传播到另一个线程中<sup>注3</sup>。</p>
+<h3 id="如果不实用Acquire和Release语义"><a href="#如果不实用Acquire和Release语义" class="headerlink" title="如果不实用Acquire和Release语义"></a>如果不实用Acquire和Release语义</h3><p>现在，我们不限定任何的正确执行顺序约束，使用C++11重写上述实验,只要在两处都放置’memory_order_relaxed`。这意味着C++ 11编译器不会强制任何特殊的内存执行顺序，<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">任何类型的乱序</a>都是允许的。</p>
+<pre><code>void IncrementSharedValue10000000Times(RandomDelay&amp; randomDelay)
+{
+int count = 0;
+while (count &lt; 10000000)
+{
+    randomDelay.doBusyWork();
+    int expected = 0;
+    if (flag.compare_exchange_strong(expected, 1, memory_order_relaxed))
+    {
+        // Lock was successful
+        sharedValue++;
+        flag.store(0, memory_order_relaxed);
+        count++;
+    }
+}
+}
+</code></pre><p>这时，看看编译器产生的ARM汇编代码能告诉我们很多信息，在Release中，使用Xcode中的反汇编视图:</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered3.png" alt=""></p>
+<p>如果你对汇编不是很熟悉，也不必担心。所有需要知道的就是编译器是否在共享变量中对任何操作重新排序了。这里包括对<code>flag</code>的两种操作以及对<code>sharedValue</code>的递增操作。在上图中，我标明了相应区域对应的汇编代码。正如你所知，我们是幸运的：尽管<code>memory_order_acquire</code>参数意味着编译器可以对那些操作重新排序，但编译器并没有这么做.</p>
+<p>我已经给出了一个样例程序来无限循环这个实验，并在每一次运行结束后将<code>sharedValue</code>的最终值打印出来。如果你想看源码并自己运行，可以在<a href="https://github.com/preshing/AcquireRelease" target="_blank" rel="external">github</a>上下载。</p>
+<p>下面是iphone正在努力的运行这个实验</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered4.png" alt=""></p>
+<p>这是Xcode输出框中的输出:</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered5.png" alt=""></p>
+<p>动手检验一下！尽管两个线程都分别执行了递增操作1千万次,<code>sharedValue</code>的最终值一直小于2千万。并且，汇编指令的执行顺序和C++中定义在共享变量中的执行顺序操作是一致的。</p>
+<p>你可能会觉得，这些结果可能是因为CPU上的内存乱序导致的。为了指出一种可能的乱序-实际上有很多种可能-<code>str.w r0, [r11]</code>(sharedValue写操作)与内存的交互可能会和<code>str r5, [r6]</code>(将flag写入0）发生乱序。换句话说，在程序结束之前，锁能被有效地释放。正如我们所见，结果是另一个线程可以自由的擦除由这个线程对值的修改，导致在实验结束时<code>sharedValued</code>的不一致。</p>
+<h3 id="正确使用Acquire与Release语义"><a href="#正确使用Acquire与Release语义" class="headerlink" title="正确使用Acquire与Release语义"></a>正确使用Acquire与Release语义</h3><p>要修正上述的例子，意味着要重新放回正确的C++11内存执行顺序约束：</p>
+<pre><code>void IncrementSharedValue10000000Times(RandomDelay&amp; randomDelay)
+{
+int count = 0;
+while (count &lt; 10000000)
+{
+    randomDelay.doBusyWork();
+    int expected = 0;
+    if (flag.compare_exchange_strong(expected, 1, memory_order_acquire))
+    {
+        // Lock was successful
+        sharedValue++;
+        flag.store(0, memory_order_release);
+        count++;
+    }
+}
+}
+</code></pre><p>编译器插入一系列<code>dmb ish</code>指令，这些指令在ARMv7指令集中充当内存屏障。我不是个ARM专家–欢迎评论–但可以保险的假设这个指令很像PowerPC上的<code>lwsync</code>指令，为<code>compare_exchange_strong</code>上的acquire语义和<code>store</code>上的release语义提供了所有<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">内存屏障类型</a><sup>注4</sup>。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered6.png" alt=""></p>
+<p>这次，我们可爱的自制锁的确保护了<code>sharedValue</code>，确保每次加锁时所有的修改都从一个线程中安全的传播到了另一个线程中<sup>注5</sup>。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered7.png" alt=""></p>
+<p>如果你仍然无法理解这个实验发生了什么。我建议你看看<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">这篇</a>文章。就类比而言，你可以想象一下，两个工作站其中每个都有<code>sharedValue</code>和<code>flag</code>的本地副本，需要一些其它的工作来确保它们是同步的。个人而言，用这种方法将其可视化是很有帮助的。</p>
+<p>我想重述一遍，我们在这里看到的内存乱序只能在多核或多处理器设备中才能发生<sup>注6</sup>。如果你把这个编译好的程序运行在Iphone3GS或更早一代的ipad中，它们都使用同样的ARMv7架构但只有一个CPU核，你也不会看到<code>sharedValue</code>最后结果的任何不匹配性。</p>
+<h3 id="有趣的笔记"><a href="#有趣的笔记" class="headerlink" title="有趣的笔记"></a>有趣的笔记</h3><p>你可以把这个<a href="https://github.com/preshing/AcquireRelease" target="_blank" rel="external">示例程序</a>运行在任何x86/x64架构上的Window,MacOS或Linux机器上。就算是在一个多核系统中，除非是你的编译器在一些特殊指令上执行了乱序，否则你是不会看到任何运行时的内存乱序的。当我用Visual Studio2012测试时，并没有发生内存乱序。那是因为x86/x64处理器通常都被认为是<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">strongly-ordered</a>：当一个CPU核执行一系列写操作时，每个其它CPU核都会看到它们在被写入时顺序的值变化<sup>注7</sup>。</p>
+<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered8.png" alt=""></p>
+<p>上图为了说明如果不了解C++11原子类型，就很容易错误的使用，。很简单，因为它只有在一个特殊的处理器和工具链中才能正确运行</p>
+<p>碰巧的是，Visual Studio2012的发行版对这个示例程序会产生非常糟糕的x86机器代码。在多核系统上使用lock-free编程，提高性能是最首要原因。现在有足够的理由让我无法忍受在Window平台上用C++11原子类型了。正如<a href="http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/#comment-61574" target="_blank" rel="external">评论</a>中提到的，VS2012专业版的最新版本产生的机器代码会好很多了。</p>
+<p>这篇文章是前期文章讨论x86/64上的<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">StoreLoad乱序</a>的续集。从我的经验来看，#StoreLoad在实际运用中并不如这里提到的执行顺序约束用的频繁</p>
+<p>最后，我不是第一个在实际运用当中阐述弱硬件执行顺序的人，但我可能是第一个使用C++11来阐述的人。之前<a href="http://wanderingcoder.net/2011/04/01/arm-memory-ordering/" target="_blank" rel="external">Pierre Lebeaupin</a>和<a href="http://ridiculousfish.com/blog/posts/barrier.html" target="_blank" rel="external">ridiculousfish</a>的一些文章采用了不同的实验来解释相同的现象。</p>
+<h2 id="译者注"><a href="#译者注" class="headerlink" title="译者注"></a>译者注</h2><p>注1:也就是说，假如CPU core1执行如下语句：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">a = <span class="number">1</span>;</span><br><span class="line">b = <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+<p>CPU core2可能先看到b == 2 ，然后才是 a == 1</p>
+<p>注2: acquire对应invalid queue。 release对应store buffer。</p>
+<p>注3: 这里的配对，并不是严格的一一对应。也就是说，CPU core1修改共享变量时使用release语义，CPU core2、 core3、core4都用acquire语义去读。</p>
+<p>那么core1和core2、core3、core4都配对。</p>
+<p>注4: 这里值得一提的时，gcc下的<code>__sync_compare_and_swap</code>和<code>__sync_fetch_and_add</code>这些原子操作在X86下会自带一个memory barrier。所以这些原子操作之后没必要再加memory barrier了。</p>
+<p>注5: 其实这也是锁的必备的一个语义。一般说来，锁要提供三种语义：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++</span><br></pre></td></tr></table></figure>
+<p>语义1:当线程1更新完a(也包括d)的值之后释放锁，线程2进入临界区必须读到a(也包括d)的新值，也就是线程1更新完之后的值。可以认为是acquire release或者happen before语义。</p>
+<p>语义2:同一时刻，a++这条语句只能有一个线程在执行。可以认为是临界语义或者互斥语义。</p>
+<p>语义3:必须保证a++不会被乱序到b++处执行，也不能乱序到c++处执行。这个自然也是临界语义或者互斥语义的一部分，因为如果乱序，那么无临界区可言了。但是读者诸君要注意到，以下这样的乱序是完全可以的、合法的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">b++;</span><br><span class="line">lock.lock();</span><br><span class="line">d++;</span><br><span class="line">a++;</span><br><span class="line">lock.unlock();</span><br><span class="line">c++;</span><br></pre></td></tr></table></figure>
+<p>或者：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">lock.lock();</span><br><span class="line">b++;</span><br><span class="line">a++;</span><br><span class="line">d++;</span><br><span class="line">c++;</span><br><span class="line">lock.unlock();</span><br></pre></td></tr></table></figure></p>
+<p>注6：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？</p>
+<p>更进一步，读者可能还会有两个疑问：</p>
+<p>1，为什么CPU要乱序执行，难道是考虑性能吗？那为什么乱序就能提升性能？</p>
+<p>2，为什么在Intel X86/64架构下，就只有写读（Store Load）发生乱序呢？读读呢？读写呢？</p>
+<p>要明白这两个问题，我们首先得知道cache coherency，也就是所谓的cache一致性。</p>
+<p>在现代计算机里，一般包含至少三种角色：cpu、cache、内存。一般说来，内存只有一个；CPU Core有多个；cache有多级，cache的基本块单位是cacheline，大小一般是64B-256B。</p>
+<p>每个cpu core有自己的私有的cache(有一级cache是共享的)，而cache只是内存的副本。那么这就带来一个问题：如何保证每个cpu core中的cache是一致的？</p>
+<p>在广泛使用的cache一致性协议即MESI协议中，cacheline有四种状态：Modified、Exclusive、Shared、Invalid，分别表示修改、独占、共享、无效。</p>
+<p>当某个cpu core写一个内存变量时，往往是（先）只修改cache，那么这就会导致不一致。为了保证一致，需要先把其他core的对应的cacheline都invalid掉，给其他core们发送invalid消息，然后等待它们的response。</p>
+<p>这个过程是耗时的，需要执行写变量的core等待，阻塞了它后面的操作。为了解决这个问题，cpu core往往有自己专属的store buffer。</p>
+<p>等待其他core给它response的时候，就可以先写store buffer，然后继续后面的读操作，对外表现就是写读乱序。</p>
+<p>因为写操作是写到store buffer中的，而store buffer是私有的，对其他core是透明的，core1无法访问core2的store buffer。因此其他core读不到这样的修改。</p>
+<p>这就是大概的原理。MESI协议非常复杂，背后的技术也很有意思。</p>
+<p>注7:X86写写不乱序；也就是说对于</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">a = <span class="number">1</span>;</span><br><span class="line">b = <span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+<p>其他cpu core将先看到a == 1再看到 b == 3。（不考虑编译器优化）</p>
+<h3 id="Acknowledgements"><a href="#Acknowledgements" class="headerlink" title="Acknowledgements"></a>Acknowledgements</h3><p>本文由微博用户 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
+<p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>原文： <a href="http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/" target="_blank" rel="external">http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/</a></p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/12/07/systemsecurity-aslr/" rel="next" title="系统安全浅薄知识系列(一)-ASLR">
+                <i class="fa fa-chevron-left"></i> 系统安全浅薄知识系列(一)-ASLR
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/12/08/weakly-ordered-cpu/"
+           data-title="深入探索并发编程系列(十)-Weakly-ordered CPU的由来" data-url="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">35</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#实验"><span class="nav-number">1.</span> <span class="nav-text">实验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#一把诡异的简单锁"><span class="nav-number">2.</span> <span class="nav-text">一把诡异的简单锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如果不实用Acquire和Release语义"><span class="nav-number">3.</span> <span class="nav-text">如果不实用Acquire和Release语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#正确使用Acquire与Release语义"><span class="nav-number">4.</span> <span class="nav-text">正确使用Acquire与Release语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#有趣的笔记"><span class="nav-number">5.</span> <span class="nav-text">有趣的笔记</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#译者注"><span class="nav-number"></span> <span class="nav-text">译者注</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Acknowledgements"><span class="nav-number">1.</span> <span class="nav-text">Acknowledgements</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

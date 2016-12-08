@@ -277,8 +277,8 @@
             
               
                 
-                <a class="post-title-link" href="/blog/2016/01/01/kvm-qemu-bytalk/" itemprop="url">
-                  KVM/Qemu虚拟机简介
+                <a class="post-title-link" href="/blog/2016/02/18/memory-safety/" itemprop="url">
+                  内存持久战-内存安全性
                 </a>
               
             
@@ -291,8 +291,8 @@
               <i class="fa fa-calendar-o"></i>
             </span>
             <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-01-01T16:05:23-05:00" content="2016-01-01">
-              2016-01-01
+            <time itemprop="dateCreated" datetime="2016-02-18T09:07:28+08:00" content="2016-02-18">
+              2016-02-18
             </time>
           </span>
 
@@ -305,8 +305,8 @@
               <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/virtualization/" itemprop="url" rel="index">
-                    <span itemprop="name">virtualization</span>
+                  <a href="/categories/security/" itemprop="url" rel="index">
+                    <span itemprop="name">security</span>
                   </a>
                 </span>
 
@@ -321,8 +321,8 @@
             
               <span class="post-comments-count">
                 &nbsp; | &nbsp;
-                <a href="/blog/2016/01/01/kvm-qemu-bytalk/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/01/01/kvm-qemu-bytalk/" itemprop="commentsCount"></span>
+                <a href="/blog/2016/02/18/memory-safety/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/02/18/memory-safety/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -346,14 +346,17 @@
 
       
         
-          <blockquote>
+          <p>C语言中的buffer overflows, format string attacks等其它的一些vulnerabilities都有一个共同的问题：违背内存安全(Memory Safety)。本文主要讲述如何准确定义内存安全，为什么这些vulnerabilities违背了内存安全。也为后续两篇文章<a href="http://www.chongh.wiki/blog/2016/02/18/memorywar-attack/">内存持久战-攻击模型</a>，<a href="http://www.chongh.wiki/blog/2016/02/23/memorywar-defense/">内存持久战-防御机制</a>做好铺垫。</p>
+<blockquote>
 <ul>
-<li>KVM/Qemu选择与部署</li>
-<li>KVM/Qemu原理概览</li>
+<li>IEEE Security&amp;Privacy’13</li>
+<li>不访问未定义的内存</li>
+<li>无限间距</li>
+<li>Pointers as capabilities</li>
 </ul>
 </blockquote>
           <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2016/01/01/kvm-qemu-bytalk/#more" rel="contents">
+            <a class="btn" href="/blog/2016/02/18/memory-safety/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -404,7 +407,265 @@
             
               
                 
-                <a class="post-title-link" href="/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" itemprop="url">
+                <a class="post-title-link" href="/blog/2016/01/03/highavailability-migration/" itemprop="url">
+                  云平台高可用之虚拟机迁移
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-01-03T12:02:39+08:00" content="2016-01-03">
+              2016-01-03
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/virtualization/" itemprop="url" rel="index">
+                    <span itemprop="name">virtualization</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/01/03/highavailability-migration/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/01/03/highavailability-migration/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>无序，直接看文章。</p>
+<blockquote>
+<ul>
+<li>什么是云平台高可用</li>
+<li>虚拟机迁移主要算法</li>
+<li>实现 Pre-copy</li>
+<li>思考</li>
+</ul>
+</blockquote>
+<h2 id="什么是云平台高可用"><a href="#什么是云平台高可用" class="headerlink" title="什么是云平台高可用"></a>什么是云平台高可用</h2><p>云，一个再熟悉不过的词了。大家都看到了云计算的商业价值，于是乎各大IT公司都纷纷提出自己的云计算服务，有Amozon的EC2，微软的Azure,谷歌的Google AppEngine,腾讯云，百度云，阿里云等。说到Google AppEngine，相信许多用goagent翻墙党都用过这个东西，但估计大家都只忙着使用goagent，却忽略了AppEngine其中提供的云服务。如今，云无处不在，从当今主流产品看，云平台需要满足以下几个需求：</p>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/blog/2016/01/03/highavailability-migration/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2016/01/02/kvm-qemu-bytalk/" itemprop="url">
+                  KVM/Qemu虚拟机简介
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-01-02T05:05:23+08:00" content="2016-01-02">
+              2016-01-02
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/virtualization/" itemprop="url" rel="index">
+                    <span itemprop="name">virtualization</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/01/02/kvm-qemu-bytalk/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/01/02/kvm-qemu-bytalk/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <blockquote>
+<ul>
+<li>KVM/Qemu选择与部署</li>
+<li>KVM/Qemu原理概览</li>
+</ul>
+</blockquote>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/blog/2016/01/02/kvm-qemu-bytalk/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/blog/2015/12/19/pin-for-dynamic-binary-instrumentation/" itemprop="url">
                   PIN for Dynamic Binary Instrumentation
                 </a>
               
@@ -418,8 +679,8 @@
               <i class="fa fa-calendar-o"></i>
             </span>
             <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-12-18T18:39:46-05:00" content="2015-12-18">
-              2015-12-18
+            <time itemprop="dateCreated" datetime="2015-12-19T07:39:46+08:00" content="2015-12-19">
+              2015-12-19
             </time>
           </span>
 
@@ -448,8 +709,8 @@
             
               <span class="post-comments-count">
                 &nbsp; | &nbsp;
-                <a href="/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2015/12/18/pin-for-dynamic-binary-instrumentation/" itemprop="commentsCount"></span>
+                <a href="/blog/2015/12/19/pin-for-dynamic-binary-instrumentation/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2015/12/19/pin-for-dynamic-binary-instrumentation/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -484,7 +745,7 @@
 </blockquote>
 <h2 id="什么是注入（Instrumentation"><a href="#什么是注入（Instrumentation" class="headerlink" title="什么是注入（Instrumentation)"></a>什么是注入（Instrumentation)</h2><p>每一个写过代码的人都调试过程序，最简单的无非就是手动在源代码中插入printf语句，当然大部分还是会选择一些调试工具如GDB。注入技术也类似，不过注入的对象是可执行二进制文件。简单来说，在你的程序中插入额外的代码来分析程序的运行时信息就称为注入技术。但就广义来说，在源代码中注入代码也可称之为注入，只是为了区分，注入技术一般特指对象为可执行二进制文件。</p>
           <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2015/12/18/pin-for-dynamic-binary-instrumentation/#more" rel="contents">
+            <a class="btn" href="/blog/2015/12/19/pin-for-dynamic-binary-instrumentation/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -535,7 +796,7 @@
             
               
                 
-                <a class="post-title-link" href="/blog/2015/12/16/octopress-tutorial/" itemprop="url">
+                <a class="post-title-link" href="/blog/2015/12/17/octopress-tutorial/" itemprop="url">
                   像黑客一样写博客: Octopress + Github Pages
                 </a>
               
@@ -549,8 +810,8 @@
               <i class="fa fa-calendar-o"></i>
             </span>
             <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-12-16T19:45:50-05:00" content="2015-12-16">
-              2015-12-16
+            <time itemprop="dateCreated" datetime="2015-12-17T08:45:50+08:00" content="2015-12-17">
+              2015-12-17
             </time>
           </span>
 
@@ -579,8 +840,8 @@
             
               <span class="post-comments-count">
                 &nbsp; | &nbsp;
-                <a href="/blog/2015/12/16/octopress-tutorial/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2015/12/16/octopress-tutorial/" itemprop="commentsCount"></span>
+                <a href="/blog/2015/12/17/octopress-tutorial/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2015/12/17/octopress-tutorial/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -618,7 +879,7 @@
 </ul>
 </blockquote>
           <div class="post-more-link text-center">
-            <a class="btn" href="/blog/2015/12/16/octopress-tutorial/#more" rel="contents">
+            <a class="btn" href="/blog/2015/12/17/octopress-tutorial/#more" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -693,7 +954,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/">
-              <span class="site-state-item-count">33</span>
+              <span class="site-state-item-count">35</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
@@ -701,7 +962,7 @@
           
             <div class="site-state-item site-state-categories">
               <a href="/categories">
-                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-count">13</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>

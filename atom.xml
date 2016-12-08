@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-11-01T16:58:10.000Z</updated>
+  <updated>2016-12-08T13:36:19.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -16,10 +16,193 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>深入探索并发编程系列(十)-Weakly-ordered CPU的由来</title>
+    <link href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/"/>
+    <id>http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/</id>
+    <published>2016-12-08T13:34:28.000Z</published>
+    <updated>2016-12-08T13:36:19.000Z</updated>
+    
+    <content type="html">&lt;p&gt;在这一系列博客中，我已经详细讨论了&lt;a href=&quot;&quot;&gt;lock-free编程&lt;/a&gt;相关的一系列主题，比如&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Acquire与Release语义&lt;/a&gt;以及&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Weakly-ordered CPUs&lt;/a&gt;. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;如果要概括weakly-ordered CPU，可以这么说:一个CPU core按照一定的顺序修改变量，然而其他的CPU core却可以看到对该变量不同的修改顺序&lt;sup&gt;注1&lt;/sup&gt;. 这就是我要在这篇文章中使用纯C++11来讲述的内容。&lt;/p&gt;
+&lt;p&gt;对于一般程序来说，x86/64处理器家族从Intel到AMD都不具备这种特性。因此我们别想着在现有的桌面系统或者笔记本上来阐述这种问题了。我们需要的只是一个weakly-ordered的多核设备。幸运的是，在我口袋里恰好就有这么一台设备。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered1.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;Iphone4s就能满足要求。它运行在一个多核ARM处理器上，而这种ARM架构就是weakly-ordered.&lt;/p&gt;
+&lt;h3 id=&quot;实验&quot;&gt;&lt;a href=&quot;#实验&quot; class=&quot;headerlink&quot; title=&quot;实验&quot;&gt;&lt;/a&gt;实验&lt;/h3&gt;&lt;p&gt;我们的实验由一个整型变量&lt;code&gt;sharedValue&lt;/code&gt;以及保护它的锁(mutex)组成。我们来生成两个线程，并且每个线程都会对&lt;code&gt;sharedValue&lt;/code&gt;做递增操作1千万次。&lt;/p&gt;
+&lt;p&gt;我们不要让线程一直等待锁(mutex)而阻塞，而是让每个线程都会忙碌地重复做一些事情(比如只是等待CPU时钟)，并试着在随机的时间里加锁。如果加锁成功，那线程就会将&lt;code&gt;shareValue&lt;/code&gt;递增，否则，就会返回到原处继续做一些忙碌地工作。下面是其伪代码:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;count = 0
+while count &amp;lt; 10000000:
+doRandomAmountOfBusyWork()
+if tryLockMutex():
+    // The lock succeeded
+    sharedValue++
+    unlockMutex()
+    count++
+endif
+endwhile
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;每个线程都运行在不同的CPU核中，timeline应该是像下图这样的。每个红色区域代表一个成功的上锁和递增操作，灰色代表加锁失败，因为这时另一个线程已经拥有这把锁了。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered2.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;需要强调的是，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;锁只是一个概念&lt;/a&gt;，有&lt;a href=&quot;http://www.chongh.wiki/blog/2016/07/04/writelightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;许多&lt;/a&gt;实现锁的方法。我们采用std::mutex中提供的实现方法，当然了，保证其中一切都会运行正确。倘若真是那样，我就没什么可以跟你们讲的了。不如这样，我们来实现一个常规的锁-我们来看看&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;弱硬件执行顺序&lt;/a&gt;的结果。直观上来看，当在线程间有个“close shave”时，内存乱序发生的可能性是最高的。举个例子，在上图中，当一个线程正好就在另一个线程释放锁的那一时刻获取锁，这种现象就叫做”close shave”。&lt;/p&gt;
+&lt;p&gt;Xcode的最新版本对C++11线程和原子类型支持非常好，那我们就用它吧。所有的C++标识符都定义在&lt;code&gt;std&lt;/code&gt;命名空间中，我们假设&lt;code&gt;using namespace std&lt;/code&gt;提前定义在了代码中某处。&lt;/p&gt;
+&lt;h3 id=&quot;一把诡异的简单锁&quot;&gt;&lt;a href=&quot;#一把诡异的简单锁&quot; class=&quot;headerlink&quot; title=&quot;一把诡异的简单锁&quot;&gt;&lt;/a&gt;一把诡异的简单锁&lt;/h3&gt;&lt;p&gt;我们的锁由一个整型&lt;code&gt;flag&lt;/code&gt;组成，1表示锁被持有，0表示不被持有。为了保证锁的独占权，一个线程只能在&lt;code&gt;flag&lt;/code&gt;值为0的时候才能将其设置成1，而且这种操作必须保证原子性。为了做到这些，我们将&lt;code&gt;flag&lt;/code&gt;定义为C++11的原子类型，&lt;code&gt;atomic&amp;lt;int&amp;gt;&lt;/code&gt;，并采用&lt;a href=&quot;http://preshing.com/20120612/an-introduction-to-lock-free-programming/#atomic-rmw&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;read-modify-write&lt;/a&gt;操作:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;int expected = 0;
+if (flag.compare_exchange_strong(expected, 1, memory_order_acquire))
+{
+    // The lock succeeded
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面代码中用的&lt;code&gt;memory_order_acquire&lt;/code&gt;参数被认为是执行顺序约束的(ordering constraint）.我们在操作中采用acquire语义，用来保证我们能从持有锁的前一个线程中获取最新的共享值&lt;sup&gt;注2&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;为了释放锁，我们执行下面的操作:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;flag.store(0, memory_order_release);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上面操作使用&lt;code&gt;memory_order_acquire&lt;/code&gt;执行顺序约束将&lt;code&gt;flag&lt;/code&gt;设置回0了，其采用了release语义。&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Acquire与Release语义&lt;/a&gt;必须成对使用,用来确保共享值能从一个线程中传播到另一个线程中&lt;sup&gt;注3&lt;/sup&gt;。&lt;/p&gt;
+&lt;h3 id=&quot;如果不实用Acquire和Release语义&quot;&gt;&lt;a href=&quot;#如果不实用Acquire和Release语义&quot; class=&quot;headerlink&quot; title=&quot;如果不实用Acquire和Release语义&quot;&gt;&lt;/a&gt;如果不实用Acquire和Release语义&lt;/h3&gt;&lt;p&gt;现在，我们不限定任何的正确执行顺序约束，使用C++11重写上述实验,只要在两处都放置’memory_order_relaxed`。这意味着C++ 11编译器不会强制任何特殊的内存执行顺序，&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;任何类型的乱序&lt;/a&gt;都是允许的。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void IncrementSharedValue10000000Times(RandomDelay&amp;amp; randomDelay)
+{
+int count = 0;
+while (count &amp;lt; 10000000)
+{
+    randomDelay.doBusyWork();
+    int expected = 0;
+    if (flag.compare_exchange_strong(expected, 1, memory_order_relaxed))
+    {
+        // Lock was successful
+        sharedValue++;
+        flag.store(0, memory_order_relaxed);
+        count++;
+    }
+}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这时，看看编译器产生的ARM汇编代码能告诉我们很多信息，在Release中，使用Xcode中的反汇编视图:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered3.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;如果你对汇编不是很熟悉，也不必担心。所有需要知道的就是编译器是否在共享变量中对任何操作重新排序了。这里包括对&lt;code&gt;flag&lt;/code&gt;的两种操作以及对&lt;code&gt;sharedValue&lt;/code&gt;的递增操作。在上图中，我标明了相应区域对应的汇编代码。正如你所知，我们是幸运的：尽管&lt;code&gt;memory_order_acquire&lt;/code&gt;参数意味着编译器可以对那些操作重新排序，但编译器并没有这么做.&lt;/p&gt;
+&lt;p&gt;我已经给出了一个样例程序来无限循环这个实验，并在每一次运行结束后将&lt;code&gt;sharedValue&lt;/code&gt;的最终值打印出来。如果你想看源码并自己运行，可以在&lt;a href=&quot;https://github.com/preshing/AcquireRelease&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;github&lt;/a&gt;上下载。&lt;/p&gt;
+&lt;p&gt;下面是iphone正在努力的运行这个实验&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered4.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这是Xcode输出框中的输出:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered5.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;动手检验一下！尽管两个线程都分别执行了递增操作1千万次,&lt;code&gt;sharedValue&lt;/code&gt;的最终值一直小于2千万。并且，汇编指令的执行顺序和C++中定义在共享变量中的执行顺序操作是一致的。&lt;/p&gt;
+&lt;p&gt;你可能会觉得，这些结果可能是因为CPU上的内存乱序导致的。为了指出一种可能的乱序-实际上有很多种可能-&lt;code&gt;str.w r0, [r11]&lt;/code&gt;(sharedValue写操作)与内存的交互可能会和&lt;code&gt;str r5, [r6]&lt;/code&gt;(将flag写入0）发生乱序。换句话说，在程序结束之前，锁能被有效地释放。正如我们所见，结果是另一个线程可以自由的擦除由这个线程对值的修改，导致在实验结束时&lt;code&gt;sharedValued&lt;/code&gt;的不一致。&lt;/p&gt;
+&lt;h3 id=&quot;正确使用Acquire与Release语义&quot;&gt;&lt;a href=&quot;#正确使用Acquire与Release语义&quot; class=&quot;headerlink&quot; title=&quot;正确使用Acquire与Release语义&quot;&gt;&lt;/a&gt;正确使用Acquire与Release语义&lt;/h3&gt;&lt;p&gt;要修正上述的例子，意味着要重新放回正确的C++11内存执行顺序约束：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;void IncrementSharedValue10000000Times(RandomDelay&amp;amp; randomDelay)
+{
+int count = 0;
+while (count &amp;lt; 10000000)
+{
+    randomDelay.doBusyWork();
+    int expected = 0;
+    if (flag.compare_exchange_strong(expected, 1, memory_order_acquire))
+    {
+        // Lock was successful
+        sharedValue++;
+        flag.store(0, memory_order_release);
+        count++;
+    }
+}
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;编译器插入一系列&lt;code&gt;dmb ish&lt;/code&gt;指令，这些指令在ARMv7指令集中充当内存屏障。我不是个ARM专家–欢迎评论–但可以保险的假设这个指令很像PowerPC上的&lt;code&gt;lwsync&lt;/code&gt;指令，为&lt;code&gt;compare_exchange_strong&lt;/code&gt;上的acquire语义和&lt;code&gt;store&lt;/code&gt;上的release语义提供了所有&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;内存屏障类型&lt;/a&gt;&lt;sup&gt;注4&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered6.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这次，我们可爱的自制锁的确保护了&lt;code&gt;sharedValue&lt;/code&gt;，确保每次加锁时所有的修改都从一个线程中安全的传播到了另一个线程中&lt;sup&gt;注5&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered7.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;如果你仍然无法理解这个实验发生了什么。我建议你看看&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这篇&lt;/a&gt;文章。就类比而言，你可以想象一下，两个工作站其中每个都有&lt;code&gt;sharedValue&lt;/code&gt;和&lt;code&gt;flag&lt;/code&gt;的本地副本，需要一些其它的工作来确保它们是同步的。个人而言，用这种方法将其可视化是很有帮助的。&lt;/p&gt;
+&lt;p&gt;我想重述一遍，我们在这里看到的内存乱序只能在多核或多处理器设备中才能发生&lt;sup&gt;注6&lt;/sup&gt;。如果你把这个编译好的程序运行在Iphone3GS或更早一代的ipad中，它们都使用同样的ARMv7架构但只有一个CPU核，你也不会看到&lt;code&gt;sharedValue&lt;/code&gt;最后结果的任何不匹配性。&lt;/p&gt;
+&lt;h3 id=&quot;有趣的笔记&quot;&gt;&lt;a href=&quot;#有趣的笔记&quot; class=&quot;headerlink&quot; title=&quot;有趣的笔记&quot;&gt;&lt;/a&gt;有趣的笔记&lt;/h3&gt;&lt;p&gt;你可以把这个&lt;a href=&quot;https://github.com/preshing/AcquireRelease&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;示例程序&lt;/a&gt;运行在任何x86/x64架构上的Window,MacOS或Linux机器上。就算是在一个多核系统中，除非是你的编译器在一些特殊指令上执行了乱序，否则你是不会看到任何运行时的内存乱序的。当我用Visual Studio2012测试时，并没有发生内存乱序。那是因为x86/x64处理器通常都被认为是&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;strongly-ordered&lt;/a&gt;：当一个CPU核执行一系列写操作时，每个其它CPU核都会看到它们在被写入时顺序的值变化&lt;sup&gt;注7&lt;/sup&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered8.png&quot; alt=&quot;&quot;&gt;&lt;/p&gt;
+&lt;p&gt;上图为了说明如果不了解C++11原子类型，就很容易错误的使用，。很简单，因为它只有在一个特殊的处理器和工具链中才能正确运行&lt;/p&gt;
+&lt;p&gt;碰巧的是，Visual Studio2012的发行版对这个示例程序会产生非常糟糕的x86机器代码。在多核系统上使用lock-free编程，提高性能是最首要原因。现在有足够的理由让我无法忍受在Window平台上用C++11原子类型了。正如&lt;a href=&quot;http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/#comment-61574&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;评论&lt;/a&gt;中提到的，VS2012专业版的最新版本产生的机器代码会好很多了。&lt;/p&gt;
+&lt;p&gt;这篇文章是前期文章讨论x86/64上的&lt;a href=&quot;http://www.chongh.wiki/blog/2016/08/11/memoryreorder/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;StoreLoad乱序&lt;/a&gt;的续集。从我的经验来看，#StoreLoad在实际运用中并不如这里提到的执行顺序约束用的频繁&lt;/p&gt;
+&lt;p&gt;最后，我不是第一个在实际运用当中阐述弱硬件执行顺序的人，但我可能是第一个使用C++11来阐述的人。之前&lt;a href=&quot;http://wanderingcoder.net/2011/04/01/arm-memory-ordering/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Pierre Lebeaupin&lt;/a&gt;和&lt;a href=&quot;http://ridiculousfish.com/blog/posts/barrier.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ridiculousfish&lt;/a&gt;的一些文章采用了不同的实验来解释相同的现象。&lt;/p&gt;
+&lt;h2 id=&quot;译者注&quot;&gt;&lt;a href=&quot;#译者注&quot; class=&quot;headerlink&quot; title=&quot;译者注&quot;&gt;&lt;/a&gt;译者注&lt;/h2&gt;&lt;p&gt;注1:也就是说，假如CPU core1执行如下语句：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;a = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b = &lt;span class=&quot;number&quot;&gt;2&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;CPU core2可能先看到b == 2 ，然后才是 a == 1&lt;/p&gt;
+&lt;p&gt;注2: acquire对应invalid queue。 release对应store buffer。&lt;/p&gt;
+&lt;p&gt;注3: 这里的配对，并不是严格的一一对应。也就是说，CPU core1修改共享变量时使用release语义，CPU core2、 core3、core4都用acquire语义去读。&lt;/p&gt;
+&lt;p&gt;那么core1和core2、core3、core4都配对。&lt;/p&gt;
+&lt;p&gt;注4: 这里值得一提的时，gcc下的&lt;code&gt;__sync_compare_and_swap&lt;/code&gt;和&lt;code&gt;__sync_fetch_and_add&lt;/code&gt;这些原子操作在X86下会自带一个memory barrier。所以这些原子操作之后没必要再加memory barrier了。&lt;/p&gt;
+&lt;p&gt;注5: 其实这也是锁的必备的一个语义。一般说来，锁要提供三种语义：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;语义1:当线程1更新完a(也包括d)的值之后释放锁，线程2进入临界区必须读到a(也包括d)的新值，也就是线程1更新完之后的值。可以认为是acquire release或者happen before语义。&lt;/p&gt;
+&lt;p&gt;语义2:同一时刻，a++这条语句只能有一个线程在执行。可以认为是临界语义或者互斥语义。&lt;/p&gt;
+&lt;p&gt;语义3:必须保证a++不会被乱序到b++处执行，也不能乱序到c++处执行。这个自然也是临界语义或者互斥语义的一部分，因为如果乱序，那么无临界区可言了。但是读者诸君要注意到，以下这样的乱序是完全可以的、合法的：&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;或者：&lt;br&gt;&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;lock.lock();&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;a++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;d++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;c++;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;lock.unlock();&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;&lt;/p&gt;
+&lt;p&gt;注6：也就是说，单核多线程、多核单线程程序不用担心memory reordering问题，只有多核多线程才需要小心谨慎。为什么呢？&lt;/p&gt;
+&lt;p&gt;更进一步，读者可能还会有两个疑问：&lt;/p&gt;
+&lt;p&gt;1，为什么CPU要乱序执行，难道是考虑性能吗？那为什么乱序就能提升性能？&lt;/p&gt;
+&lt;p&gt;2，为什么在Intel X86/64架构下，就只有写读（Store Load）发生乱序呢？读读呢？读写呢？&lt;/p&gt;
+&lt;p&gt;要明白这两个问题，我们首先得知道cache coherency，也就是所谓的cache一致性。&lt;/p&gt;
+&lt;p&gt;在现代计算机里，一般包含至少三种角色：cpu、cache、内存。一般说来，内存只有一个；CPU Core有多个；cache有多级，cache的基本块单位是cacheline，大小一般是64B-256B。&lt;/p&gt;
+&lt;p&gt;每个cpu core有自己的私有的cache(有一级cache是共享的)，而cache只是内存的副本。那么这就带来一个问题：如何保证每个cpu core中的cache是一致的？&lt;/p&gt;
+&lt;p&gt;在广泛使用的cache一致性协议即MESI协议中，cacheline有四种状态：Modified、Exclusive、Shared、Invalid，分别表示修改、独占、共享、无效。&lt;/p&gt;
+&lt;p&gt;当某个cpu core写一个内存变量时，往往是（先）只修改cache，那么这就会导致不一致。为了保证一致，需要先把其他core的对应的cacheline都invalid掉，给其他core们发送invalid消息，然后等待它们的response。&lt;/p&gt;
+&lt;p&gt;这个过程是耗时的，需要执行写变量的core等待，阻塞了它后面的操作。为了解决这个问题，cpu core往往有自己专属的store buffer。&lt;/p&gt;
+&lt;p&gt;等待其他core给它response的时候，就可以先写store buffer，然后继续后面的读操作，对外表现就是写读乱序。&lt;/p&gt;
+&lt;p&gt;因为写操作是写到store buffer中的，而store buffer是私有的，对其他core是透明的，core1无法访问core2的store buffer。因此其他core读不到这样的修改。&lt;/p&gt;
+&lt;p&gt;这就是大概的原理。MESI协议非常复杂，背后的技术也很有意思。&lt;/p&gt;
+&lt;p&gt;注7:X86写写不乱序；也就是说对于&lt;/p&gt;
+&lt;figure class=&quot;highlight c++&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;a = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;b = &lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;其他cpu core将先看到a == 1再看到 b == 3。（不考虑编译器优化）&lt;/p&gt;
+&lt;h3 id=&quot;Acknowledgements&quot;&gt;&lt;a href=&quot;#Acknowledgements&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgements&quot;&gt;&lt;/a&gt;Acknowledgements&lt;/h3&gt;&lt;p&gt;本文由微博用户 &lt;a href=&quot;http://weibo.com/2767520802/profile?topnav=1&amp;amp;wvr=6&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Diting0x&lt;/a&gt; 与 &lt;a href=&quot;http://weibo.com/yebangyu&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;睡眼惺忪的小叶先森&lt;/a&gt; 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。&lt;/p&gt;
+&lt;p&gt;感谢好友&lt;a href=&quot;http://weibo.com/u/1707881862?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;小伙伴-小伙伴儿 &lt;/a&gt;阅读了初稿，并给出宝贵的意见。&lt;/p&gt;
+&lt;p&gt;原文： &lt;a href=&quot;http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;br&gt;仅为学习使用，未经博主同意，请勿转载&lt;br&gt;本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在这一系列博客中，我已经详细讨论了&lt;a href=&quot;&quot;&gt;lock-free编程&lt;/a&gt;相关的一系列主题，比如&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot;&gt;Acquire与Release语义&lt;/a&gt;以及&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot;&gt;Weakly-ordered CPUs&lt;/a&gt;. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="High-performance" scheme="http://yoursite.com/categories/High-performance/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>系统安全浅薄知识系列(一)-ASLR</title>
+    <link href="http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/"/>
+    <id>http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/</id>
+    <published>2016-12-07T08:13:20.000Z</published>
+    <updated>2016-12-07T08:29:17.000Z</updated>
+    
+    <content type="html">&lt;p&gt;ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。&lt;/p&gt;
+&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
+&lt;p&gt;&lt;strong&gt;怎么做？&lt;/strong&gt;&lt;br&gt;随机化程序的关键数据在内存中的位置，这些数据包括程序的数据段、堆、栈以及共享库。见下图：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/aslr1.png&quot; alt=&quot;aslr1&quot;&gt;&lt;/p&gt;
+&lt;p&gt;这些数据为什么没有包括代码段？ 下文会继续讨论。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;干嘛用的？&lt;/strong&gt;&lt;br&gt;ASLR是一种保护缓冲区溢出攻击的防御技术，通过增加内存攻击(如return-into-libc或ROP)预测目标地址的难度阻碍其实施攻击。见下图：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/aslr2.png&quot; alt=&quot;aslr2&quot;&gt;&lt;/p&gt;
+&lt;p&gt;攻击者欲跳转到目标地址0xbfffd5d8的shellcode中，但在执行时其地址被随机化到了0xbfffe3f8中，此时跳转到0xbfffd5d8会导致内存奔溃。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;如何开启或关闭ASLR?&lt;/strong&gt;&lt;br&gt;以Linux系统为例，通过配置&lt;code&gt;/proc/sys/kernel/randomize_va_space&lt;/code&gt;中的值来开启或关闭ASLR.&lt;br&gt;运行&lt;code&gt;cat /proc/sys/kernel/randomize_va_space&lt;/code&gt;命令，若输出为0，表示没有随机化，所有都是静态的；若输出为1，表示保守随机化，共享库、栈、mmap()，VDSO以及堆都被随机化；若输出为2，表示全随机化，在1的基础上，增加了通过brk()方式内存管理的随机化。&lt;br&gt;下图为Ubuntu14.04的结果，&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/aslr3.png&quot; alt=&quot;aslr3&quot;&gt;&lt;/p&gt;
+&lt;p&gt;关闭ASLR,可以运行&lt;code&gt;echo 0 /proc/sys/kernel/randomize_va_space&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Windows和Linux在ASLR机制上有所不同，想了解详情可以参考&lt;a href=&quot;http://www.freebuf.com/articles/system/29392.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这里&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;编译成PIE?&lt;/strong&gt;&lt;br&gt;说到这里，还遗留了一个问题，那就是随机化的数据为什么没有包括代码段？ 要想让ASLR机制有效，就必须保证程序在内存空间的所有区域都是随机化的。有任何一部分没有被随机化，都有可能被攻击者利用来定位有效的gadgets来实施攻击。实际上，ASLR对代码段(.text)是不作随机化的，只有当可执行文件在编译成PIE(Position Independent Executable，位置依赖可执行文件)时，代码段才会被随机化。&lt;/p&gt;
+&lt;p&gt;对于non-PIE(也就是没有添加编译选项PIE),尽管ASLR的级别设置为2，攻击者仍然能利用程序的.text段以及GOT/PLT(全局偏移表/过程连接表)实施攻击(比如return-to-got/plt、ROP)。&lt;/p&gt;
+&lt;p&gt;既然non-PIE的可执行文件不能享受ASLR机制带来的安全性，那ASLR又有何意义? 是不是可以把所有的程序在编译时都加上PIE选项？ 对Linux系统来说，是有选择性的编译PIE，所有的库文件都是默认编译成PIE的，而大部分程序默认是不会被编译成PIE的。详情可以参考这篇论文的发现&lt;a href=&quot;http://e-collection.library.ethz.ch/eserv/eth:5699/eth-5699-01.pdf?pid=eth:5699&amp;amp;dsID=eth-5699-01.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Too much PIE is bad for performance&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;说了这么多，PIE的原理是什么？文章提到的这么多专有名词，ROP, Return-to-libc,Return-to-GOT/PIT, gadgets都又是什么呢？有机会再谈。&lt;/p&gt;
+&lt;h3 id=&quot;References&quot;&gt;&lt;a href=&quot;#References&quot; class=&quot;headerlink&quot; title=&quot;References&quot;&gt;&lt;/a&gt;References&lt;/h3&gt;&lt;p&gt;Lu et al,”ASLR-Guard: Stopping Address Space Leakage for Code Reuse Attacks”,CODASPY’16&lt;br&gt;Gu et al, “Derandomizing Kernel Address Space Layout for Memory Introspection and Forensics”, CCS’15&lt;br&gt;&lt;a href=&quot;http://www.freebuf.com/articles/system/29392.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ASLR在Windows与Linux系统之间的差别&lt;/a&gt;&lt;br&gt;&lt;a href=&quot;https://pax.grsecurity.net/docs/aslr.txt&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;PAX/ASLR&lt;/a&gt;&lt;br&gt;&lt;a href=&quot;https://securityetalii.es/2013/02/03/how-effective-is-aslr-on-linux-systems/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;How Effective is ASLR on Linux Systems?&lt;/a&gt;&lt;/p&gt;
+&lt;h4 id=&quot;Acknowledgements&quot;&gt;&lt;a href=&quot;#Acknowledgements&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgements&quot;&gt;&lt;/a&gt;Acknowledgements&lt;/h4&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
+&lt;p&gt;仅为学习使用，未经博主同意，请勿转载&lt;/p&gt;
+&lt;p&gt;本文地址：&lt;a href=&quot;http://chongh.wiki/blog/2016/12/07/systemsecurity-aslr/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://chongh.wiki/blog/2016/12/07/systemsecurity-aslr/&lt;/a&gt; &lt;/p&gt;
+&lt;p&gt;作者 [ 新浪微博: &lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
+</content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="System-security" scheme="http://yoursite.com/categories/System-security/"/>
+    
+    
+  </entry>
+  
+  <entry>
     <title>深入探索并发编程系列(九)-弱/强内存模型</title>
     <link href="http://yoursite.com/blog/2016/10/30/memorymodel/"/>
     <id>http://yoursite.com/blog/2016/10/30/memorymodel/</id>
-    <published>2016-10-30T13:21:50.000Z</published>
+    <published>2016-10-30T01:21:50.000Z</published>
     <updated>2016-11-01T16:58:10.000Z</updated>
     
     <content type="html">&lt;p&gt;存在许多种内存乱序&lt;sup&gt;注1&lt;/sup&gt;，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。&lt;/p&gt;
@@ -90,7 +273,7 @@
     <title>深入探索并发编程系列(八)-Acquire与Release语义</title>
     <link href="http://yoursite.com/blog/2016/09/28/acquireandrelease/"/>
     <id>http://yoursite.com/blog/2016/09/28/acquireandrelease/</id>
-    <published>2016-09-28T15:11:52.000Z</published>
+    <published>2016-09-28T03:11:52.000Z</published>
     <updated>2016-11-01T16:59:16.000Z</updated>
     
     <content type="html">&lt;p&gt;一般来说，在无锁(lock-free)&lt;sup&gt;注1&lt;/sup&gt;编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。&lt;/p&gt;
@@ -159,7 +342,7 @@
     <title>深入探索并发编程系列(七)-内存屏障:资源控制操作</title>
     <link href="http://yoursite.com/blog/2016/09/19/sourcecontrol/"/>
     <id>http://yoursite.com/blog/2016/09/19/sourcecontrol/</id>
-    <published>2016-09-19T17:16:57.000Z</published>
+    <published>2016-09-19T05:16:57.000Z</published>
     <updated>2016-11-01T16:59:36.000Z</updated>
     
     <content type="html">&lt;p&gt;当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。&lt;/p&gt;
@@ -260,7 +443,7 @@
     <title>深入探索并发编程系列(六)-编译期间内存乱序</title>
     <link href="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/"/>
     <id>http://yoursite.com/blog/2016/09/05/compilermemoryreorder/</id>
-    <published>2016-09-05T21:44:17.000Z</published>
+    <published>2016-09-05T09:44:17.000Z</published>
     <updated>2016-11-01T16:59:59.000Z</updated>
     
     <content type="html">&lt;p&gt;写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。&lt;br&gt;&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;&lt;br&gt;在众多资料中，preshing这个博客质量很高，经过和作者邮件沟通获得授权后，我们着手翻译了他的一系列文章并加上注释，构成了“深入探索并发编程系列”。翻译，力求精准又易懂；注释，力求全面又有益，希望对大家理解这个系列有所帮助，也希望可以为社区做点贡献。&lt;/p&gt;
@@ -375,7 +558,7 @@
     <title>深入探索并发编程系列(五)-将内存乱序逮个正着</title>
     <link href="http://yoursite.com/blog/2016/08/11/memoryreorder/"/>
     <id>http://yoursite.com/blog/2016/08/11/memoryreorder/</id>
-    <published>2016-08-11T15:03:27.000Z</published>
+    <published>2016-08-11T03:03:27.000Z</published>
     <updated>2016-11-01T17:00:23.000Z</updated>
     
     <content type="html">&lt;p&gt;当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。&lt;/p&gt;
@@ -462,7 +645,7 @@
     <title>深入探索并发编程系列(四)-实现递归锁</title>
     <link href="http://yoursite.com/blog/2016/07/11/recursivemutex/"/>
     <id>http://yoursite.com/blog/2016/07/11/recursivemutex/</id>
-    <published>2016-07-11T12:47:43.000Z</published>
+    <published>2016-07-11T00:47:43.000Z</published>
     <updated>2016-11-01T17:00:43.000Z</updated>
     
     <content type="html">&lt;p&gt;当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。&lt;br&gt;虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。&lt;/p&gt;
@@ -540,7 +723,7 @@
     <title>深入探索并发编程系列(三)-自己动手实现轻量级锁</title>
     <link href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/07/04/writelightweightmutex/</id>
-    <published>2016-07-04T13:16:31.000Z</published>
+    <published>2016-07-04T01:16:31.000Z</published>
     <updated>2016-11-01T17:01:02.000Z</updated>
     
     <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。&lt;/p&gt;
@@ -604,7 +787,7 @@
     <title>深入探索并发编程系列(二)-总是使用轻量级锁</title>
     <link href="http://yoursite.com/blog/2016/06/27/lightweightmutex/"/>
     <id>http://yoursite.com/blog/2016/06/27/lightweightmutex/</id>
-    <published>2016-06-28T03:36:21.000Z</published>
+    <published>2016-06-27T15:36:21.000Z</published>
     <updated>2016-11-01T17:01:22.000Z</updated>
     
     <content type="html">&lt;p&gt;在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。&lt;/p&gt;
@@ -652,7 +835,7 @@
     <title>深入探索并发编程系列(一)-锁不慢；锁竞争慢</title>
     <link href="http://yoursite.com/blog/2016/06/20/mutexperf/"/>
     <id>http://yoursite.com/blog/2016/06/20/mutexperf/</id>
-    <published>2016-06-20T15:01:55.000Z</published>
+    <published>2016-06-20T03:01:55.000Z</published>
     <updated>2016-11-01T17:01:40.000Z</updated>
     
     <content type="html">&lt;p&gt;锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。&lt;/p&gt;
@@ -708,7 +891,7 @@
     <title>Source Insight for Linux</title>
     <link href="http://yoursite.com/blog/2016/05/25/sourceinsight-linux/"/>
     <id>http://yoursite.com/blog/2016/05/25/sourceinsight-linux/</id>
-    <published>2016-05-25T20:12:34.000Z</published>
+    <published>2016-05-25T08:12:34.000Z</published>
     <updated>2016-05-25T20:20:15.000Z</updated>
     
     <content type="html">&lt;p&gt;windows下的source insight, Mac下的sublime以及linux下的vim，在我个人看来是最优秀的源码阅读环境。简洁与效率，我想对于开发者来说，绝对是件好事。&lt;/p&gt;
@@ -790,7 +973,7 @@ endif
     <title>理清编译链接的那些事儿</title>
     <link href="http://yoursite.com/blog/2016/05/25/lib-compile-link/"/>
     <id>http://yoursite.com/blog/2016/05/25/lib-compile-link/</id>
-    <published>2016-05-25T14:42:40.000Z</published>
+    <published>2016-05-25T02:42:40.000Z</published>
     <updated>2016-05-26T01:06:35.000Z</updated>
     
     <content type="html">&lt;p&gt;当你在linux下写C/C++代码的时候，是不是会遇到许多编译链接的问题？ 时不时报个glibc,gcc，g++等相关的错误？ 很多时候都无从下手，而且比较混乱。 这也是编译链接过程中经常出现的问题。&lt;/p&gt;
@@ -848,7 +1031,7 @@ sudo update-alternatives --config gcc
     <title>PVOPS 框架介绍</title>
     <link href="http://yoursite.com/blog/2016/05/03/pvops/"/>
     <id>http://yoursite.com/blog/2016/05/03/pvops/</id>
-    <published>2016-05-04T00:22:46.000Z</published>
+    <published>2016-05-03T12:22:46.000Z</published>
     <updated>2016-05-04T00:48:13.000Z</updated>
     
     <content type="html">&lt;p&gt;pvops是做什么的？ 简单地说，hook kernel.&lt;br&gt;利用pvops你可以自定义自己的write_cr3函数，你可以修改页表，追踪页表更新的信息，而这些听起来非常底层的操作，利用pvops都变得简单起来。&lt;/p&gt;
@@ -879,11 +1062,11 @@ sudo update-alternatives --config gcc
       <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
     
     
-      <category term="System" scheme="http://yoursite.com/tags/System/"/>
+      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
     
       <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
-      <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
+      <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
       <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
     
@@ -893,7 +1076,7 @@ sudo update-alternatives --config gcc
     <title>深入理解Linux内存分配</title>
     <link href="http://yoursite.com/blog/2016/05/03/linux-memory-alloc/"/>
     <id>http://yoursite.com/blog/2016/05/03/linux-memory-alloc/</id>
-    <published>2016-05-03T19:41:45.000Z</published>
+    <published>2016-05-03T07:41:45.000Z</published>
     <updated>2016-06-06T17:55:55.000Z</updated>
     
     <content type="html">&lt;p&gt;没有目录，希望能一口气读完&lt;/p&gt;
@@ -958,7 +1141,7 @@ sudo update-alternatives --config gcc
     <title>深入理解Paxos算法(二)</title>
     <link href="http://yoursite.com/blog/2016/04/29/understand-paxos2/"/>
     <id>http://yoursite.com/blog/2016/04/29/understand-paxos2/</id>
-    <published>2016-04-29T15:58:58.000Z</published>
+    <published>2016-04-29T03:58:58.000Z</published>
     <updated>2016-04-30T03:40:59.000Z</updated>
     
     <content type="html">&lt;p&gt;&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;上一篇&lt;/a&gt;博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。&lt;/p&gt;
@@ -1042,7 +1225,7 @@ sudo update-alternatives --config gcc
     <title>有心智的机器</title>
     <link href="http://yoursite.com/blog/2016/04/29/shikongnote2/"/>
     <id>http://yoursite.com/blog/2016/04/29/shikongnote2/</id>
-    <published>2016-04-29T15:50:55.000Z</published>
+    <published>2016-04-29T03:50:55.000Z</published>
     <updated>2016-05-13T20:29:21.000Z</updated>
     
     <content type="html">&lt;p&gt;当某个系统能够正常运转时，不要扰乱它；要以它为基层来构建。在自然体系中，改良就是在现存的调试好的系统上打补丁。原先的层级继续工作，甚至不会注意到(或不必注意到)其上还有新的层级。&lt;/p&gt;
@@ -1081,7 +1264,7 @@ sudo update-alternatives --config gcc
     <title>深入理解Paxos算法(一)</title>
     <link href="http://yoursite.com/blog/2016/04/28/understand-paxos1/"/>
     <id>http://yoursite.com/blog/2016/04/28/understand-paxos1/</id>
-    <published>2016-04-28T05:31:00.000Z</published>
+    <published>2016-04-27T17:31:00.000Z</published>
     <updated>2016-04-30T16:13:49.000Z</updated>
     
     <content type="html">&lt;p&gt;我第一次听说Paxos算法是在2004年，&lt;/p&gt;
@@ -1160,7 +1343,7 @@ sudo update-alternatives --config gcc
     <title>Paxos/Mutil-paxos 算法浅析</title>
     <link href="http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/"/>
     <id>http://yoursite.com/blog/2016/04/27/paxos-mutilpaxos/</id>
-    <published>2016-04-28T00:48:54.000Z</published>
+    <published>2016-04-27T12:48:54.000Z</published>
     <updated>2016-04-30T04:27:15.000Z</updated>
     
     <content type="html">&lt;p&gt;在前几篇博客中，讨论了我在伯克利最后一学期修的分布式系统编程课程中的内容。&lt;/p&gt;
@@ -1223,7 +1406,7 @@ sudo update-alternatives --config gcc
     <title>新生物文明与蜂群思维</title>
     <link href="http://yoursite.com/blog/2016/04/26/shikongnote1/"/>
     <id>http://yoursite.com/blog/2016/04/26/shikongnote1/</id>
-    <published>2016-04-26T16:56:01.000Z</published>
+    <published>2016-04-26T04:56:01.000Z</published>
     <updated>2016-04-26T16:59:08.000Z</updated>
     
     <content type="html">&lt;p&gt;新生物文明&lt;/p&gt;
@@ -1252,495 +1435,6 @@ sudo update-alternatives --config gcc
     
       <category term="Misc" scheme="http://yoursite.com/categories/Misc/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>电影无人区的思考</title>
-    <link href="http://yoursite.com/blog/2016/04/22/wurenqu/"/>
-    <id>http://yoursite.com/blog/2016/04/22/wurenqu/</id>
-    <published>2016-04-22T06:39:20.000Z</published>
-    <updated>2016-04-26T19:29:28.000Z</updated>
-    
-    <content type="html">&lt;p&gt;从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。&lt;/p&gt;
-&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;p&gt;今天是2016年，又一个三年，这是我第三次看这部电影，而这时候，却身处美国的一个中西部农村。这种黑色、公路片对我一直有巨大的诱惑力，之前看过《两杆大烟枪》、《老无所依》、《不准掉头》、《偷拐抢骗》、《杀手没有假期》，还有宁浩的疯狂系列，都非常喜欢。&lt;/p&gt;
-&lt;p&gt;黑色让人沉思，公路让人浮想联翩。想找个假期能狂奔在美国西部的公路上，没有尽头，去体验那种放肆。&lt;/p&gt;
-&lt;p&gt;无人区，这里没有人，只有动物。&lt;br&gt;一个没有人的区域，没有法律、没有道德、没有人情，只有生物本能的生与死、苦与乐。&lt;br&gt;而人与动物的区别，就是，人会用火。&lt;br&gt;火可以用来取暖，炙热情感。就像电影中的潘肖，牺牲自己也要让她把这个故事带出去。&lt;/p&gt;
-&lt;p&gt;好温馨的表达，人会用火。多点燃你心中的火，多温暖你身边的人。&lt;/p&gt;
-&lt;p&gt;突然用电影来表达这些，实在是太不和谐。&lt;/p&gt;
-&lt;p&gt;完&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="Misc" scheme="http://yoursite.com/categories/Misc/"/>
-    
-    
-      <category term="Life" scheme="http://yoursite.com/tags/Life/"/>
-    
-      <category term="Movie" scheme="http://yoursite.com/tags/Movie/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Linux系统调用权威指南</title>
-    <link href="http://yoursite.com/blog/2016/04/08/linux-syscalls/"/>
-    <id>http://yoursite.com/blog/2016/04/08/linux-syscalls/</id>
-    <published>2016-04-08T21:08:08.000Z</published>
-    <updated>2016-05-16T23:59:26.000Z</updated>
-    
-    <content type="html">&lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
-&lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;ul&gt;
-&lt;li&gt;硬件与软件&lt;/li&gt;
-&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
-&lt;li&gt;中断&lt;/li&gt;
-&lt;li&gt;特殊模块寄存器&lt;/li&gt;
-&lt;li&gt;编写汇编代码触发系统调用不是个好主意&lt;a id=&quot;more&quot;&gt;&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;ul&gt;
-&lt;li&gt;传统系统调用&lt;ul&gt;
-&lt;li&gt;自己写汇编代码使用传统系统调用&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;int $0x80&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;iret&lt;/code&gt;: 从传统系统调用返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;快速系统调用&lt;ul&gt;
-&lt;li&gt;32位快速系统调用&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;sysenter/sysexit&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;内幕&lt;/li&gt;
-&lt;li&gt;自己写汇编代码使用&lt;code&gt;sysenter&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;sysenter&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;sysexit&lt;/code&gt;: 从&lt;code&gt;sysenter&lt;/code&gt;中返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;64位快速系统调用&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;syscall/sysret&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;自己写汇编代码使用syscall&lt;/li&gt;
-&lt;li&gt;内核层面：&lt;code&gt;syscall&lt;/code&gt;入口&lt;/li&gt;
-&lt;li&gt;sysret: 从syscall中返回&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;syscall(2)：半手动调用syscall&lt;ul&gt;
-&lt;li&gt;glibc &lt;code&gt;syscall&lt;/code&gt;封装器内幕&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;虚拟系统调用&lt;ul&gt;
-&lt;li&gt;内核中的vDSO&lt;/li&gt;
-&lt;li&gt;在内存中定位vDSO&lt;/li&gt;
-&lt;li&gt;glibc中的vDSO&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;glibc&lt;/code&gt;系统调用封装器&lt;/li&gt;
-&lt;li&gt;重要的syscall相关bugs&lt;ul&gt;
-&lt;li&gt;CVE-2010-3301&lt;/li&gt;
-&lt;li&gt;Android &lt;code&gt;sysenter&lt;/code&gt; ABI 破坏&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;结论&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/blockquote&gt;
-&lt;h2 id=&quot;长话短说-Too-long-Don’t-read&quot;&gt;&lt;a href=&quot;#长话短说-Too-long-Don’t-read&quot; class=&quot;headerlink&quot; title=&quot;长话短说(Too long; Don’t read)&quot;&gt;&lt;/a&gt;长话短说(Too long; Don’t read)&lt;/h2&gt;&lt;p&gt;文章解释了Linux程序在内核中是如何调用函数的。&lt;/p&gt;
-&lt;p&gt;读完你可以知道：触发系统调用的不同方法，如何编写汇编代码触发系统调用(含代码样例), 内核执行系统调用的入口，内核从系统调用返回的出口，glibc封装器，相关bugs，还有更多，更多。&lt;/p&gt;
-&lt;h2 id=&quot;什么是系统调用？&quot;&gt;&lt;a href=&quot;#什么是系统调用？&quot; class=&quot;headerlink&quot; title=&quot;什么是系统调用？&quot;&gt;&lt;/a&gt;什么是系统调用？&lt;/h2&gt;&lt;p&gt;当你运行的程序调用 open,fork,read,write（以及其它类似的函数)时,就会触发系统调用。&lt;/p&gt;
-&lt;p&gt;系统调用描述的是用户程序进入内核后执行的任务。用户程序利用系统调用能执行许多操作：创建进程、网络、文件以及I/O操作等。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://man7.org/linux/man-pages/man2/syscalls.2.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;man page for syscalls(2)&lt;/a&gt; 列出了全部系统调用。&lt;/p&gt;
-&lt;p&gt;用户程序可以通过不同的方式执行系统调用，不同CPU架构中，底层执行系统调用的指令也有所不同。&lt;/p&gt;
-&lt;p&gt;作为应用程序开发者，不必刻意去考虑系统调用是如何执行的。你只需要简单的加上合适的头文件，像调用普通函数一样就可以使用系统调用了。&lt;/p&gt;
-&lt;p&gt;glibc提供了封装代码将底层抽象，把你传递的参数放置好之后开始进入内核。&lt;/p&gt;
-&lt;p&gt;在深入理解系统调用执行的细节之前，我们需要定义一些术语，再谈一谈后面要用到的核心知识点。&lt;/p&gt;
-&lt;h2 id=&quot;准备知识&quot;&gt;&lt;a href=&quot;#准备知识&quot; class=&quot;headerlink&quot; title=&quot;准备知识&quot;&gt;&lt;/a&gt;准备知识&lt;/h2&gt;&lt;h3 id=&quot;硬件与软件&quot;&gt;&lt;a href=&quot;#硬件与软件&quot; class=&quot;headerlink&quot; title=&quot;硬件与软件&quot;&gt;&lt;/a&gt;硬件与软件&lt;/h3&gt;&lt;p&gt;这篇博客作以下假设：&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;你在使用32位、64位Intel或AMD CPU. 文中提到的方法可能对那些使用其它系统的人同样有效，但列出的代码都是依赖CPU的。&lt;/li&gt;
-&lt;li&gt;你感兴趣的是Linux kernel 3.13.0. 其它的内核版本类似，但实际的代码行号，代码架构以及文件路径会有所不同。文中也提供了3.13.0内核源代码的github链接。&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;你感兴趣的是&lt;code&gt;glibc&lt;/code&gt;，或者由&lt;code&gt;glibc&lt;/code&gt;衍生的其它libc实现(比如&lt;code&gt;eglibc&lt;/code&gt;).&lt;/p&gt;
-&lt;p&gt;文中提到的x86-64指的是基于x86架构的64位Intel和AMD处理器。&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&quot;用户程序，内核与CPU特权级&quot;&gt;&lt;a href=&quot;#用户程序，内核与CPU特权级&quot; class=&quot;headerlink&quot; title=&quot;用户程序，内核与CPU特权级&quot;&gt;&lt;/a&gt;用户程序，内核与CPU特权级&lt;/h3&gt;&lt;p&gt;用户程序(如编辑器、终端、ssh进程等)需要与内核交互，内核才能代表用户程序执行一些其不能执行的操作。&lt;/p&gt;
-&lt;p&gt;举个例子，如果一个用户程序需要执行一些I/O操作(open,read,write等)或者修改自身的地址空间(mmap,sbrk等)，必须要通知内核才能代表其自身完成这些操作。&lt;/p&gt;
-&lt;p&gt;那么又是什么阻碍了用户程序自身执行这些操作呢？&lt;/p&gt;
-&lt;p&gt;x86-64处理器引入了特权级的概念。特权级是个复杂的话题，需要另写博文详述了。当然，本文重点不在此，因此将特权级的概念简化如下：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;特权级实现了访问控制。当前特权级决定了哪些CPU指令和I/O操作能被执行。&lt;/li&gt;
-&lt;li&gt;内核运行在最高特权级，称为“Ring 0”；用户程序运行在最低特权级,称为”Ring 3”.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;用户程序要执行特权操作，必须经历特权级转变的过程(从”Ring 3”到“Ring 0”),才能让内核来执行这些操作。&lt;/p&gt;
-&lt;p&gt;有许多方法能引起特权级转变并触发内核执行相关操作。&lt;/p&gt;
-&lt;p&gt;从常用的方法说起：中断。&lt;/p&gt;
-&lt;h3 id=&quot;中断&quot;&gt;&lt;a href=&quot;#中断&quot; class=&quot;headerlink&quot; title=&quot;中断&quot;&gt;&lt;/a&gt;中断&lt;/h3&gt;&lt;p&gt;可以把中断理解为硬件或软件引发的一个事件。&lt;/p&gt;
-&lt;p&gt;硬件中断源于硬件设备通知内核某个特殊事件的发生。网卡收到数据包时产生的中断是比较常见的硬件中断。&lt;/p&gt;
-&lt;p&gt;软件中断由某段代码的执行而引发。在x86-64系统中，执行 int指令就会引发软件中断。&lt;/p&gt;
-&lt;p&gt;中断通常都会被分配一个中断号。这些中断号有着特殊的含义。&lt;/p&gt;
-&lt;p&gt;想象存储在CPU内存中的一个数组，数组的每个条目都映射为一个中断号。每个条目还存储了当CPU接收到中断信号后将要执行的函数地址以及一些其它的选项，选项中含有中断处理函数应该在哪个特权级上执行的信息。&lt;/p&gt;
-&lt;p&gt;下面的这张图取自Intel CPU手册，描述了数组中每个条目的存储结构。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/idt.png&quot; alt=&quot;idt&quot;&gt;&lt;/p&gt;
-&lt;p&gt;仔细看，会发现有一个2位的域标记着特权级描述符(DPL)。这个值决定了当执行中断处理函数时CPU需要的最低特权级。&lt;/p&gt;
-&lt;p&gt;当CPU接收到特定类型事件时，通过DPL信息知道它应该执行在哪个地址空间，以及事件处理器应该执行在哪个特权级上。&lt;/p&gt;
-&lt;p&gt;实际上，在x86-64系统中有许多不同的方法处理中断。对这个感兴趣想了解更多的可以参考 &lt;a href=&quot;http://wiki.osdev.org/8259_PIC&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;8259 Programmable Interrupt Controller, Advanced Interrupt Controllers&lt;/a&gt;和&lt;a href=&quot;http://wiki.osdev.org/IOAPIC&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt; IO Advanced Interrupt Controllers&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;当处理硬件中断和软件中断时，还会涉及到其它一些复杂的工作要处理，比如中断号冲突与重映射等问题。&lt;/p&gt;
-&lt;p&gt;讨论系统调用时，我们不必关注以上这些细节。&lt;/p&gt;
-&lt;h3 id=&quot;特殊模块寄存器&quot;&gt;&lt;a href=&quot;#特殊模块寄存器&quot; class=&quot;headerlink&quot; title=&quot;特殊模块寄存器&quot;&gt;&lt;/a&gt;特殊模块寄存器&lt;/h3&gt;&lt;p&gt;特殊模块寄存器（MSRs)是用来控制CPU某些特性的一组控制寄存器。 CPU文档中列举了每个MSRs的地址。&lt;/p&gt;
-&lt;p&gt;可以执行CPU指令 &lt;code&gt;rdmsr/wrmsr&lt;/code&gt;来读/写 MSRs.&lt;/p&gt;
-&lt;p&gt;也有一些命令行工具可以用来读/写 MSRs. 但不建议这么做，因为修改这些值（尤其当系统在运行的时候)是相当危险的，除非你真的能做到小心翼翼。&lt;/p&gt;
-&lt;p&gt;如果你不介意让你的系统不稳定或者不可恢复的损坏你的数据，你可以安装&lt;code&gt;msr-tools&lt;/code&gt;工具并加载&lt;code&gt;msr&lt;/code&gt;内核模块来读/写MSRs.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;% sudo apt-get install msr-tools
-% sudo modprobe msr
-% sudo rdmsr
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下文中我们会看到一些系统调用的方法就会用到这些MSRs.&lt;/p&gt;
-&lt;h3 id=&quot;编写汇编代码触发系统调用不是个好主意&quot;&gt;&lt;a href=&quot;#编写汇编代码触发系统调用不是个好主意&quot; class=&quot;headerlink&quot; title=&quot;编写汇编代码触发系统调用不是个好主意&quot;&gt;&lt;/a&gt;编写汇编代码触发系统调用不是个好主意&lt;/h3&gt;&lt;p&gt;自己编写汇编代码来触发系统调用可不是个好主意。&lt;/p&gt;
-&lt;p&gt;最大的原因就在于一些系统调用在执行之前或之后会有额外的代码需要在glibc中执行。&lt;/p&gt;
-&lt;p&gt;在下面的例子中，我们会用到&lt;code&gt;exit&lt;/code&gt;系统调用。你可以在&lt;code&gt;exit&lt;/code&gt;被调用时利用&lt;a href=&quot;http://man7.org/linux/man-pages/man3/atexit.3.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;atexit&lt;/code&gt;&lt;/a&gt;注册处理函数。&lt;/p&gt;
-&lt;p&gt;这些处理函数都是被glibc调用的，注意，不是kernel. 因此，当你自己写汇编代码调用&lt;code&gt;exit&lt;/code&gt;时，你自己注册的处理函数是不会执行的，因为你绕过了glibc。&lt;/p&gt;
-&lt;p&gt;然而，写汇编代码来执行系统调用是个不错的学习经验。&lt;/p&gt;
-&lt;h2 id=&quot;传统系统调用&quot;&gt;&lt;a href=&quot;#传统系统调用&quot; class=&quot;headerlink&quot; title=&quot;传统系统调用&quot;&gt;&lt;/a&gt;传统系统调用&lt;/h2&gt;&lt;p&gt;从上文的准备知识中，我们可以知道两件事情：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;可以通过软件中断来触发内核的执行&lt;/li&gt;
-&lt;li&gt;可以通过汇编指令 &lt;code&gt;int&lt;/code&gt; 来产生软件中断&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;结合这两个概念我们再去了解Linux系统中的传统系统调用接口。&lt;/p&gt;
-&lt;p&gt;Linux内核分配了一个特殊的软件中断号，让用户程序进入到内核中执行系统调用。&lt;/p&gt;
-&lt;p&gt;Linux内核会为中断处理号 128(0x80)注册一个中断处理器&lt;code&gt;ia32-syscall&lt;/code&gt;. 通过代码来看看到底怎么做的。&lt;/p&gt;
-&lt;p&gt;内核3.13.0源码中的&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/traps.c#L770&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/traps.c&lt;/code&gt;&lt;/a&gt;中有个&lt;code&gt;trap_init&lt;/code&gt;函数:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; __&lt;span class=&quot;function&quot;&gt;init &lt;span class=&quot;title&quot;&gt;trap_init&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* ..... other code ... */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        set_system_intr_gate(IA32_SYSCALL_VECTOR, ia32_syscall);&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;其中，&lt;code&gt;IA32_SYSCALL_VECTOR&lt;/code&gt;在&lt;code&gt;arch/x86/include/asm/irq_vectors.h&lt;/code&gt;中被定义为 &lt;code&gt;0x80&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;进一步看，既然内核预留了一个软件中断供用户程序来触发内核的执行，那在这么多的系统调用中，内核又是如何知道该执行哪一个呢？&lt;/p&gt;
-&lt;p&gt;这时，用户程序需要在&lt;code&gt;eax&lt;/code&gt;寄存器中放入系统调用号。系统调用相关的其它参数会被传入到剩余的通用寄存器中。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L378-L397&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/ia32entry.S&lt;/code&gt;&lt;/a&gt;中的注释对此有具体的介绍:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;* Emulated IA32 system calls via &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;number&quot;&gt;0x80&lt;/span&gt;.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* Arguments:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %eax System call number.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %ebx Arg1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %ecx Arg2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %edx Arg3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %esi Arg4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %edi Arg5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;* %ebp Arg6    [note: not saved in the &lt;span class=&quot;built_in&quot;&gt;stack&lt;/span&gt; frame, should not be touched]&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;*&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;现在我们知道了如何执行系统调用以及如何传递这些参数，可以开始试着写一些内联汇编代码。&lt;/p&gt;
-&lt;h3 id=&quot;自己编写汇编代码使用传统系统调用&quot;&gt;&lt;a href=&quot;#自己编写汇编代码使用传统系统调用&quot; class=&quot;headerlink&quot; title=&quot;自己编写汇编代码使用传统系统调用&quot;&gt;&lt;/a&gt;自己编写汇编代码使用传统系统调用&lt;/h3&gt;&lt;p&gt;要使用传统系统调用，你可以写一小段内联汇编代码，尽管从学习的角度来看这很有用，我绝不鼓励读者们自己编写汇编代码使用系统调用。&lt;/p&gt;
-&lt;p&gt;在下面的例子中，我们会试着去执行&lt;code&gt;exit&lt;/code&gt;系统调用，它只需要一个参数：退出状态.&lt;/p&gt;
-&lt;p&gt;首先，我们需要找到&lt;code&gt;exit&lt;/code&gt;的系统调用号。Linux内核中有个文件将每个系统调用列在了一张表中。很多脚本在构建的时候会处理此文件以产生一些头文件供用户使用。&lt;/p&gt;
-&lt;p&gt;看看上述的表格，可以在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_32.tbl&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/syscalls/syscall_32.tbl&lt;/code&gt;&lt;/a&gt;找到:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;1 i386 exit sys_exit
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;可见 &lt;code&gt;exit&lt;/code&gt;的系统调用号是1. 根据上文所述，我们需要将系统调用号写入&lt;code&gt;eax&lt;/code&gt;寄存器中，以及第一个参数（退出状态)写入&lt;code&gt;ebx&lt;/code&gt;寄存器中。&lt;/p&gt;
-&lt;p&gt;下面介绍的一段C代码（含有一些内联汇编）做的就是上面的工作。可以看到退出状态是’42’.&lt;/p&gt;
-&lt;p&gt;（实际上这个例子可以简化一些，但我认为多用一些文字描述会更有用，让那些之前从没见过GCC内联汇编代码的人也可以用下面的例子作为参考）&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;title&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; argc, &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; *argv[])&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; syscall_nr = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; exit_status = &lt;span class=&quot;number&quot;&gt;42&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;asm&lt;/span&gt; (&lt;span class=&quot;string&quot;&gt;&quot;movl %0, %%eax\n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;             &lt;span class=&quot;string&quot;&gt;&quot;movl %1, %%ebx\n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       &lt;span class=&quot;string&quot;&gt;&quot;int $0x80&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* output parameters, we aren&#39;t outputting anything, no none */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;comment&quot;&gt;/* (none) */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* input parameters mapped to %0 and %1, repsectively */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (syscall_nr), &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (exit_status)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* registers that we are &quot;clobbering&quot;, unneeded since we are calling exit */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;eax&quot;&lt;/span&gt;, &lt;span class=&quot;string&quot;&gt;&quot;ebx&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;接下来，编译，执行，然后检查退出状态。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ gcc -o test test.c
-$ ./test
-$ echo $?
-42
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;成功了！ 这就是我们利用软件中断来执行&lt;code&gt;exit&lt;/code&gt;系统调用的全过程。&lt;/p&gt;
-&lt;h3 id=&quot;内核层面：int-0x80入口&quot;&gt;&lt;a href=&quot;#内核层面：int-0x80入口&quot; class=&quot;headerlink&quot; title=&quot;内核层面：int $0x80入口&quot;&gt;&lt;/a&gt;内核层面：&lt;code&gt;int $0x80&lt;/code&gt;入口&lt;/h3&gt;&lt;p&gt;目前为止，我们知道了如何从用户程序中触发系统调用。&lt;br&gt;下面来看看内核如何利用系统调用号执行系统调用中的代码。&lt;/p&gt;
-&lt;p&gt;回顾前文，内核调用&lt;code&gt;ia32_syscall&lt;/code&gt;来注册系统调用处理函数。&lt;/p&gt;
-&lt;p&gt;该函数是用汇编实现的，定义在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L426&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/ia32entry.S&lt;/code&gt;&lt;/a&gt;中。该函数做了很多事情，但最重要的还是它触发了实际的系统调用：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;ia32_do_call:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;function&quot;&gt;IA32_ARG_FIXUP&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        call *&lt;span class=&quot;title&quot;&gt;ia32_sys_call_table&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(,%rax,&lt;span class=&quot;number&quot;&gt;8&lt;/span&gt;)&lt;/span&gt; &lt;span class=&quot;meta&quot;&gt;# xxx: rip relative&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;注意到，&lt;code&gt;IA32_ARG_FIXUP&lt;/code&gt; 是一个宏，做的是重新处理初始参数，以让当前的系统调用层能正确的理解这些参数。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;ia32_sys_call_table&lt;/code&gt; 是&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/syscall_ia32.c#L18-L25&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/syscall_ia32.c&lt;/code&gt;&lt;/a&gt;中定义的一张表。注意代码中的最后一行 &lt;code&gt;#include&lt;/code&gt;. &lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;sys_call_ptr_t&lt;/span&gt; ia32_sys_call_table[__NR_ia32_syscall_max+&lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;] = &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         * Smells like a compiler bug -- it doesn&#39;t work&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         * when the &amp;amp; below is removed.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        [&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt; ... __NR_ia32_syscall_max] = &amp;amp;compat_ni_syscall,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;#include &amp;lt;&lt;span class=&quot;keyword&quot;&gt;asm&lt;/span&gt;/syscalls_32.h&amp;gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;回想一下前面提到在 &lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_32.tbl&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/syscalls/syscall_32.tbl&lt;/code&gt;&lt;/a&gt; 中定义的系统调用表。&lt;/p&gt;
-&lt;p&gt;一些脚本在编译的时候使用这张表生成&lt;code&gt;syscalls_32.h&lt;/code&gt;头文件。头文件中由一些有效的C代码组成，就像上面一样，以&lt;code&gt;#include&lt;/code&gt;的形式插入到&lt;code&gt;ia32_sys_call_table&lt;/code&gt;中，里面含有系统调用号引用的函数地址。&lt;/p&gt;
-&lt;p&gt;到目前为止，你已经知道如何通过传统系统调用进入内核了。&lt;/p&gt;
-&lt;h3 id=&quot;iret-从传统系统调用返回&quot;&gt;&lt;a href=&quot;#iret-从传统系统调用返回&quot; class=&quot;headerlink&quot; title=&quot;iret: 从传统系统调用返回&quot;&gt;&lt;/a&gt;iret: 从传统系统调用返回&lt;/h3&gt;&lt;p&gt;了解了如何通过软件中断进入内核执行系统调用之后，应该思考，内核应该如何返回到用户程序中并恢复其原始特权级呢？&lt;/p&gt;
-&lt;p&gt;查阅 &lt;a href=&quot;ftp://download.intel.com/design/processor/manuals/253668.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Intel Software Developer’s Manual&lt;/a&gt; （警告：PDF很大), 可以找到一些有用的图表，描述了当特权级转变时，程序栈的状态。&lt;/p&gt;
-&lt;p&gt;请看图：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xppf1.com1.z0.glb.clouddn.com/isr_stack.png&quot; alt=&quot;isr-stack&quot;&gt;&lt;/p&gt;
-&lt;p&gt;当用户程序利用软件中断将执行环境转变到内核函数&lt;code&gt;ia32_syscall&lt;/code&gt;中时，发生特权级转变。上图描述的就是当进入到&lt;code&gt;ia32_syscall&lt;/code&gt;中时栈的状态。&lt;/p&gt;
-&lt;p&gt;这就意味着在&lt;code&gt;ia32_syscall&lt;/code&gt;执行前，返回地址和CPU标志(用来编码特权级)以及其它的信息都被存储在栈中。&lt;/p&gt;
-&lt;p&gt;如此一来，为了恢复用户程序的执行，内核只需要将栈中的这些值拷贝到相应的寄存器中。&lt;/p&gt;
-&lt;p&gt;好了，这些都是如何做到的？&lt;/p&gt;
-&lt;p&gt;有很多方法可以做到，其中最简单的就是使用&lt;code&gt;iret&lt;/code&gt;指令。&lt;/p&gt;
-&lt;p&gt;Intel指令集手册中指出，&lt;code&gt;iret&lt;/code&gt;指令从栈中将返回地址和保存的寄存器的值按照初始顺序pop出来。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;As with a real-address mode interrupt return, the IRET instruction pops the return instruction pointer, return code segment selector, and EFLAGS image from the stack to the EIP, CS, and EFLAGS registers, respectively, and then resumes execution of the interrupted program or procedure.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;在Linux内核中找到相关的代码有一点点困难，因为它们隐藏在许多宏中,类似的标志以及系统调用退出的追踪信息都会经过额外的处理。&lt;/p&gt;
-&lt;p&gt;遍历内核中汇编存根里面所有的宏最终会找到&lt;code&gt;iret&lt;/code&gt;，用来从系统调用返回到用户程序。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L1042-L1043&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/entry_64.S&lt;/code&gt;&lt;/a&gt;中可以找到&lt;code&gt;irq_return&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;irq_return:
-INTERRUPT_RETURN
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中&lt;code&gt;INTERRUPT_RETURN&lt;/code&gt;在 &lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L132&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/include/asm/irqflags.h&lt;/code&gt;&lt;/a&gt;被定义为&lt;code&gt;iretq&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;到目前为止，你已经知道传统系统调用是如何工作的了。&lt;/p&gt;
-&lt;h2 id=&quot;快速系统调用&quot;&gt;&lt;a href=&quot;#快速系统调用&quot; class=&quot;headerlink&quot; title=&quot;快速系统调用&quot;&gt;&lt;/a&gt;快速系统调用&lt;/h2&gt;&lt;p&gt;传统的系统调用过程看起来似乎很合理，但最新的方法是不需要软件中断来触发系统调用的，而且比使用软件中断更快。&lt;/p&gt;
-&lt;p&gt;这两种快速的方法都分别包含两条指令。一条指令用来进入内核，另一条则用来退出内核。两种方法都在Intel CPU的文档中定义为”快速系统调用”.&lt;/p&gt;
-&lt;p&gt;然而，Intel和AMD在具体实现的时候，针对CPU分别运行在32位和64位时该采用哪种方法才有更效的问题上产生了分歧。&lt;/p&gt;
-&lt;p&gt;为了在Intel和AMD处理器中最大化兼容性：&lt;/p&gt;
-&lt;p&gt;   32位系统中使用：&lt;code&gt;sysenter&lt;/code&gt;和&lt;code&gt;sysexit&lt;/code&gt;&lt;br&gt;   64位系统中使用：&lt;code&gt;syscall&lt;/code&gt;和&lt;code&gt;sysret&lt;/code&gt;&lt;/p&gt;
-&lt;h3 id=&quot;32位快速系统调用&quot;&gt;&lt;a href=&quot;#32位快速系统调用&quot; class=&quot;headerlink&quot; title=&quot;32位快速系统调用&quot;&gt;&lt;/a&gt;32位快速系统调用&lt;/h3&gt;&lt;h4 id=&quot;sysenter-sysexit&quot;&gt;&lt;a href=&quot;#sysenter-sysexit&quot; class=&quot;headerlink&quot; title=&quot;sysenter/sysexit&quot;&gt;&lt;/a&gt;&lt;code&gt;sysenter&lt;/code&gt;/&lt;code&gt;sysexit&lt;/code&gt;&lt;/h4&gt;&lt;p&gt;  用&lt;code&gt;sysenter&lt;/code&gt;触发系统调用比传统中断方法要复杂一些，其涉及到用户程序(通过glibc）与内核之间更多的协调问题。&lt;/p&gt;
-&lt;p&gt;  我们逐步来了解这些细节。首先来看看Intel指令集参考手册中是如何描述&lt;code&gt;sysenter&lt;/code&gt;以及如何使用它的。&lt;/p&gt;
-&lt;p&gt;  看下面：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  Prior to executing the SYSENTER instruction, software must specify the privilege level 0 code segment and code entry point, and the privilege level 0 stack segment and stack pointer by writing values to the following MSRs:
-
-• IA32_SYSENTER_CS (MSR address 174H) — The lower 16 bits of this MSR are the segment selector for the privilege level 0 code segment. This value is also used to determine the segment selector of the privilege level 0 stack segment (see the Operation section). This value cannot indicate a null selector.
-
-• IA32_SYSENTER_EIP (MSR address 176H) — The value of this MSR is loaded into RIP (thus, this value references the first instruction of the selected operating procedure or routine). In protected mode, only bits 31:0 are loaded.
-
-• IA32_SYSENTER_ESP (MSR address 175H) — The value of this MSR is loaded into RSP (thus, this value contains the stack pointer for the privilege level 0 stack). This value cannot represent a non-canonical address. In protected mode, only bits 31:0 are loaded.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;换句话说：为了让内核接收到&lt;code&gt;sysenter&lt;/code&gt;触发的系统调用，内核必须设置3个特殊模块寄存器（MSRs). 其中最重要的是 &lt;code&gt;IA32_SYSENTER_EIP&lt;/code&gt;(地址是0x176). 该MSR代表的是用户程序在执行 &lt;code&gt;sysenter&lt;/code&gt;指令时，内核将要执行的函数地址。&lt;/p&gt;
-&lt;p&gt;我们可以在内核代码&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso32-setup.c#L240&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/vdso/vdso32-setup.c&lt;/code&gt;&lt;/a&gt;中找到写MSR的相关代码：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;void enable_sep_cpu(void)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;{&lt;br&gt;        /&lt;em&gt; … other code … &lt;/em&gt;/&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;wrmsr(MSR_IA32_SYSENTER_EIP, (unsigned long) ia32_sysenter_target, 0);
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;MSR_IA32_SYSENTER_EIP&lt;/code&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/uapi/asm/msr-index.h#L54&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/include/uapi/asm/msr-index.h&lt;/code&gt;&lt;/a&gt;中定义为 &lt;code&gt;0x00000176&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;类似传统软件中断型的系统调用, 使用&lt;code&gt;sysenter&lt;/code&gt;触发系统调用时也定义了一些规范。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L99-L117&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/ia32entry.S&lt;/code&gt;&lt;/a&gt;的注释中可以找到相关内容:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;* 32bit SYSENTER instruction entry.
- *
- * Arguments:
- * %eax System call number.
- * %ebx Arg1
- * %ecx Arg2
- * %edx Arg3
- * %esi Arg4
- * %edi Arg5
- * %ebp user stack
- * 0(%ebp) Arg6
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;回想一下，传统的系统调用方法包括返回到用户程序的机制：&lt;code&gt;iret&lt;/code&gt;指令。&lt;/p&gt;
-&lt;p&gt;要理解让&lt;code&gt;sysenter&lt;/code&gt;正确执行的逻辑不太简单，因为不像软件中断,&lt;code&gt;sysenter&lt;/code&gt;并不存储返回地址。&lt;/p&gt;
-&lt;p&gt;实际上，在执行&lt;code&gt;sysenter&lt;/code&gt;指令之前，内核要做的一些记录工作都是会随着时间而变化的(如果已经改变了，你就会看到下文中将要描述的bugs了)&lt;/p&gt;
-&lt;p&gt;为了兼容未来特性的变化，用户程序使用内核中的函数&lt;br&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;。当调用该函数的进程执行时，会被映射到每个用户进程空间中去。&lt;/p&gt;
-&lt;p&gt;这听起来有点诡异。它是内核中的代码，却在用户层执行。&lt;/p&gt;
-&lt;p&gt;实际上，&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;是vDSO(virtual Dynamic Shared Object)的一部分，而vDSO允许程序在用户层中执行内核代码。&lt;/p&gt;
-&lt;p&gt;后文中会具体介绍什么是vDSO，vDSO做了什么以及工作原理是什么。&lt;/p&gt;
-&lt;p&gt;我们先来了解&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;的一些细节。&lt;/p&gt;
-&lt;h4 id=&quot;kernel-vsyscall内幕&quot;&gt;&lt;a href=&quot;#kernel-vsyscall内幕&quot; class=&quot;headerlink&quot; title=&quot;_ _kernel_vsyscall内幕&quot;&gt;&lt;/a&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;内幕&lt;/h4&gt;&lt;p&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数封装了&lt;code&gt;sysenter&lt;/code&gt;调用的规范，定义在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso32/sysenter.S#L31-L40&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/vdso/vdso32/sysenter.S&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;__kernel_vsyscall:
-.LSTART_vsyscall:
-    push %ecx
-.Lpush_ecx:
-    push %edx
-.Lpush_edx:
-    push %ebp
-.Lenter_kernel:
-    movl %esp,%ebp
-    sysenter
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;既然是vDSO(也被称为共享库)的一部分，那用户程序是如何在运行时定位该函数地址的呢？&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数的地址被写入到 &lt;a href=&quot;https://www.gnu.org/software/libc/manual/html_node/Auxiliary-Vector.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ELF 辅助向量&lt;/a&gt;, 用户程序以及库函数(主要指glibc)可以在这里找到其地址并使用。&lt;/p&gt;
-&lt;p&gt;以下方法可用来查找ELF辅助向量：&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;使用&lt;a href=&quot;http://man7.org/linux/man-pages/man3/getauxval.3.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;getauxval&lt;/code&gt;&lt;/a&gt;函数，带有&lt;code&gt;AT_SYSINFO&lt;/code&gt;参数.&lt;/li&gt;
-&lt;li&gt;迭代搜索环境变量,然后从内存中解析这些变量.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;第一种方法较为简单，但glibc 2.16前的版本不支持。 下文例子中介绍的代码中实现的是第二种方法。&lt;/p&gt;
-&lt;p&gt;从有关&lt;code&gt;__kernel_vsyscall&lt;/code&gt;的代码中可以看出，在执行&lt;code&gt;sysenter&lt;/code&gt;指令之前&lt;code&gt;__kernel_vsyscall&lt;/code&gt;会做一些记录工作。&lt;/p&gt;
-&lt;p&gt;因此，我们需要做的就是手动利用&lt;code&gt;sysenter&lt;/code&gt;进入到内核中：&lt;/p&gt;
-&lt;p&gt;  . 在ELF辅助向量中找到&lt;code&gt;AT_SYSINFO&lt;/code&gt;,也就是&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;被写入的地址&lt;br&gt;  . 像传统系统调用一样，将系统调用号和参数写入寄存器中&lt;br&gt;  . 调用&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数&lt;/p&gt;
-&lt;p&gt;你可能从来没写过属于你自己的&lt;code&gt;sysenter&lt;/code&gt;封装函数，那是因为内核利用&lt;code&gt;sysenter&lt;/code&gt;进入和退出系统调用的规范是会变化的，到那时候你的代码就会崩溃了。&lt;/p&gt;
-&lt;p&gt;在开始用&lt;code&gt;sysenter&lt;/code&gt;触发系统调用前，你都要调用&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数。&lt;/p&gt;
-&lt;p&gt;那么，让我们开始吧。&lt;/p&gt;
-&lt;h4 id=&quot;自己写汇编使用sysenter&quot;&gt;&lt;a href=&quot;#自己写汇编使用sysenter&quot; class=&quot;headerlink&quot; title=&quot;自己写汇编使用sysenter&quot;&gt;&lt;/a&gt;自己写汇编使用sysenter&lt;/h4&gt;&lt;p&gt;继续利用前面传统系统调用的例子，我们调用&lt;code&gt;exit&lt;/code&gt;，退出状态是42.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;exit&lt;/code&gt;的系统调用号是1. 根据前文描述，我们只需要将系统调用号写进&lt;code&gt;eax&lt;/code&gt;寄存器中，并把第一个参数(退出状态)写到&lt;code&gt;ebx&lt;/code&gt;寄存器中。&lt;/p&gt;
-&lt;p&gt;（实际上这个例子可以简化一些，但我认为多用一些文字描述会更有趣，让那些之前没见过GCC内联汇编代码的人也可以用下面的例子作为参考）&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;24&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;25&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;26&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;27&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;28&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;29&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;30&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;31&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;32&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;33&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;34&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;35&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;36&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;37&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;38&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;39&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;40&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;41&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;42&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;43&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;meta-string&quot;&gt;&amp;lt;stdlib.h&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;meta-string&quot;&gt;&amp;lt;elf.h&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;title&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; argc, &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt;* argv[], &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt;* envp[])&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; syscall_nr = &lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; exit_status = &lt;span class=&quot;number&quot;&gt;42&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  Elf32_auxv_t *auxv;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;/* auxilliary vectors are located after the end of the environment&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   * variables&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   *&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   * check this helpful diagram: https://static.lwn.net/images/2012/auxvec.png&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt;(*envp++ != &lt;span class=&quot;literal&quot;&gt;NULL&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;/* envp is now pointed at the auxilliary vectors, since we&#39;ve iterated&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   * through the environment variables.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;for&lt;/span&gt; (auxv = (Elf32_auxv_t *)envp; auxv-&amp;gt;a_type != AT_NULL; auxv++)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;keyword&quot;&gt;if&lt;/span&gt;( auxv-&amp;gt;a_type == AT_SYSINFO) &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;keyword&quot;&gt;break&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;/* &lt;span class=&quot;doctag&quot;&gt;NOTE:&lt;/span&gt; in glibc 2.16 and higher you can replace the above code with&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   * a call to getauxval(3):  getauxval(AT_SYSINFO)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;asm&lt;/span&gt;(&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;movl %0,  %%eax    \n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;movl %1, %%ebx    \n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;call *%2          \n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      : &lt;span class=&quot;comment&quot;&gt;/* output parameters, we aren&#39;t outputting anything, no none */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* (none) */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      : &lt;span class=&quot;comment&quot;&gt;/* input parameters mapped to %0 and %1, repsectively */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (syscall_nr), &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (exit_status), &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (auxv-&amp;gt;a_un.a_val)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      : &lt;span class=&quot;comment&quot;&gt;/* registers that we are &quot;clobbering&quot;, unneeded since we are calling exit */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;string&quot;&gt;&quot;eax&quot;&lt;/span&gt;, &lt;span class=&quot;string&quot;&gt;&quot;ebx&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;接下来，编译，执行，然后检查退出状态:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ gcc -m32 -o test test.c
-$ ./test
-$ echo $?
-42
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;成功了! 我们利用 &lt;code&gt;sysenter&lt;/code&gt;触发了&lt;code&gt;exit&lt;/code&gt;系统调用，而不需要引发软件中断。&lt;/p&gt;
-&lt;h4 id=&quot;内核层面：sysenter入口&quot;&gt;&lt;a href=&quot;#内核层面：sysenter入口&quot; class=&quot;headerlink&quot; title=&quot;内核层面：sysenter入口&quot;&gt;&lt;/a&gt;内核层面：&lt;code&gt;sysenter&lt;/code&gt;入口&lt;/h4&gt;&lt;p&gt;目前我们已经知道用户程序如何通过&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数利用&lt;code&gt;sysenter&lt;/code&gt;触发系统调用，下面来看看内核如何利用系统调用号来执行系统调用中的代码。&lt;/p&gt;
-&lt;p&gt;回想前面的章节，内核调用&lt;code&gt;ia32_sysenter_target&lt;/code&gt;来注册系统调用处理函数。&lt;/p&gt;
-&lt;p&gt;此函数在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L162-L163&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/ia32entry.S&lt;/code&gt;&lt;/a&gt;中以汇编代码实现。我们来看看&lt;code&gt;eax&lt;/code&gt;寄存器中的值是在哪里被用来执行系统调用的:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sysenter_dispatch:
-    call    *ia32_sys_call_table(,%rax,8)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这段代码和前文传统系统调用模式的代码很类似：名为&lt;code&gt;ia32_sys_call_table&lt;/code&gt;的表存储着系统调用号。&lt;/p&gt;
-&lt;p&gt;在所有必要的记录工作完成后，传统系统调用模型以及&lt;code&gt;sysenter&lt;/code&gt;系统调用模型采用相同的机制和系统调用表来分配系统调用。&lt;/p&gt;
-&lt;p&gt;参照 &lt;code&gt;int $0x80&lt;/code&gt;（内核层面：int $0x80入口这一章节)，可以了解到&lt;code&gt;ia32_sys_call_table&lt;/code&gt; 是如何定义和构造的。&lt;/p&gt;
-&lt;p&gt;以上内容就是如何通过&lt;code&gt;sysenter&lt;/code&gt;系统调用进入内核的全部过程。&lt;/p&gt;
-&lt;h4 id=&quot;sysexit-从sysenter中返回&quot;&gt;&lt;a href=&quot;#sysexit-从sysenter中返回&quot; class=&quot;headerlink&quot; title=&quot;sysexit: 从sysenter中返回&quot;&gt;&lt;/a&gt;sysexit: 从sysenter中返回&lt;/h4&gt;&lt;p&gt;内核利用&lt;code&gt;sysexit&lt;/code&gt;指令将执行环境恢复到用户程序。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;sysexit&lt;/code&gt;指令的使用不像&lt;code&gt;iret&lt;/code&gt;那么直接。调用者需要将返回地址写入&lt;code&gt;rdx&lt;/code&gt;寄存器中，并将栈指针写入&lt;code&gt;rcx&lt;/code&gt;寄存器。&lt;/p&gt;
-&lt;p&gt;这就意味着你的代码中需要计算执行环境要返回的地址，保存地址值，并在调用&lt;code&gt;sysexit&lt;/code&gt;前能恢复。&lt;/p&gt;
-&lt;p&gt;可以在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/ia32/ia32entry.S#L169-L185&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/ia32/ia32entry.S&lt;/code&gt;&lt;/a&gt; 找到相关代码:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;sysexit_from_sys_call:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        andl    $~TS_COMPAT,TI_status+THREAD_INFO(%rsp,RIP-ARGOFFSET)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* clear IF, that popfq doesn&#39;t enable interrupts early */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        andl  $~&lt;span class=&quot;number&quot;&gt;0x200&lt;/span&gt;,EFLAGS-R11(%rsp)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movl    RIP-R11(%rsp),%edx              &lt;span class=&quot;comment&quot;&gt;/* User %eip */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        CFI_REGISTER rip,rdx&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        RESTORE_ARGS &lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;number&quot;&gt;24&lt;/span&gt;,&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;,&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        xorq    %r8,%r8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        xorq    %r9,%r9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        xorq    %r10,%r10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        xorq    %r11,%r11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        popfq_cfi&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/*CFI_RESTORE rflags*/&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        popq_cfi %rcx                           &lt;span class=&quot;comment&quot;&gt;/* User %esp */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        CFI_REGISTER rsp,rcx&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        TRACE_IRQS_ON&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        ENABLE_INTERRUPTS_SYSEXIT32&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;&lt;code&gt;ENABLE_INTERRUPTS_SYSEXIT32&lt;/code&gt;是定义在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L139-L143&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/include/asm/irqflags.h&lt;/code&gt;&lt;/a&gt;的宏，其中含有&lt;code&gt;sysexit&lt;/code&gt;指令。&lt;/p&gt;
-&lt;p&gt;好了，你已经知道32位快速系统调用是如何工作的了。&lt;/p&gt;
-&lt;h3 id=&quot;64位快速系统调用&quot;&gt;&lt;a href=&quot;#64位快速系统调用&quot; class=&quot;headerlink&quot; title=&quot;64位快速系统调用&quot;&gt;&lt;/a&gt;64位快速系统调用&lt;/h3&gt;&lt;p&gt;下一步之旅就是去探索64位快速系统调用了。其分别利用&lt;code&gt;syscall&lt;/code&gt; 、&lt;code&gt;sysret&lt;/code&gt;指令进入系统调用、从系统调用中返回。&lt;/p&gt;
-&lt;h4 id=&quot;syscall-sysret&quot;&gt;&lt;a href=&quot;#syscall-sysret&quot; class=&quot;headerlink&quot; title=&quot;syscall/sysret&quot;&gt;&lt;/a&gt;syscall/sysret&lt;/h4&gt;&lt;p&gt;Intel指令集参考指南解释了&lt;code&gt;syscall&lt;/code&gt;指令是如何工作的:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;SYSCALL invokes an OS system-call handler at privilege level 0. It does so by loading RIP from the IA32_LSTAR MSR (after saving the address of the instruction following SYSCALL into RCX).
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;换句话说：为了让内核接收到系统调用，内核必须向&lt;code&gt;IA32_LSTAR&lt;/code&gt; MSR注册当系统调用触发时要执行的代码地址。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/cpu/common.c#L1128&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/cpu/common.c&lt;/code&gt;&lt;/a&gt; 可以找到相关代码:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;title&quot;&gt;syscall_init&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/* ... other code ... */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        wrmsrl(MSR_LSTAR, system_call);&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;&lt;code&gt;MSR_LSTAR&lt;/code&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/uapi/asm/msr-index.h#L9&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/include/uapi/asm/msr-index.h&lt;/code&gt;&lt;/a&gt;定义为 0xc0000082。&lt;/p&gt;
-&lt;p&gt;类似传统软件中断型的系统调用, 使用&lt;code&gt;syscall&lt;/code&gt;触发系统调用时也定义了一些规范。&lt;/p&gt;
-&lt;p&gt;用户程序需要将系统调用号写入&lt;code&gt;rax&lt;/code&gt;寄存器中。系统调用的参数要c传入通用寄存器中。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://www.x86-64.org/documentation/abi.pdf&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;x86-64 ABI &lt;/a&gt;章节A.2.1 对此有所描述:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;1. User-level applications use as integer registers for passing the sequence %rdi, %rsi, %rdx, %rcx, %r8 and %r9. The kernel interface uses %rdi, %rsi, %rdx, %r10, %r8 and %r9.
-2. A system-call is done via the syscall instruction. The kernel destroys registers %rcx and %r11.
-3. The number of the syscall has to be passed in register %rax.
-4. System-calls are limited to six arguments,no argument is passed directly on the stack.
-5. Returning from the syscall, register %rax contains the result of the system-call. A value in the range between -4095 and -1 indicates an error, it is -errno.
-6. Only values of class INTEGER or class MEMORY are passed to the kernel.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L569-L591&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/entry_64.S&lt;/code&gt;&lt;/a&gt;的注释中也有相关介绍。&lt;/p&gt;
-&lt;p&gt;现在我们已经知道了如何执行系统调用以及如何传递这些参数，开始着手写一些内联汇编代码。&lt;/p&gt;
-&lt;h4 id=&quot;自己写汇编使用syscall&quot;&gt;&lt;a href=&quot;#自己写汇编使用syscall&quot; class=&quot;headerlink&quot; title=&quot;自己写汇编使用syscall&quot;&gt;&lt;/a&gt;自己写汇编使用syscall&lt;/h4&gt;&lt;p&gt;基于前面介绍的例子，我们开始着手编写一小段含有内联汇编的C程序，代码中执行&lt;code&gt;exit&lt;/code&gt;系统调用并传递退出状态：42.&lt;/p&gt;
-&lt;p&gt;首先，我们要找到&lt;code&gt;exit&lt;/code&gt;的系统调用号。在这个例子中，我们需要从&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_64.tbl#L69&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/syscalls/syscall_64.tbl&lt;/code&gt;&lt;/a&gt;中读取这张表：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;60 common exit sys_exit
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;exit&lt;/code&gt;的系统调用号是60. 根据前文介绍，我们只需将60写入&lt;code&gt;eax&lt;/code&gt;寄存器，以及第一个参数(退出状态)写入&lt;code&gt;rdi&lt;/code&gt;寄存器。&lt;/p&gt;
-&lt;p&gt;请看下面这段含有内联汇编的C代码。类似前面的例子，从清晰度来看，冗余的文字可能比代码本身更重要。&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;title&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; argc, &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; *argv[])&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; syscall_nr = &lt;span class=&quot;number&quot;&gt;60&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; exit_status = &lt;span class=&quot;number&quot;&gt;42&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;asm&lt;/span&gt; (&lt;span class=&quot;string&quot;&gt;&quot;movq %0, %%rax\n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       &lt;span class=&quot;string&quot;&gt;&quot;movq %1, %%rdi\n&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;       &lt;span class=&quot;string&quot;&gt;&quot;syscall&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* output parameters, we aren&#39;t outputting anything, no none */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;comment&quot;&gt;/* (none) */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* input parameters mapped to %0 and %1, repsectively */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (syscall_nr), &lt;span class=&quot;string&quot;&gt;&quot;m&quot;&lt;/span&gt; (exit_status)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    : &lt;span class=&quot;comment&quot;&gt;/* registers that we are &quot;clobbering&quot;, unneeded since we are calling exit */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;string&quot;&gt;&quot;rax&quot;&lt;/span&gt;, &lt;span class=&quot;string&quot;&gt;&quot;rdi&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;接下来，编译，执行，然后检查退出状态:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ gcc -o test test.c
-$ ./test
-$ echo $?
-42
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;成功了! 我们利用&lt;code&gt;syscall&lt;/code&gt;系统调用方式来触发&lt;code&gt;exit&lt;/code&gt;系统调用。避免了软件中断，如果我们要用micro-benchmark 来计算时间的话，这种方法执行起来要快许多。&lt;/p&gt;
-&lt;h4 id=&quot;内核层面：syscall入口&quot;&gt;&lt;a href=&quot;#内核层面：syscall入口&quot; class=&quot;headerlink&quot; title=&quot;内核层面：syscall入口&quot;&gt;&lt;/a&gt;内核层面：syscall入口&lt;/h4&gt;&lt;p&gt;现在我们已经知道了如何从用户程序中触发系统调用。接下来就要介绍内核如何利用系统调用号执行系统调用中的代码。&lt;/p&gt;
-&lt;p&gt;回想前文，我们知道如何将&lt;code&gt;system_call&lt;/code&gt;函数的地址写入&lt;code&gt;LSTAR&lt;/code&gt; MSR中。&lt;/p&gt;
-&lt;p&gt;下面就来看看这个函数中的代码是如何利用&lt;code&gt;rax&lt;/code&gt;寄存器将执行环境切换到系统调用中的。可以参考&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L629&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/entry_64.S&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;call *sys_call_table(,%rax,8)  # XXX:    rip relative
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;类似传统系统调用，&lt;code&gt;sys_call_table&lt;/code&gt;一张在C文件中定义的表，其利用&lt;code&gt;#include&lt;/code&gt;将脚本产生的C代码包含进来。&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/syscall_64.c#L25-L32&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/syscall_64.c&lt;/code&gt;&lt;/a&gt;,注意底部的&lt;code&gt;#include&lt;/code&gt;:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;asmlinkage &lt;span class=&quot;keyword&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;sys_call_ptr_t&lt;/span&gt; sys_call_table[__NR_syscall_max+&lt;span class=&quot;number&quot;&gt;1&lt;/span&gt;] = &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;comment&quot;&gt;/*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         * Smells like a compiler bug -- it doesn&#39;t work&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         * when the &amp;amp; below is removed.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;         */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        [&lt;span class=&quot;number&quot;&gt;0&lt;/span&gt; ... __NR_syscall_max] = &amp;amp;sys_ni_syscall,&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;#include &amp;lt;&lt;span class=&quot;keyword&quot;&gt;asm&lt;/span&gt;/syscalls_64.h&amp;gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;从前文我们知道，系统调用表定义在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/syscalls/syscall_64.tbl&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/syscalls/syscall_64.tbl&lt;/code&gt;&lt;/a&gt;。与传统中断模式一样，脚本在内核编译的时候执行并通过&lt;code&gt;syscall_64.tbl&lt;/code&gt;文件中的表生成&lt;code&gt;syscalls_64.h&lt;/code&gt;文件。&lt;/p&gt;
-&lt;p&gt;上述代码包括能生成系统调用号索引的函数指针数组的C代码。&lt;/p&gt;
-&lt;p&gt;以上就是如何通过&lt;code&gt;syscall&lt;/code&gt;系统调用进入内核的全过程。&lt;/p&gt;
-&lt;h4 id=&quot;sysret-从syscall中返回&quot;&gt;&lt;a href=&quot;#sysret-从syscall中返回&quot; class=&quot;headerlink&quot; title=&quot;sysret: 从syscall中返回&quot;&gt;&lt;/a&gt;sysret: 从syscall中返回&lt;/h4&gt;&lt;p&gt;内核利用&lt;code&gt;sysret&lt;/code&gt;指令将执行环境恢复到用户程序执行&lt;code&gt;syscall&lt;/code&gt;的地方。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;sysret&lt;/code&gt;比起&lt;code&gt;sysexit&lt;/code&gt;来要简单一些，因为当执行&lt;code&gt;syscall&lt;/code&gt;时，需要被恢复执行的地址保存在&lt;code&gt;rcx&lt;/code&gt;寄存器中。&lt;/p&gt;
-&lt;p&gt;只要能将这个地址保存起来，并在执行&lt;code&gt;sysret&lt;/code&gt;前将其恢复到&lt;code&gt;rcx&lt;/code&gt;寄存器中，执行环境就能在触发&lt;code&gt;syscall&lt;/code&gt;的地方恢复。&lt;/p&gt;
-&lt;p&gt;这种机制比较方便，因为&lt;code&gt;sysenter&lt;/code&gt;却要求你自己在代码中计算这个地址，并将其重写到寄存器中。&lt;/p&gt;
-&lt;p&gt;上述代码在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/kernel/entry_64.S#L650-L655&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/kernel/entry_64.S&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;movq RIP-ARGOFFSET(%rsp),%rcx
-CFI_REGISTER    rip,rcx
-RESTORE_ARGS 1,-ARG_SKIP,0
-/*CFI_REGISTER  rflags,r11*/
-movq    PER_CPU_VAR(old_rsp), %rsp
-USERGS_SYSRET64
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;其中&lt;code&gt;USERGS_SYSRET64&lt;/code&gt;是定义在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/include/asm/irqflags.h#L133-L135&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/include/asm/irqflags.h&lt;/code&gt;&lt;/a&gt;中的宏，其中包含&lt;code&gt;sysret&lt;/code&gt;指令。&lt;/p&gt;
-&lt;p&gt;好了，目前为止，你已经知道64位系统调用是如何工作的了。&lt;/p&gt;
-&lt;h2 id=&quot;syscall-2-半手动调用syscall&quot;&gt;&lt;a href=&quot;#syscall-2-半手动调用syscall&quot; class=&quot;headerlink&quot; title=&quot;syscall(2)半手动调用syscall&quot;&gt;&lt;/a&gt;syscall(2)半手动调用syscall&lt;/h2&gt;&lt;p&gt;太棒了，针对不同系统调用模型，我们已经知道如何编写汇编代码去触发这些系统调用了。&lt;/p&gt;
-&lt;p&gt;通常来说，你没必要自己写汇编代码。glibc提供的封装器函数已经为你处理好了所有的汇编代码。&lt;/p&gt;
-&lt;p&gt;当然，也有一些系统调用，glibc并没有为其做好封装器。其中一个例子就是&lt;code&gt;futex&lt;/code&gt;–快速用户层上锁系统调用。&lt;/p&gt;
-&lt;p&gt;等等，为什么&lt;a href=&quot;http://man7.org/linux/man-pages/man7/futex.7.html#NOTES&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;futex&lt;/code&gt;&lt;/a&gt;没有系统调用封装器呢？&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;futex&lt;/code&gt;是为库函数调用准备的，而不是应用程序。因此，要想调用&lt;code&gt;futex&lt;/code&gt;，你必须这样做:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;为你想支持的平台生成汇编存根(stub)&lt;/li&gt;
-&lt;li&gt;使用glibc提供的&lt;code&gt;syscall&lt;/code&gt;封装器&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;有些时候，如果你想执行那些没有封装器的系统调用，你别无选择，只能利用第二种方法：使用glibc提供的&lt;code&gt;syscall&lt;/code&gt;函数。&lt;/p&gt;
-&lt;p&gt;我们试试利用glibc提供的&lt;code&gt;syscall&lt;/code&gt;调用&lt;code&gt;exit&lt;/code&gt;，其退出状态是42:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;span class=&quot;meta-keyword&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;meta-string&quot;&gt;&amp;lt;unistd.h&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;title&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;int&lt;/span&gt; argc, &lt;span class=&quot;keyword&quot;&gt;char&lt;/span&gt; *argv[])&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; syscall_nr = &lt;span class=&quot;number&quot;&gt;60&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;long&lt;/span&gt; exit_status = &lt;span class=&quot;number&quot;&gt;42&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  syscall(syscall_nr, exit_status);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;接下来，编译，执行，然后检查退出状态:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ gcc -o test test.c
-$ ./test
-$ echo $?
-42
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;成功了！我们利用glibc提供的&lt;code&gt;syscall&lt;/code&gt;封装器成功的调用了&lt;code&gt;exit&lt;/code&gt;.&lt;/p&gt;
-&lt;h3 id=&quot;glibc-syscall封装器内幕&quot;&gt;&lt;a href=&quot;#glibc-syscall封装器内幕&quot; class=&quot;headerlink&quot; title=&quot;glibc syscall封装器内幕&quot;&gt;&lt;/a&gt;glibc syscall封装器内幕&lt;/h3&gt;&lt;p&gt;来看看前面例子中&lt;code&gt;syscall&lt;/code&gt;封装器在glibc中是如何工作的&lt;/p&gt;
-&lt;p&gt;在&lt;a href=&quot;https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/sysv/linux/x86_64/syscall.S#L24-L42&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;sysdeps/unix/sysv/linux/x86_64/syscall.S&lt;/code&gt;&lt;/a&gt;：&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;/* Usage: long syscall (syscall_number, arg1, arg2, arg3, arg4, arg5, arg6)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   We need to do some arg shifting, the syscall_number will be in&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   rax.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        .text&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;ENTRY (syscall)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %rdi, %rax         /* Syscall number -&amp;gt; rax.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %rsi, %rdi         /* shift arg1 - arg5.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %rdx, %rsi&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %rcx, %rdx&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %r8, %r10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq %r9, %r8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        movq 8(%rsp),%r9        /* arg6 is on the stack.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        syscall                 /* Do the system call.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        cmpq $-4095, %rax       /* Check %rax for error.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        jae SYSCALL_ERROR_LABEL /* Jump to error handler if error.  */&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;L(pseudo_end):&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        ret                     /* Return to caller.  */&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;前面我们给出了x86_64 ABI文档的参考链接，其描述了用户层和内核层的调用规范。&lt;/p&gt;
-&lt;p&gt;这段汇编stud很酷，因为它同时遵守两种调用规范。传递到这个函数的参数遵守用户层调用规范，但是在转移到另一组不同的寄存器利用&lt;code&gt;syscall&lt;/code&gt;进入内核之前，又遵守内核层规范。&lt;/p&gt;
-&lt;p&gt;以上就是在你要执行默认没有封装器的系统调用时，glibc提供的&lt;code&gt;syscall&lt;/code&gt;封装器的工作方式。&lt;/p&gt;
-&lt;h2 id=&quot;虚拟系统调用&quot;&gt;&lt;a href=&quot;#虚拟系统调用&quot; class=&quot;headerlink&quot; title=&quot;虚拟系统调用&quot;&gt;&lt;/a&gt;虚拟系统调用&lt;/h2&gt;&lt;p&gt;到目前为止，我们已经介绍了所有进入内核触发系统调用的方法，并演示了如何手动(或者半手动）触发系统调用将系统从用户层切换到内核层。&lt;/p&gt;
-&lt;p&gt;倘若程序能触发一些系统调用，而不需要进入到内核呢？&lt;/p&gt;
-&lt;p&gt;这就是Linux vDSO存在的原因。Linux vDSO是内核代码的一部分，但是却被映射到用户程序地址空间中在用户层执行。&lt;/p&gt;
-&lt;p&gt;这也就是一些系统调用不用进入到内核就能被执行的原因。举个这样的例子: &lt;code&gt;gettimeofday&lt;/code&gt;系统调用。&lt;/p&gt;
-&lt;p&gt;程序调用&lt;code&gt;gettimeofday&lt;/code&gt;并不会真正进入到内核。而是简单的调用了内核提供的一小段代码，然后在用户层执行。&lt;/p&gt;
-&lt;p&gt;没有软件中断，也不需要复杂的&lt;code&gt;sysenter&lt;/code&gt;或者&lt;code&gt;syscall&lt;/code&gt;的记录工作。&lt;code&gt;gettimeofday&lt;/code&gt;只是一个普通的函数调用。&lt;/p&gt;
-&lt;p&gt;当你执行&lt;code&gt;ldd&lt;/code&gt;命令时，可以看到vDSO出现在第一个条目中：&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ ldd `which bash`
- linux-vdso.so.1 =&amp;gt;  (0x00007fff667ff000)
- libtinfo.so.5 =&amp;gt; /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007f623df7d000)
-  libdl.so.2 =&amp;gt; /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f623dd79000)
-  libc.so.6 =&amp;gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f623d9ba000)
-  /lib64/ld-linux-x86-64.so.2 (0x00007f623e1ae000)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;下面来看看vDSO在内核中是如何设置的。&lt;/p&gt;
-&lt;h3 id=&quot;内核中的vDSO&quot;&gt;&lt;a href=&quot;#内核中的vDSO&quot; class=&quot;headerlink&quot; title=&quot;内核中的vDSO&quot;&gt;&lt;/a&gt;内核中的vDSO&lt;/h3&gt;&lt;p&gt;可以在 &lt;a href=&quot;https://github.com/torvalds/linux/tree/v3.13/arch/x86/vdso&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/vdso/&lt;/code&gt;&lt;/a&gt;中找到vDSO的源码。 其中包括一小段汇编代码、一些C源文件和一个链接器脚本&lt;/p&gt;
-&lt;p&gt;此&lt;a href=&quot;https://sourceware.org/binutils/docs/ld/Scripts.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;链接器脚本&lt;/a&gt;是个很酷的东西，可以具体去了解一下。&lt;/p&gt;
-&lt;p&gt;看看&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vdso.lds.S&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/vdso/vdso.lds.S&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;comment&quot;&gt;/*&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; * This controls what userland symbols we export from the vDSO.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;VERSION &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        LINUX_2&lt;span class=&quot;number&quot;&gt;.6&lt;/span&gt; &amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        global:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                clock_gettime;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                __vdso_clock_gettime;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                gettimeofday;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                __vdso_gettimeofday;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                getcpu;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                __vdso_getcpu;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                time;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;                __vdso_time;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        local: *;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &amp;#125;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;链接器脚本很有用处，但并不被大家所熟知。链接器脚本会处理vDSO要导出的符号表。&lt;/p&gt;
-&lt;p&gt;可以看到，vDSO导出了4个不同的函数，每个函数都有两个名字。&lt;br&gt;可以在此文件夹下的C文件中找到函数的定义。&lt;/p&gt;
-&lt;p&gt;例如，&lt;code&gt;gettimeofday&lt;/code&gt;的源代码可以在&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vclock_gettime.c#L281-L282&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;arch/x86/vdso/vclock_gettime.c&lt;/code&gt;&lt;/a&gt;中找到:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;int gettimeofday(struct timeval *, struct timezone *)
-    __attribute__((weak, alias(&amp;quot;__vdso_gettimeofday&amp;quot;)));
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;这段代码将&lt;code&gt;gettimeofday&lt;/code&gt;作为&lt;code&gt;__vdso_gettimeofday&lt;/code&gt; 的弱别名(&lt;a href=&quot;https://gcc.gnu.org/onlinedocs/gcc-4.3.5/gcc/Function-Attributes.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;weak alias&lt;/a&gt;)。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;https://github.com/torvalds/linux/blob/v3.13/arch/x86/vdso/vclock_gettime.c#L260-L280&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;同文件&lt;/a&gt;中的&lt;code&gt;__vdso_gettimeofday&lt;/code&gt;函数中包含了当用户程序执行&lt;code&gt;gettimeofday&lt;/code&gt;系统调用时真正在用户层执行的源代码。&lt;/p&gt;
-&lt;h3 id=&quot;在内存中定为vDSO&quot;&gt;&lt;a href=&quot;#在内存中定为vDSO&quot; class=&quot;headerlink&quot; title=&quot;在内存中定为vDSO&quot;&gt;&lt;/a&gt;在内存中定为vDSO&lt;/h3&gt;&lt;p&gt;由于地址空间布局随机化(&lt;a href=&quot;https://en.wikipedia.org/wiki/Address_space_layout_randomization&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ASLR&lt;/a&gt;)的原因,当程序开始执行时，vDSO会被加载到随机的地址空间中。&lt;/p&gt;
-&lt;p&gt;如果vDSO加载到随机地址空间中，用户程序是如何找到它的呢？&lt;/p&gt;
-&lt;p&gt;回想前文提到的&lt;code&gt;sysenter&lt;/code&gt;系统调用方法，用户程序要调用&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数，而不是自己写&lt;code&gt;sysenter&lt;/code&gt;汇编代码。&lt;/p&gt;
-&lt;p&gt;而&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数也是vDSO的一部分。&lt;/p&gt;
-&lt;p&gt;提供的代码样例中通过搜索&lt;a href=&quot;https://www.gnu.org/software/libc/manual/html_node/Auxiliary-Vector.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;ELF辅助头文件&lt;/a&gt;找到和&lt;code&gt;AT_SYSINFO&lt;/code&gt;匹配的头文件，头文件中含有&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;函数的地址。&lt;/p&gt;
-&lt;p&gt;类似的，要定位到vDSO, 用户程序可以搜索ELF辅助头文件找到和&lt;code&gt;AT_SYSINFO_EHDR&lt;/code&gt;匹配的头文件. 里面包含由链接器脚本生成的vDSO的ELF头的起始地址。&lt;/p&gt;
-&lt;p&gt;两个例子中，程序被加载时内核都会将其地址写入到ELF头中。这也就是为何正确的地址总是出现&lt;code&gt;AT_SYSINFO_EHDR&lt;/code&gt;和&lt;code&gt;AT_SYSINFO&lt;/code&gt;中。&lt;/p&gt;
-&lt;p&gt;一旦定为到ELF头部信息，用户程序就能解析ELF对象了(可以用&lt;a href=&quot;http://www.mr511.de/software/english.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;libelf&lt;/a&gt;),并且可以根据需要调用ELF对象中的函数。&lt;/p&gt;
-&lt;p&gt;这样很酷，因为这就意味着vDSO能充分利用ELF有用的特性，比如&lt;a href=&quot;https://www.akkadia.org/drepper/symbol-versioning&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt; symbol versioning&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;内核文档 &lt;a href=&quot;https://github.com/torvalds/linux/tree/v3.13/Documentation/vDSO&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;Documentation/vDSO/&lt;/code&gt;&lt;/a&gt;中有解析vDSO和调用其中函数的例子。&lt;/p&gt;
-&lt;h3 id=&quot;glibc中的vDSO&quot;&gt;&lt;a href=&quot;#glibc中的vDSO&quot; class=&quot;headerlink&quot; title=&quot;glibc中的vDSO&quot;&gt;&lt;/a&gt;glibc中的vDSO&lt;/h3&gt;&lt;p&gt;大多数情况下，大家都会访问vDSO，但并不会意识到。那是因为glibc利用前面章节介绍的接口对其进行了封装抽象。&lt;/p&gt;
-&lt;p&gt;当一个程序被加载时，&lt;a href=&quot;http://man7.org/linux/man-pages/man8/ld.so.8.html&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;动态链接器和加载器&lt;/a&gt;便会加载程序依赖的DSOs，也包括vDSO.&lt;/p&gt;
-&lt;p&gt;当glibc解析被加载程序的ELF头部时，会存储有关于vDSO的一些位置信息。也包括简短的stub函数，用来在真正执行系统调用前搜索vDSO中的符号名。&lt;/p&gt;
-&lt;p&gt;举个例子，&lt;code&gt;glibc&lt;/code&gt;中的&lt;code&gt;gettimeofday&lt;/code&gt;函数，定义在&lt;a href=&quot;https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/sysv/linux/x86_64/gettimeofday.c#L26-L37&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;sysdeps/unix/sysv/linux/x86_64/gettimeofday.c&lt;/code&gt;&lt;/a&gt;中：&lt;/p&gt;
-&lt;figure class=&quot;highlight c&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *&lt;span class=&quot;title&quot;&gt;gettimeofday_ifunc&lt;/span&gt; &lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt; __&lt;span class=&quot;title&quot;&gt;asm__&lt;/span&gt; &lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;string&quot;&gt;&quot;__gettimeofday&quot;&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;function&quot;&gt;&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt; *&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;title&quot;&gt;gettimeofday_ifunc&lt;/span&gt; &lt;span class=&quot;params&quot;&gt;(&lt;span class=&quot;keyword&quot;&gt;void&lt;/span&gt;)&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&amp;#123;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  PREPARE_VERSION (linux26, &lt;span class=&quot;string&quot;&gt;&quot;LINUX_2.6&quot;&lt;/span&gt;, &lt;span class=&quot;number&quot;&gt;61765110&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;comment&quot;&gt;/* If the vDSO is not available we fall back on the old vsyscall.  */&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  return (_dl_vdso_vsym (&lt;span class=&quot;string&quot;&gt;&quot;gettimeofday&quot;&lt;/span&gt;, &amp;amp;linux26)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;          ?: (void *) VSYSCALL_ADDR_vgettimeofday);&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&amp;#125;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;__asm (&lt;span class=&quot;string&quot;&gt;&quot;.type __gettimeofday, %gnu_indirect_function&quot;&lt;/span&gt;);&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-&lt;p&gt;这段glibc中的代码会在vDSO中搜索&lt;code&gt;gettimeofday&lt;/code&gt;函数并且返回其地址。这些工作都通过 &lt;a href=&quot;http://willnewton.name/uncategorized/using-gnu-indirect-functions/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;间接函数&lt;/a&gt;封装好了。&lt;/p&gt;
-&lt;p&gt;这就是程序如何通过glibc调用&lt;code&gt;gettimeofday&lt;/code&gt;并访问vDSO却完全不用切换到内核、引发特权级转变以及触发软件中断的全过程。&lt;/p&gt;
-&lt;p&gt;其中也总结了Linux 32/64位 Intel/AMD系统的每种系统调用方法的优势。&lt;/p&gt;
-&lt;h2 id=&quot;glibc-系统调用封装器&quot;&gt;&lt;a href=&quot;#glibc-系统调用封装器&quot; class=&quot;headerlink&quot; title=&quot;glibc 系统调用封装器&quot;&gt;&lt;/a&gt;glibc 系统调用封装器&lt;/h2&gt;&lt;p&gt;在讨论系统调用的时候，简单的提提glibc是如何处理系统调用是很有意义的。&lt;/p&gt;
-&lt;p&gt;对于许多系统调用来说，glibc只需要一个简单的封装函数将参数传入合适的寄存器中，然后执行&lt;code&gt;syscall&lt;/code&gt;或者&lt;code&gt;int $0x80&lt;/code&gt;指令，或者调用&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;。&lt;/p&gt;
-&lt;p&gt;这些都是利用一系列在文本文件中定义的表完成的，这些表会经过脚本处理并输出C代码。&lt;/p&gt;
-&lt;p&gt;例如，&lt;a href=&quot;https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/syscalls.list&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;`sysdeps/unix/syscalls.list&lt;/a&gt; `文件描述了一些常用的系统调用:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;access - access i:si __access access acct - acct i:S acct chdir - chdir i:s __chdir chdir chmod - chmod i:si __chmod chmod
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;要了解每一栏目的含义，可以查看处理此文件的脚本注释： &lt;a href=&quot;https://github.molgen.mpg.de/git-mirror/glibc/blob/glibc-2.15/sysdeps/unix/make-syscalls.sh&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;&lt;code&gt;sysdeps/unix/make-syscalls.sh&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;对于更复杂的系统调用，比如&lt;code&gt;exit&lt;/code&gt;，其会触发那些有真正C代码或汇编代码实现的处理函数，并不会出现在类似这样的文本文件中。&lt;/p&gt;
-&lt;p&gt;以后的博文中会具体介绍glibc的实现以及linux内核中一些重要的系统调用。&lt;/p&gt;
-&lt;h2 id=&quot;重要的syscall相关bugs&quot;&gt;&lt;a href=&quot;#重要的syscall相关bugs&quot; class=&quot;headerlink&quot; title=&quot;重要的syscall相关bugs&quot;&gt;&lt;/a&gt;重要的syscall相关bugs&lt;/h2&gt;&lt;p&gt;很荣幸能利用这次机会提两个与linux系统调用相关的神奇bugs.&lt;/p&gt;
-&lt;p&gt;一起来瞧一瞧吧！&lt;/p&gt;
-&lt;h3 id=&quot;CVE-2010-3301&quot;&gt;&lt;a href=&quot;#CVE-2010-3301&quot; class=&quot;headerlink&quot; title=&quot;CVE-2010-3301&quot;&gt;&lt;/a&gt;CVE-2010-3301&lt;/h3&gt;&lt;p&gt;&lt;a href=&quot;http://cve.mitre.org/cgi-bin/cvename.cgi?name=2010-3301&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这个安全利用&lt;/a&gt;能让本地用户获取root权限。&lt;/p&gt;
-&lt;p&gt;引起这个漏洞的原因就在于汇编代码中的一个小bug，其允许用户程序触发x86_64系统中的传统系统调用。&lt;/p&gt;
-&lt;p&gt;此利用代码相当聪明:在一个特定的地址下，利用&lt;code&gt;mmap&lt;/code&gt;生成一块内存区域，并利用一个整数让代码产生溢出：&lt;/p&gt;
-&lt;p&gt;（还记得上面章节中提到的传统中断方式中的这段代码吗？）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;call *ia32_sys_call_table(,%rax,8)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;此代码可以将执行环境切换到一块任意的地址中，在那执行内核代码，从而可以将运行的进程权限提升到root.&lt;/p&gt;
-&lt;h3 id=&quot;Android-sysenter-ABI-破坏&quot;&gt;&lt;a href=&quot;#Android-sysenter-ABI-破坏&quot; class=&quot;headerlink&quot; title=&quot;Android sysenter ABI 破坏&quot;&gt;&lt;/a&gt;Android &lt;code&gt;sysenter&lt;/code&gt; ABI 破坏&lt;/h3&gt;&lt;p&gt;还记得前面说过不要在应用程序代码中硬编码&lt;code&gt;sysenter&lt;/code&gt; ABI吗？&lt;/p&gt;
-&lt;p&gt;不幸的是，用android-x86的一些人就容易犯这些错误。只要内核的ABI一改变，andorid-x86就瞬间无法工作。&lt;/p&gt;
-&lt;p&gt;工作于内核的人最终用一些陈旧的&lt;code&gt;sysenter&lt;/code&gt;硬编码序列来恢复&lt;code&gt;sysenter&lt;/code&gt; ABI,以避免对Android设备的破坏。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://git.kernel.org/cgit/linux/kernel/git/tip/tip.git/commit/?id=30bfa7b3488bfb1bb75c9f50a5fcac1832970c60&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这里&lt;/a&gt;是提交给Linux 内核的patch. 你也可以在提交信息中找到向android源码提交的攻击代码的链接&lt;/p&gt;
-&lt;p&gt;记住：千万不要自己编写汇编代码使用&lt;code&gt;sysenter&lt;/code&gt;. 如果你因为某种原因要自己实现，可以使用前面例子中的一些代码，起码要仔细检查一下 &lt;code&gt;__kernel_vsyscall&lt;/code&gt;函数。&lt;/p&gt;
-&lt;h2 id=&quot;结论&quot;&gt;&lt;a href=&quot;#结论&quot; class=&quot;headerlink&quot; title=&quot;结论&quot;&gt;&lt;/a&gt;结论&lt;/h2&gt;&lt;p&gt;Linux内核中的系统调用机制是及其复杂的。触发系统调用有许多中方案，各都有其优缺点。&lt;/p&gt;
-&lt;p&gt;自己编写汇编代码来触发系统调用可不是个好主意，因为在你代码下层的ABI可能会崩溃。系统中的内核以及libc的实现会（可能会）选择最快的方式来触发系统调用。&lt;/p&gt;
-&lt;p&gt;如果你不能使用glibc提供的封装器(或者那个封装器不存在),你起码应该用&lt;code&gt;syscall&lt;/code&gt;封装器函数，或者仔细检查vDSO提供的&lt;code&gt;_ _kernel_vsyscall&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;继续关注将来研究单个系统调用及其实现的相关文章。&lt;/p&gt;
-&lt;h2 id=&quot;相关博文&quot;&gt;&lt;a href=&quot;#相关博文&quot; class=&quot;headerlink&quot; title=&quot;相关博文&quot;&gt;&lt;/a&gt;相关博文&lt;/h2&gt;&lt;p&gt;如果你喜欢这篇博客，你可能对以下底层技术的相关博客也感兴趣。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.packagecloud.io/eng/2016/02/29/how-does-strace-work/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;How does strace work?&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.packagecloud.io/eng/2016/03/14/how-does-ltrace-work/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;How does ltrace work?&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.packagecloud.io/eng/2016/03/21/apt-hash-sum-mismatch/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;APT Hash sum mismatch&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.packagecloud.io/eng/2014/10/28/howto-gpg-sign-verify-deb-packages-apt-repositories/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;HOWTO: GPG sign and verify deb packages and APT repositories&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;a href=&quot;http://blog.packagecloud.io/eng/2014/11/24/howto-gpg-sign-verify-rpm-packages-yum-repositories/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;HOWTO: GPG sign and verify RPM packages and yum repositories&lt;/a&gt;&lt;/p&gt;
-&lt;h2 id=&quot;Acknowledgement&quot;&gt;&lt;a href=&quot;#Acknowledgement&quot; class=&quot;headerlink&quot; title=&quot;Acknowledgement&quot;&gt;&lt;/a&gt;Acknowledgement&lt;/h2&gt;&lt;p&gt;本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)&lt;/p&gt;
-&lt;p&gt;此文是一篇完整的译文，尽量在原文的基础上做到通俗易懂&lt;/p&gt;
-&lt;p&gt;仅为学习使用，未经博主同意，请勿转载。&lt;/p&gt;
-&lt;p&gt;原英文地址：&lt;a href=&quot;http://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#bit-fast-system-calls。&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#bit-fast-system-calls。&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;本文地址：&lt;a href=&quot;http://www.chongh.wiki/blog/2016/04/08/linux-syscalls/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;http://www.chongh.wiki/blog/2016/04/08/linux-syscalls/&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;作者[新浪微博:&lt;a href=&quot;http://weibo.com/2767520802/profile?rightmod=1&amp;amp;wvr=6&amp;amp;mod=personinfo&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@diting0x&lt;/a&gt;]&lt;/p&gt;
-&lt;p&gt;感谢好友 &lt;a href=&quot;http://weibo.com/u/2765244861?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@睡眼惺忪的小叶先森&lt;/a&gt;与&lt;a href=&quot;http://weibo.com/u/2495479763?topnav=1&amp;amp;wvr=6&amp;amp;topsug=1&amp;amp;is_all=1&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;@skyline09&lt;/a&gt;指出的一些勘误及意见。&lt;/p&gt;
-</content>
-    
-    <summary type="html">
-    
-      &lt;blockquote&gt;
-&lt;ul&gt;
-&lt;li&gt;长话短说（Too long;Don’t read)&lt;/li&gt;
-&lt;li&gt;什么是系统调用&lt;/li&gt;
-&lt;li&gt;准备知识&lt;ul&gt;
-&lt;li&gt;硬件与软件&lt;/li&gt;
-&lt;li&gt;用户程序，内核与CPU特权级&lt;/li&gt;
-&lt;li&gt;中断&lt;/li&gt;
-&lt;li&gt;特殊模块寄存器&lt;/li&gt;
-&lt;li&gt;编写汇编代码触发系统调用不是个好主意
-    
-    </summary>
-    
-      <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
-    
-    
-      <category term="System" scheme="http://yoursite.com/tags/System/"/>
-    
-      <category term="Kernel" scheme="http://yoursite.com/tags/Kernel/"/>
-    
-      <category term="Syscall" scheme="http://yoursite.com/tags/Syscall/"/>
-    
-      <category term="OS" scheme="http://yoursite.com/tags/OS/"/>
     
   </entry>
   
