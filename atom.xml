@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-12-09T11:27:03.000Z</updated>
+  <updated>2016-12-09T15:22:48.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/"/>
     <id>http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/</id>
     <published>2016-12-08T11:23:49.000Z</published>
-    <updated>2016-12-09T11:27:03.000Z</updated>
+    <updated>2016-12-09T15:22:48.000Z</updated>
     
     <content type="html"><![CDATA[<p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。</p>
 <a id="more"></a>
@@ -142,6 +142,7 @@ while (count &lt; 10000000)
 <p>其他cpu core将先看到a == 1再看到 b == 3。（不考虑编译器优化）</p>
 <h3 id="Acknowledgements"><a href="#Acknowledgements" class="headerlink" title="Acknowledgements"></a>Acknowledgements</h3><p>本文由微博用户 <a href="http://weibo.com/2767520802/profile?topnav=1&amp;wvr=6&amp;is_all=1" target="_blank" rel="external">Diting0x</a> 与 <a href="http://weibo.com/yebangyu" target="_blank" rel="external">睡眼惺忪的小叶先森</a> 共同完成，在原文的基础上添加了许多精华注释，帮助大家理解。</p>
 <p>感谢好友<a href="http://weibo.com/u/1707881862?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">小伙伴-小伙伴儿 </a>阅读了初稿，并给出宝贵的意见。</p>
+<p>感谢微博用户@白云展翅海面飞指出一个勘误</p>
 <p>原文： <a href="http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/" target="_blank" rel="external">http://preshing.com/20121019/this-is-why-they-call-it-a-weakly-ordered-cpu/</a></p>
 <p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)<br>仅为学习使用，未经博主同意，请勿转载<br>本系列文章已经获得了原作者preshing的授权。版权归原作者和本网站共同所有</p>
 ]]></content>
