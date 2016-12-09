@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-12-09T03:00:31.000Z</updated>
+  <updated>2016-12-09T11:27:03.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -19,10 +19,10 @@
     <title>深入探索并发编程系列(十)-Weakly-ordered CPU的由来</title>
     <link href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/"/>
     <id>http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/</id>
-    <published>2016-12-08T13:34:28.000Z</published>
-    <updated>2016-12-09T03:00:31.000Z</updated>
+    <published>2016-12-08T11:23:49.000Z</published>
+    <updated>2016-12-09T11:27:03.000Z</updated>
     
-    <content type="html"><![CDATA[<p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有任何言语比具体的例子更能把问题说清楚。</p>
+    <content type="html"><![CDATA[<p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。</p>
 <a id="more"></a>
 <p>如果要概括weakly-ordered CPU，可以这么说:一个CPU core按照一定的顺序修改变量，然而其他的CPU core却可以看到对该变量不同的修改顺序<sup>注1</sup>. 这就是我要在这篇文章中使用纯C++11来讲述的内容。</p>
 <p>对于一般程序来说，x86/64处理器家族从Intel到AMD都不具备这种特性。因此我们别想着在现有的桌面系统或者笔记本上来阐述这种问题了。我们需要的只是一个weakly-ordered的多核设备。幸运的是，在我口袋里恰好就有这么一台设备。</p>
@@ -73,7 +73,7 @@ while (count &lt; 10000000)
 }
 </code></pre><p>这时，看看编译器产生的ARM汇编代码能告诉我们很多信息，在Release中，使用Xcode中的反汇编视图:</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered3.png" alt=""></p>
-<p>如果你对汇编不是很熟悉，也不必担心。所有需要知道的就是编译器是否在共享变量中对任何操作重新排序了。这里包括对<code>flag</code>的两种操作以及对<code>sharedValue</code>的递增操作。在上图中，我标明了相应区域对应的汇编代码。正如你所知，我们是幸运的：尽管<code>memory_order_acquire</code>参数意味着编译器可以对那些操作重新排序，但编译器并没有这么做.</p>
+<p>如果你对汇编不是很熟悉，也不必担心。所有需要知道的就是编译器是否在共享变量中对任何操作重新排序了。这里包括对<code>flag</code>的两种操作以及对<code>sharedValue</code>的递增操作。在上图中，我标明了相应区域对应的汇编代码。正如你所知，我们是幸运的：尽管<code>memory_order_relaxed</code>参数意味着编译器可以对那些操作重新排序，但编译器并没有这么做.</p>
 <p>我已经给出了一个样例程序来无限循环这个实验，并在每一次运行结束后将<code>sharedValue</code>的最终值打印出来。如果你想看源码并自己运行，可以在<a href="https://github.com/preshing/AcquireRelease" target="_blank" rel="external">github</a>上下载。</p>
 <p>下面是iphone正在努力的运行这个实验</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/weaklyordered4.png" alt=""></p>
@@ -148,7 +148,7 @@ while (count &lt; 10000000)
     
     <summary type="html">
     
-      &lt;p&gt;在这一系列博客中，我已经详细讨论了&lt;a href=&quot;&quot;&gt;lock-free编程&lt;/a&gt;相关的一系列主题，比如&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot;&gt;Acquire与Release语义&lt;/a&gt;以及&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot;&gt;Weakly-ordered CPUs&lt;/a&gt;. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有任何言语比具体的例子更能把问题说清楚。&lt;/p&gt;
+      &lt;p&gt;在这一系列博客中，我已经详细讨论了&lt;a href=&quot;&quot;&gt;lock-free编程&lt;/a&gt;相关的一系列主题，比如&lt;a href=&quot;http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/&quot;&gt;Acquire与Release语义&lt;/a&gt;以及&lt;a href=&quot;http://www.chongh.wiki/blog/2016/10/30/memorymodel/&quot;&gt;Weakly-ordered CPUs&lt;/a&gt;. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。&lt;/p&gt;
     
     </summary>
     
