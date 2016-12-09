@@ -158,47 +158,6 @@ while (count &lt; 10000000)
   </entry>
   
   <entry>
-    <title>操作系统安全浅薄知识系列(一)-ASLR</title>
-    <link href="http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/"/>
-    <id>http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/</id>
-    <published>2016-12-07T08:13:20.000Z</published>
-    <updated>2016-12-09T13:58:43.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。</p>
-<a id="more"></a>
-<p><strong>怎么做？</strong><br>随机化程序的关键数据在内存中的位置，这些数据包括程序的数据段、堆、栈以及共享库。见下图：</p>
-<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/aslr1.png" alt="aslr1"></p>
-<p>这些数据为什么没有包括代码段？ 下文会继续讨论。</p>
-<p><strong>干嘛用的？</strong><br>ASLR是一种保护缓冲区溢出攻击的防御技术，通过增加内存攻击(如return-into-libc或ROP)预测目标地址的难度阻碍其实施攻击。见下图：</p>
-<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/aslr2.png" alt="aslr2"></p>
-<p>攻击者欲跳转到目标地址0xbfffd5d8的shellcode中，但在执行时其地址被随机化到了0xbfffe3f8中，此时跳转到0xbfffd5d8会导致内存奔溃。</p>
-<p><strong>如何开启或关闭ASLR?</strong><br>以Linux系统为例，通过配置<code>/proc/sys/kernel/randomize_va_space</code>中的值来开启或关闭ASLR.<br>运行<code>cat /proc/sys/kernel/randomize_va_space</code>命令，若输出为0，表示没有随机化，所有都是静态的；若输出为1，表示保守随机化，共享库、栈、mmap()，VDSO以及堆都被随机化；若输出为2，表示全随机化，在1的基础上，增加了通过brk()方式内存管理的随机化。<br>下图为Ubuntu14.04的结果，</p>
-<p><img src="http://7xppf1.com1.z0.glb.clouddn.com/aslr3.png" alt="aslr3"></p>
-<p>关闭ASLR,可以运行<code>echo 0 /proc/sys/kernel/randomize_va_space</code></p>
-<p>Windows和Linux在ASLR机制上有所不同，想了解详情可以参考<a href="http://www.freebuf.com/articles/system/29392.html" target="_blank" rel="external">这里</a></p>
-<p><strong>编译成PIE?</strong><br>说到这里，还遗留了一个问题，那就是随机化的数据为什么没有包括代码段？ 要想让ASLR机制有效，就必须保证程序在内存空间的所有区域都是随机化的。有任何一部分没有被随机化，都有可能被攻击者利用来定位有效的gadgets来实施攻击。实际上，ASLR对代码段(.text)是不作随机化的，只有当可执行文件在编译成PIE(Position Independent Executable，位置依赖可执行文件)时，代码段才会被随机化。</p>
-<p>对于non-PIE(也就是没有添加编译选项PIE),尽管ASLR的级别设置为2，攻击者仍然能利用程序的.text段以及GOT/PLT(全局偏移表/过程连接表)实施攻击(比如return-to-got/plt、ROP)。</p>
-<p>既然non-PIE的可执行文件不能享受ASLR机制带来的安全性，那ASLR又有何意义? 是不是可以把所有的程序在编译时都加上PIE选项？ 对Linux系统来说，是有选择性的编译PIE，所有的库文件都是默认编译成PIE的，而大部分程序默认是不会被编译成PIE的。详情可以参考这篇论文的发现<a href="http://e-collection.library.ethz.ch/eserv/eth:5699/eth-5699-01.pdf?pid=eth:5699&amp;dsID=eth-5699-01.pdf" target="_blank" rel="external">Too much PIE is bad for performance</a>。</p>
-<p>说了这么多，PIE的原理是什么？文章提到的ROP, Return-to-libc,Return-to-GOT/PIT, gadgets都又是什么呢？有机会再谈。</p>
-<h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p>Lu et al,”ASLR-Guard: Stopping Address Space Leakage for Code Reuse Attacks”,CODASPY’16<br>Gu et al, “Derandomizing Kernel Address Space Layout for Memory Introspection and Forensics”, CCS’15<br><a href="http://www.freebuf.com/articles/system/29392.html" target="_blank" rel="external">ASLR在Windows与Linux系统之间的差别</a><br><a href="https://pax.grsecurity.net/docs/aslr.txt" target="_blank" rel="external">PAX/ASLR</a><br><a href="https://securityetalii.es/2013/02/03/how-effective-is-aslr-on-linux-systems/" target="_blank" rel="external">How Effective is ASLR on Linux Systems?</a></p>
-<h4 id="Acknowledgements"><a href="#Acknowledgements" class="headerlink" title="Acknowledgements"></a>Acknowledgements</h4><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
-<p>仅为学习使用，未经博主同意，请勿转载</p>
-<p>本文地址：<a href="http://chongh.wiki/blog/2016/12/07/systemsecurity-aslr/" target="_blank" rel="external">http://chongh.wiki/blog/2016/12/07/systemsecurity-aslr/</a> </p>
-<p>作者 [ 新浪微博: <a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a>]</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="System-security" scheme="http://yoursite.com/categories/System-security/"/>
-    
-    
-  </entry>
-  
-  <entry>
     <title>深入探索并发编程系列(九)-弱/强内存模型</title>
     <link href="http://yoursite.com/blog/2016/10/30/memorymodel/"/>
     <id>http://yoursite.com/blog/2016/10/30/memorymodel/</id>
@@ -1435,6 +1394,38 @@ sudo update-alternatives --config gcc
     
       <category term="Misc" scheme="http://yoursite.com/categories/Misc/"/>
     
+    
+  </entry>
+  
+  <entry>
+    <title>电影无人区的思考</title>
+    <link href="http://yoursite.com/blog/2016/04/22/wurenqu/"/>
+    <id>http://yoursite.com/blog/2016/04/22/wurenqu/</id>
+    <published>2016-04-21T18:39:20.000Z</published>
+    <updated>2016-04-26T19:29:28.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。</p>
+<a id="more"></a>
+<p>今天是2016年，又一个三年，这是我第三次看这部电影，而这时候，却身处美国的一个中西部农村。这种黑色、公路片对我一直有巨大的诱惑力，之前看过《两杆大烟枪》、《老无所依》、《不准掉头》、《偷拐抢骗》、《杀手没有假期》，还有宁浩的疯狂系列，都非常喜欢。</p>
+<p>黑色让人沉思，公路让人浮想联翩。想找个假期能狂奔在美国西部的公路上，没有尽头，去体验那种放肆。</p>
+<p>无人区，这里没有人，只有动物。<br>一个没有人的区域，没有法律、没有道德、没有人情，只有生物本能的生与死、苦与乐。<br>而人与动物的区别，就是，人会用火。<br>火可以用来取暖，炙热情感。就像电影中的潘肖，牺牲自己也要让她把这个故事带出去。</p>
+<p>好温馨的表达，人会用火。多点燃你心中的火，多温暖你身边的人。</p>
+<p>突然用电影来表达这些，实在是太不和谐。</p>
+<p>完</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;从大学起就听说过宁浩的无人区，那时候还是2009年，就期待着这部想像中的‘黑色幽默’。可是时间一晃，便迟到了四年，也早耗费了我整个大学时光。不知不觉，随我到了北京，13年上映，那时便立马看了首映。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Misc" scheme="http://yoursite.com/categories/Misc/"/>
+    
+    
+      <category term="Life" scheme="http://yoursite.com/tags/Life/"/>
+    
+      <category term="Movie" scheme="http://yoursite.com/tags/Movie/"/>
     
   </entry>
   
