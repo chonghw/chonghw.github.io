@@ -158,11 +158,11 @@ while (count &lt; 10000000)
   </entry>
   
   <entry>
-    <title>系统安全浅薄知识系列(一)-ASLR</title>
+    <title>操作系统安全浅薄知识系列(一)-ASLR</title>
     <link href="http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/"/>
     <id>http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/</id>
     <published>2016-12-07T08:13:20.000Z</published>
-    <updated>2016-12-09T03:01:40.000Z</updated>
+    <updated>2016-12-09T13:58:43.000Z</updated>
     
     <content type="html"><![CDATA[<p>ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。</p>
 <a id="more"></a>
