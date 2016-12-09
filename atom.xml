@@ -162,7 +162,7 @@ while (count &lt; 10000000)
     <link href="http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/"/>
     <id>http://yoursite.com/blog/2016/12/07/systemsecurity-aslr/</id>
     <published>2016-12-07T08:13:20.000Z</published>
-    <updated>2016-12-07T08:29:17.000Z</updated>
+    <updated>2016-12-09T03:01:40.000Z</updated>
     
     <content type="html"><![CDATA[<p>ASLR全称是Address Space Layout Randomization，翻译成中文就是地址空间布局随机化。</p>
 <a id="more"></a>
@@ -179,7 +179,7 @@ while (count &lt; 10000000)
 <p><strong>编译成PIE?</strong><br>说到这里，还遗留了一个问题，那就是随机化的数据为什么没有包括代码段？ 要想让ASLR机制有效，就必须保证程序在内存空间的所有区域都是随机化的。有任何一部分没有被随机化，都有可能被攻击者利用来定位有效的gadgets来实施攻击。实际上，ASLR对代码段(.text)是不作随机化的，只有当可执行文件在编译成PIE(Position Independent Executable，位置依赖可执行文件)时，代码段才会被随机化。</p>
 <p>对于non-PIE(也就是没有添加编译选项PIE),尽管ASLR的级别设置为2，攻击者仍然能利用程序的.text段以及GOT/PLT(全局偏移表/过程连接表)实施攻击(比如return-to-got/plt、ROP)。</p>
 <p>既然non-PIE的可执行文件不能享受ASLR机制带来的安全性，那ASLR又有何意义? 是不是可以把所有的程序在编译时都加上PIE选项？ 对Linux系统来说，是有选择性的编译PIE，所有的库文件都是默认编译成PIE的，而大部分程序默认是不会被编译成PIE的。详情可以参考这篇论文的发现<a href="http://e-collection.library.ethz.ch/eserv/eth:5699/eth-5699-01.pdf?pid=eth:5699&amp;dsID=eth-5699-01.pdf" target="_blank" rel="external">Too much PIE is bad for performance</a>。</p>
-<p>说了这么多，PIE的原理是什么？文章提到的这么多专有名词，ROP, Return-to-libc,Return-to-GOT/PIT, gadgets都又是什么呢？有机会再谈。</p>
+<p>说了这么多，PIE的原理是什么？文章提到的ROP, Return-to-libc,Return-to-GOT/PIT, gadgets都又是什么呢？有机会再谈。</p>
 <h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p>Lu et al,”ASLR-Guard: Stopping Address Space Leakage for Code Reuse Attacks”,CODASPY’16<br>Gu et al, “Derandomizing Kernel Address Space Layout for Memory Introspection and Forensics”, CCS’15<br><a href="http://www.freebuf.com/articles/system/29392.html" target="_blank" rel="external">ASLR在Windows与Linux系统之间的差别</a><br><a href="https://pax.grsecurity.net/docs/aslr.txt" target="_blank" rel="external">PAX/ASLR</a><br><a href="https://securityetalii.es/2013/02/03/how-effective-is-aslr-on-linux-systems/" target="_blank" rel="external">How Effective is ASLR on Linux Systems?</a></p>
 <h4 id="Acknowledgements"><a href="#Acknowledgements" class="headerlink" title="Acknowledgements"></a>Acknowledgements</h4><p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
 <p>仅为学习使用，未经博主同意，请勿转载</p>
