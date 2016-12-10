@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2016-12-09T15:22:48.000Z</updated>
+  <updated>2016-12-10T02:05:39.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,7 +20,7 @@
     <link href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/"/>
     <id>http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/</id>
     <published>2016-12-08T11:23:49.000Z</published>
-    <updated>2016-12-09T15:22:48.000Z</updated>
+    <updated>2016-12-10T02:05:39.000Z</updated>
     
     <content type="html"><![CDATA[<p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/" target="_blank" rel="external">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。</p>
 <a id="more"></a>
@@ -54,7 +54,7 @@ if (flag.compare_exchange_strong(expected, 1, memory_order_acquire))
 <p>为了释放锁，我们执行下面的操作:</p>
 <pre><code>flag.store(0, memory_order_release);
 </code></pre><p>上面操作使用<code>memory_order_acquire</code>执行顺序约束将<code>flag</code>设置回0了，其采用了release语义。<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/" target="_blank" rel="external">Acquire与Release语义</a>必须成对使用,用来确保共享值能从一个线程中传播到另一个线程中<sup>注3</sup>。</p>
-<h3 id="如果不实用Acquire和Release语义"><a href="#如果不实用Acquire和Release语义" class="headerlink" title="如果不实用Acquire和Release语义"></a>如果不实用Acquire和Release语义</h3><p>现在，我们不限定任何的正确执行顺序约束，使用C++11重写上述实验,只要在两处都放置’memory_order_relaxed`。这意味着C++ 11编译器不会强制任何特殊的内存执行顺序，<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">任何类型的乱序</a>都是允许的。</p>
+<h3 id="如果不使用Acquire和Release语义"><a href="#如果不使用Acquire和Release语义" class="headerlink" title="如果不使用Acquire和Release语义"></a>如果不使用Acquire和Release语义</h3><p>现在，我们不限定任何的正确执行顺序约束，使用C++11重写上述实验,只要在两处都放置’memory_order_relaxed`。这意味着C++ 11编译器不会强制任何特殊的内存执行顺序，<a href="http://www.chongh.wiki/blog/2016/09/19/sourcecontrol/" target="_blank" rel="external">任何类型的乱序</a>都是允许的。</p>
 <pre><code>void IncrementSharedValue10000000Times(RandomDelay&amp; randomDelay)
 {
 int count = 0;
