@@ -64,7 +64,7 @@
 <link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Virtualization,KVM,QEMU,Security,Binary,Libvmi,Volatility," />
+  <meta name="keywords" content="Security,Binary,Virtualization,KVM,QEMU,Libvmi,Volatility," />
 
 
 
@@ -103,7 +103,7 @@
 0x03 虚拟机监控Libvmi
 0x04 虚拟机监控Volatility">
 <meta property="og:image" content="http://7xppf1.com1.z0.glb.clouddn.com/libvirt-internal.png">
-<meta property="og:updated_time" content="2016-06-14T14:22:13.000Z">
+<meta property="og:updated_time" content="2016-12-20T02:31:21.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="A Comprehensive Virtualized Enviroment Setup and Analysis">
 <meta name="twitter:description" content="本文介绍了一套完整的虚拟化环境搭建与分析工作，包括虚拟机的创建，虚拟机的管理，以及虚拟机的监控。可根据自身需要阅读相关内容。
@@ -386,7 +386,7 @@ modprobe kvm_intel
 kvm                   415549  1 kvm_intel
 </code></pre><p>qemu-kvm安装成功后会在/your-confiure-location/bin/qemu-system-x86_64等可执行文件。</p>
 <p>安装完KVM/QEMU后，创建虚拟机的时候，虚拟机的网络方式是比较关心的问题，KVM/QEMU有两种网络配置方式。</p>
-<p>其一，用户模式（User Networking): 即NAT方式，也是默认的网络模式。让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机。既然无法访问客户机，那宿主机与客户机该如何传输文件呢？默认的，客户机得到的ip空间为10.0.2.0/24，宿主机提供了ip为10.0.2.2的地址让虚拟机访问。可以ssh到宿主机(10.0.2.2)，用scp来拷贝文件。</p>
+<p>其一，用户模式（User Networking): 即NAT方式，也是默认的网络模式。让虚拟机访问主机、互联网或本地网络上的资源的简单方法，但是不能从网络或其他的客户机访问客户机。既然无法访问客户机，那宿主机与客户机该如何传输文件呢？默认的，客户机得到的ip空间为10.0.2.0/24，宿主机提供了ip为10.0.2.2的地址让虚拟机访问。可以ssh到宿主机(10.0.2.2)，用scp来拷贝文件。如: 在虚拟机中执行，scp root@10.0.2.2:/home/xxx/xxx.txt .<br> 或者，ssh登录到宿主机，再scp . root@10.0.2.0:/home/xxx</p>
 <p>其二，桥接模式（Bridge Networking): 这种模式允许客户机就像一台独立的主机一样拥有网络。这种方式要比用户网络复杂一些，但是设置好后客户机与互联网，客户机与主机之间的通信都很容易。桥接网络需要网卡支持，一般的有线网卡都支持，绝大部分的无线网卡都不支持。</p>
 <p>NAT方式是KVM/QEMU提供的默认方式，要设置桥接模式，首先在宿主机上安装桥接相关的包，</p>
 <pre><code>apt-get install bridge-utils. 
@@ -596,15 +596,15 @@ pip install distorm3
       
         <div class="post-tags">
           
+            <a href="/tags/Security/" rel="tag">#Security</a>
+          
+            <a href="/tags/Binary/" rel="tag">#Binary</a>
+          
             <a href="/tags/Virtualization/" rel="tag">#Virtualization</a>
           
             <a href="/tags/KVM/" rel="tag">#KVM</a>
           
             <a href="/tags/QEMU/" rel="tag">#QEMU</a>
-          
-            <a href="/tags/Security/" rel="tag">#Security</a>
-          
-            <a href="/tags/Binary/" rel="tag">#Binary</a>
           
             <a href="/tags/Libvmi/" rel="tag">#Libvmi</a>
           
@@ -707,7 +707,7 @@ pip install distorm3
           
             <div class="site-state-item site-state-categories">
               <a href="/categories">
-                <span class="site-state-item-count">13</span>
+                <span class="site-state-item-count">12</span>
                 <span class="site-state-item-name">分类</span>
               </a>
             </div>
