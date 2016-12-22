@@ -16,6 +16,8 @@
 <meta name="twitter:description">
   
   
+    <link rel="icon" href="/favicon.png">
+  
   <link href="/webfonts/ptserif/main.css" rel='stylesheet' type='text/css'>
   <link href="/webfonts/source-code-pro/main.css" rel="stylesheet" type="text/css">
   <link rel="stylesheet" href="/css/style.css">
@@ -31,6 +33,18 @@
       <a id="main-nav-toggle" class="nav-icon" href="javascript:;"></a>
       <a id="logo" class="logo" href="/"></a>
       <nav id="main-nav">
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/categories">Categories</a>
+        
+          <a class="main-nav-link" href="/tags">Tags</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+          <a class="main-nav-link" href="/atom.xml">Rss</a>
         
       </nav>
       <nav id="sub-nav">
@@ -67,13 +81,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/12/08/weakly-ordered-cpu/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>在这一系列博客中，我已经详细讨论了<a href="">lock-free编程</a>相关的一系列主题，比如<a href="http://www.chongh.wiki/blog/2016/09/28/acquireandrelease/">Acquire与Release语义</a>以及<a href="http://www.chongh.wiki/blog/2016/10/30/memorymodel/">Weakly-ordered CPUs</a>. 我已经努力尝试把这些主题讲的更加地通俗易懂，但大家都知道，Talk is cheap.没有言语比具体的例子更能把问题说清楚。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/12/08/weakly-ordered-cpu/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -116,13 +134,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/10/30/memorymodel/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/10/30/memorymodel/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>存在许多种内存乱序<sup>注1</sup>，但它们发生的频率并不都是一样的。这取决于你的目标处理器以及开发工具链。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/10/30/memorymodel/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -165,13 +187,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/09/28/acquireandrelease/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/09/28/acquireandrelease/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>一般来说，在无锁(lock-free)<sup>注1</sup>编程中，线程有两种方法来操作共享内存：线程间相互竞争一种资源或者相互合作传递消息。Acquire与Release语义对后者来说很关键：保证在线程间可靠地相互传递消息。实际上，我大胆地猜测，不正确的或者缺乏Acquire与Release语义是导致无锁编程产生错误的最常见 原因。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/09/28/acquireandrelease/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -214,13 +240,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/09/19/sourcecontrol/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/09/19/sourcecontrol/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/09/19/sourcecontrol/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -263,13 +293,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/09/05/compilermemoryreorder/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>写在最前：掌握并发编程非常困难，除了多读书、多写代码、多调试、多和朋友讨论，别无他法。<br>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/09/05/compilermemoryreorder/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -312,13 +346,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/08/11/memoryreorder/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/08/11/memoryreorder/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>当用C/C++编写无锁代码时，一定要小心谨慎，以保证正确的内存顺序。不然的话，会发生一些诡异的事情。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/08/11/memoryreorder/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -361,13 +399,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/07/11/recursivemutex/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/07/11/recursivemutex/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>当你要为多CPU核优化代码时，有时需要去实现一种新的同步原语。<br>虽然我不鼓励这么做，但这样的情况却时常发生。就在你打算开始这么做的时候，可能会先找一些例子来参考。这种过程无疑是搬起石头砸自己的脚，但却能减少你再次犯这种错误的次数，这样起码还能给你留下几个脚趾头继续走路。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/07/11/recursivemutex/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -410,13 +452,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/07/04/writelightweightmutex/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>在<a href="http://www.chongh.wiki/blog/2016/06/27/lightweightmutex/">上一篇</a>文章中，我强调了使用轻量级锁的重要性。还提到如果你能容忍某些弊端的话，自己动手实现轻量级锁也是可以的。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/07/04/writelightweightmutex/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -459,13 +505,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/06/27/lightweightmutex/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/06/27/lightweightmutex/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>在多线程编程中，我们会常说起锁(也叫互斥量)。但锁仅仅是个概念，要真正用上锁，需要将其实现。事实证明，存在许多实现锁的方法，不同方法在性能表现上却有很大的区别。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/06/27/lightweightmutex/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -508,13 +558,17 @@
 
       
         <div class="article-comment-link-wrap">
-          <a href="http://yoursite.com/blog/2016/06/20/mutexperf/#ds-thread" class="article-comment-link">Comments</a>
+          <a href="http://yoursite.com/blog/2016/06/20/mutexperf/#ds-thread" class="article-comment-link">Комментарии</a>
         </div>
       
     </div>
     <div class="article-entry" itemprop="articleBody">
       
         <p>锁(也叫互斥量)在很长一段时间都被误解了。1986年，在Usenet的有关于多线程的讨论会中，Matthew Dillon说过：大多数人都对锁有个误解，认为锁是慢的。25年后，这种误解似乎在某一时间段又突然出现了。</p>
+        
+          <p class="article-more-link">
+            <a href="/blog/2016/06/20/mutexperf/#more">Read More</a>
+          </p>
         
       
     </div>
@@ -533,7 +587,7 @@
 
     
       <nav id="page-nav">
-        <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
+        <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Далее &raquo;</a>
       </nav>
     </section>
     <footer id="footer">
@@ -549,6 +603,9 @@
 
 <script src="/js/jquery.min.js"></script>
 
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
 
 
 <script src="/js/script.js"></script>
