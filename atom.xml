@@ -1022,9 +1022,9 @@ sudo update-alternatives --config gcc
       <category term="operating-system" scheme="http://yoursite.com/categories/operating-system/"/>
     
     
-      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
-    
       <category term="Instrumentation" scheme="http://yoursite.com/tags/Instrumentation/"/>
+    
+      <category term="Virtualization" scheme="http://yoursite.com/tags/Virtualization/"/>
     
       <category term="System" scheme="http://yoursite.com/tags/System/"/>
     
