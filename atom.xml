@@ -303,7 +303,7 @@ while (count &lt; 10000000)
     <link href="http://yoursite.com/blog/2016/09/19/sourcecontrol/"/>
     <id>http://yoursite.com/blog/2016/09/19/sourcecontrol/</id>
     <published>2016-09-19T05:16:57.000Z</published>
-    <updated>2016-11-01T16:59:36.000Z</updated>
+    <updated>2017-02-09T13:03:19.000Z</updated>
     
     <content type="html"><![CDATA[<p>当你使用资源控制时, 那么你肯定在试图理解内存执行顺序。不管你是用C,C++还是其它语言，这都是在编写无锁(lock-free)代码时需要重点考虑的。</p>
 <a id="more"></a>
@@ -328,7 +328,7 @@ while (count &lt; 10000000)
 <p>现在，如果每个程序员分别独自工作在仓库的隔离区域，他们都不会意识到背后的传播过程，甚至不知道另一个程序员的存在。这就好比两个正在运行的独立的单线程。在这个例子中，内存执行顺序的<a href="http://www.chongh.wiki/blog/2016/09/05/compilermemoryreorder/" target="_blank" rel="external">基本原则</a>还是能保证的。</p>
 <p>当程序员开始在仓库的同一区域工作时，上述的类比就显得更加重要了。再来看看<a href="http://www.chongh.wiki/blog/2016/08/11/memoryreorder/" target="_blank" rel="external">之前文章</a>中的例子。 X和Y是全局变量，且都初始化为0.</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol3.png" alt=""></p>
-<p>把X和Y想象成是Larry的工作副本，Sergey的工作副本以及仓库本身中的文件。Larry将1写入工作副本中的X，sergey同时将1写进工作副本中的Y。 如果每个程序员在查询工作副本中的其它文件之前，两者的修改都能传回到仓库中，最后都会得到这个结果：r1 = 0 和 r2 = 0<br>。起初可能会觉得这种结果与直觉上相反，但对照下资源控制的类比方式，就觉得很明显了。<br><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol4.png" alt=""></p>
+<p>把X和Y想象成是Larry的工作副本，Sergey的工作副本以及仓库本身中的文件。Larry将1写入工作副本中的X，sergey同时将1写进工作副本中的Y。 在查找其它副本之前, 如果修改没有回传到创库.(leak to..) 而且 没有返回到对应的副本(back). 结果就是r1=0 r2=0<br>。起初可能会觉得这种结果与直觉上相反，但对照下资源控制的类比方式，就觉得很明显了。<br><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol4.png" alt=""></p>
 <h2 id="Memory-Barrier类型"><a href="#Memory-Barrier类型" class="headerlink" title="Memory Barrier类型"></a>Memory Barrier类型</h2><p>幸运的是，Larry和Sergey不完全是对这种随机性与在背后发生的不可预计的传播无能为力。他们能发出一些特殊指令，调用fence指令来充当memory barrier）. 对于上述类比方式，可以定义四种memory barrier，因此也对应四种fence指令。每种memory barrier都是以阻止不同类型的内存乱序能力来命名，比如，StoreLoad用来阻止写读类型。</p>
 <p><img src="http://7xppf1.com1.z0.glb.clouddn.com/sourcecontrol5.png" alt=""></p>
 <p>就像<a href="http://g.oswego.edu/dl/jmm/cookbook.html" target="_blank" rel="external">Doug</a>指出的那样，这四种类型可能并不能很好的对应真实CPU中的特殊指令。大部分情况，一条CPU指令能充当上述几种memory barrier类型的组合，可能也会附带一些其它的效果。不论在什么情况下，只要你以资源控制的类比方式理解了这四种memory barrier，就容易理解真实CPU中的大多数的指令与一些高级编程语言的构造。</p>
