@@ -1,0 +1,590 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content=",," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="High Performance" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="我第一次听说Paxos算法是在2004年，">
+<meta name="keywords">
+<meta property="og:type" content="website">
+<meta property="og:title" content="深入理解Paxos算法(一)">
+<meta property="og:url" content="http://yoursite.com/post.bak/2016-04-28-understand-paxos1.html">
+<meta property="og:site_name" content="High Performance">
+<meta property="og:description" content="我第一次听说Paxos算法是在2004年，">
+<meta property="og:updated_time" content="2017-08-21T12:09:59.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入理解Paxos算法(一)">
+<meta name="twitter:description" content="我第一次听说Paxos算法是在2004年，">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title>
+  
+
+  
+    深入理解Paxos算法(一) | High Performance
+  
+</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left  ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">High Performance</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+      <p>我第一次听说Paxos算法是在2004年，</p>
+<a id="more"></a>
+<p>那时我还在读本科，修了一门分布式算法的课程。在过去的几年里，Paxos算法被提出过许多次，主要应用在可扩展存储系统中的健壮性实施上。我对此总是充满敬畏之心，“简直难以置信的复杂，Paxos算法，当心!”. 我决定再读一遍原论文，试着去解释Paxos算法做了些什么以及又是如何做到的。简单地说，Paxos解决了这样一个问题：可恢复的复制不断增长的条目。</p>
+<pre><code>[译者注：这里的条目一般指日志中`ITEM`]
+</code></pre><h3 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h3><p>Paxos算法原论文中介绍了Paxos（帕克西）岛屿中的立法议会问题。帕克西岛议会在一个音响效果非常差劲的大厅举办，所以立法者们都通过信差传递信息。由于立法者和信差都是商人的缘故，他们随时都有可能离开议会房间。每位立法者能提议一个法案，如果法案通过，就会被记录在每位立法者的笔记本上。每个通过的法案都有一个索引，e.g.，”137:每吨橄榄收取5%的税”，也就是说#137法案的内容是：“每吨橄榄收取5%的税”。</p>
+<pre><code>[译者注：商人都忙着挣钱呢,而立法者和信差离开会导致信息丢失或信息重复传递等问题]
+</code></pre><p>在帕克西岛屿议会的故事中隐藏着一个分布式日志(有时称作日报)能将节点失效以及信息丢失(立法者和信差离开房间)恢复的理论。 Paxos算法处理请求并将信息添加到日志中(法案通过).每个添加到日志中的法案都由一个有序增长的索引来标识(e.g.，条目A的索引是1，条目B的索引是2)。所有参与Paxos算法的节点最终都会知道每个条目都伴随一个索引被添加到每个立法者手上的笔记本中。</p>
+<p>考虑一个可能的API形式化问题来理解Paxos算法：</p>
+<ul>
+<li>添加条目—将条目添加到日志中，然后返回每个条目的索引，如果条目没有添加，则返回-1</li>
+<li>获取索引—返回指定索引的条目，如果条目没有添加，则返回空值(<code>NULL</code>)</li>
+<li>每个条目在添加时都会触发一个事件，此事件将条目以及条目的索引作为参数</li>
+</ul>
+<p>注意，获取索引的操作是最终一致性的(<a href="https://distributedthoughts.wordpress.com/2013/09/08/eventual-consistency/" target="_blank" rel="external">eventually consistent</a>). 如果能加入其它的一些逻辑，这种一致性能做到强一致性。Paxos算法最终一致性的实现在 <a href="https://cloud.google.com/appengine/docs/java/gettingstarted/using-datastore-objectify" target="_blank" rel="external">Google’s HRD</a> 可以找到。</p>
+<h3 id="为什么选择Paxos算法？"><a href="#为什么选择Paxos算法？" class="headerlink" title="为什么选择Paxos算法？"></a>为什么选择Paxos算法？</h3><p>如果你想以容错的方式存储数据。根据<a href="https://en.wikipedia.org/wiki/Split-brain_(computing" target="_blank" rel="external">split brain</a>原理，你会发现两个节点是不够的。因此，你要有三个节点： X, Y 和 Z。当你在读/写操作时，如果其中一个节点宕机了，要保证操作能正常地继续执行。我们你正在写数据的时候， X 宕机了， Y 和 Z 都在处理这个请求。但与此同时，当Y和Z正要提交数据的时候，维护人员把 X 修复好了，然而又 不小心把 Y 弄宕机了。这时，被写入的值是什么状态? 还在那吗？ 我们能确保 X 和 Z 能同步并获取正确的值吗？ 在这种情况下，可能性非常小。 更何况当你的系统大到有许多节点许多信息要传递的时候，可能性都是非常小的。</p>
+<p>这就是Paxos算法出现的缘由。Paxos算法<br>确保在数据被写入过程中，不管发生什么，最终都会将数据发送给所有的节点。<br>并且，不同的节点不会觉得某些索引中含有不同的值(e.g.，日志记录冲突)。这种保证称之为Paxos算法的”安全性”(safety)。</p>
+<pre><code>[译者注：这里的值指被添加的条目]
+</code></pre><p>Paxos算法假设：</p>
+<ul>
+<li>消息被发送后内容不会修改</li>
+<li>节点能按照指定的算法运行(e.g.，没有bug,没有黑客)</li>
+<li>节点有永久性存储器（e.g.，当节点崩溃时，存储器的内容不会丢失)</li>
+</ul>
+<p>尽管以下情况可能会发生，Paxos还是能保证“安全性”：</p>
+<ul>
+<li>信息丢失或者被复制</li>
+<li>一些(甚至所有)节点宕机或者重启</li>
+</ul>
+<p>然而，当系统真的处于“疯狂”状态时（所有的节点都宕机了), Paxos算法并不能保证读/写操作能正常进行。如果有足够的(多数)节点能恢复并能正常通信，Paxos算法就能确保读/写操作都能正确执行，这种性质称为”存活性”(liveness).</p>
+<p>总结这一章节，在多数节点都能正常相互通信时，Paxos算法总能在保证“安全性”的同时，又能保证“存活性”. （这也就是Paxos需要三个节点来支撑一次失效，五个节点来支撑两次失效的缘故).</p>
+<pre><code>[译者注：具体可以参考split brain原理，至少需要多少个节点才能支撑失效]
+</code></pre><h3 id="Paxos算法-一个菜鸟的视角"><a href="#Paxos算法-一个菜鸟的视角" class="headerlink" title="Paxos算法: 一个菜鸟的视角"></a>Paxos算法: 一个菜鸟的视角</h3><p>Paxos算法有三个主要模块: a) 决策者选举协议–决定哪个节点具有决策权， b) 单个日志条目共识协议(称为Synod算法)来保证”安全性“ 以及 c) 管理日志协议，e.g. 哪个条目应该被添加</p>
+<p>一个菜鸟对这个算法的理解是这样的：</p>
+<ul>
+<li>每 X 秒运行一次决策者选举算法，以便让所有节点知道哪个节点拥有决策权</li>
+<li>当决策者收到一个添加日志条目 <code>ITEM</code> 的请求时，会选取下一个闲置的索引<code>INDEX</code>，然后达成一个共识：将<code>（INDEX,ITEM)</code>添加到日志中</li>
+<li>在达成这样一个共识的过程中：将<code>（INDEX,ITEM)</code>添加到日志中。所有的节点都会参与投票，最终同意条目 <code>ITEM</code> 被添加到日志中并赋予索引 <code>INDEX</code></li>
+</ul>
+<pre><code>[译者注:这里说的投票过程在Synod算法中实现]
+</code></pre><p>决策者选举算法意味着选取的具有决策权的节点是每个节点都认可同意的。目前有许多决策者选举算法，Paxos算法并没有具体化该使用哪一个。一个简单的方法就是将每个节点都赋予一个ID，然后将它们的ID广播给每个节点，拥有最高值ID的节点就是决策者。</p>
+<p>存在这种可能性(e.g.,在网络分离时)会选出不止一个决策者。举个例子，在上述的决策者选举算法中，如果拥有最高ID值的节点的信息丢失了，最高和第二高ID的节点就有可能都被选举为决策者。在有不止一个决策者的情况下，Synod算法(共识算法)也能确保为每个日志记录最多选出一个条目。我会在下一篇博客中详细讲述Synod算法。现在就已经能足够说明，当两个不同决策者在<code>(INDEX,ITEM1)</code>和<code>(INDEX,ITEM2)</code>上要达成共识时---同一个索引中含有两个不同的条目---其中只有一个能被选出。</p>
+<p>我们先离开一会，来聊一聊管理日志的问题：假定只有一个决策者，当决策者被选出时，它会检查整个日志然后看看里面是否有“空隙”（hole). e.g.，日志记录中的值还没有达成共识。举个例子，索引“17”中有个空隙. 这时，决策者会运行Synod算法，初始化(17,EMPTY). 根据Synod算法，它要么是在<code>(17,EMPTY)</code>,要么是在<code>(17,VALUE)</code>（VALUE是之前提案的值)上达成共识。无论如何，两种情况下，空隙都填满了。</p>
+<p>当不再有空隙时，决策者就可以开始处理写操作了：对于每个添加条目到日志中的请求，决策者会运行共识算法，初始化<code>(INDEX,ITEM)</code>,<code>INDEX</code>是下一个可用的索引，<code>ITEM</code> 是要被写进日志的条目。注意，决策者能同时添加多个条目到日志中，也包括添加条目来填补空隙的情况。<br>只要存在唯一的决策者，条目都会被添加到日志中。如果有多个决策者，这个算法可能会停止，直到下一次只出现一个决策者的时候。</p>
+<h3 id="长话短说"><a href="#长话短说" class="headerlink" title="长话短说"></a>长话短说</h3><p>总结一下，Paxos算法是一种能将分布式日志抽象化的高度可恢复性算法。算法假设某些机制能选举出一个决策者。尽管存在没有决策者或者有多个决策者的情况，Paxos算法都能确保分布式日志中的数据一致性。通常情况下确实只有一个决策者，这时数据都能被及时的插入到日志中并能保持一致性。</p>
+<p>Paxos算法的可恢复性能容忍节点失效，重启，信息丢失以及网络分离。当超过一半的节点能正常通信时，Paxos算法就能正常的执行写操作。当少于一半的节点能正常通信时(可能因为宕机，也可能因为网络分离),Paxos也能保证一致性，但数据不一定能写入（e.g. 没有写成功)。</p>
+<p>总之，如果相比 AP, 你更喜欢 CP 的话 (<a href="https://en.wikipedia.org/wiki/CAP_theorem" target="_blank" rel="external">CAP定理</a> ），Paxos算法对你来说是一个非常好的解决方案。</p>
+<h3 id="Related-papers"><a href="#Related-papers" class="headerlink" title="Related papers"></a>Related papers</h3><p><a href="http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf?tduid=\(dd7507dc5da69f82517b43f2b4f6d1a2\" target="_blank" rel="external">The Part-Time Parliament, Lamport</a>(256380)(2459594)(TnL5HPStwNw-LkhlnevB9dnJgzTQ4MgOnQ)())<br><a href="http://www.cs.utexas.edu/users/lorenzo/corsi/cs380d/past/03F/notes/paxos-simple.pdf" target="_blank" rel="external">Paxos Made Simple, Lamport</a></p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>注:[特别重要]</p>
+<p>[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助</p>
+<p>译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]</p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>译文，仅为学习使用，未经博主同意，请勿转载。</p>
+<p>原文地址：<a href="https://distributedthoughts.wordpress.com/2013/09/22/understanding-paxos-part-1/" target="_blank" rel="external">https://distributedthoughts.wordpress.com/2013/09/22/understanding-paxos-part-1/</a></p>
+<p>本文地址： <a href="http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/</a></p>
+<p>译者 [ 新浪微博: <a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a>]，感谢好友<a href="http://weibo.com/u/2765244861?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@睡眼惺忪的小叶先生</a>与我几次激烈的讨论，对本文很有帮助</p>
+
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="post.bak/2016-04-28-understand-paxos1.html"
+           data-title="深入理解Paxos算法(一)" data-url="http://yoursite.com/post.bak/2016-04-28-understand-paxos1.html">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel  sidebar-panel-active ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Obsolete" />
+          <p class="site-author-name" itemprop="name">Obsolete</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">11</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2017</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Obsolete</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

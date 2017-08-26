@@ -1,0 +1,595 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"/>
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content=",," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="High Performance" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/images/avatar.jpg?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
+<meta name="keywords">
+<meta property="og:type" content="website">
+<meta property="og:title" content="深入理解Paxos算法(二)">
+<meta property="og:url" content="http://yoursite.com/post.bak/2016-04-28-understand-paxos2.html">
+<meta property="og:site_name" content="High Performance">
+<meta property="og:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
+<meta property="og:updated_time" content="2017-08-21T12:09:59.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入理解Paxos算法(二)">
+<meta name="twitter:description" content="上一篇博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"hide"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+  <title>
+  
+
+  
+    深入理解Paxos算法(二) | High Performance
+  
+</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="http://s6.cnzz.com/stat.php?id=1257556336&web_id=1257556336" type="text/javascript"></script>
+  </div>
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left  ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">High Performance</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br />
+            
+            技术
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-life">
+          <a href="/life" rel="section">
+            
+              <i class="menu-item-icon fa fa-question-circle fa-fw"></i> <br />
+            
+            生活
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-user fa-fw"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-heartbeat fa-fw"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+    
+      <p><a href="http://www.chongh.wiki/blog/2016/04/28/understand-paxos1/" target="_blank" rel="external">上一篇</a>博客对Paxos算法做了大致的介绍。快速回顾一下： Paxos算法实现了一种可恢复的分布式日志，日志可以添加条目并为每个条目分配一个独有(递增)的索引。算法由三部分组成：决策者选举算法，条目共识算法(称为Synod算法)和管理日志协议。在这篇博客中，我会详细讨论Synod算法。</p>
+<a id="more"></a>
+<h3 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h3><p>在开始之前做以下声明：这篇博客描述的Paxos算法是来源于原论文中的最基本的形式。当然也有许多基于Paxos的相关优化算法，但我觉得聊那些优化算法会扰乱我们对整个算法的理解。</p>
+<p>Synod算法是Paxos的核心。针对每个日志索引，Synod算法都会单独执行一次，e.g.，为获取日志中的第一个条目执行一次，又为日志中的第二个条目执行第二次，如此往复。多个Synod算法可以并发执行而不会相互影响各自的结果。在下文中，术语”Synod实例”表示： 针对一个特定的索引，Synod算法的一次执行。</p>
+<p>简单地说，Synod算法是一种共识算法，用来保证：a)所有参与的节点都有相同的输出值，b)输出值是由一些节点投票选出的结果(而不是任意的值),c)如果能保证足够的节点正常地相互通信，算法最终能正常结束。算法这样构造，以便让所有的节点都能提案一个值，其动态性保证了那些提案的值中只有一个能被选出。然而，也存在这种情况：不同的时间不同的节点会提案出许多值，导致算法永远在执行，无法结束。为了加快Synod算法的结束，我们可以限制节点只能把值提案给Paxos算法的决策者。当只有一个决策者的时候，算法很快就能结束运行了。当然，算法的建立之初是为了能支持任意节点都能提案值，尽管会有多个决策者，达成共识的输出值最终仍然会保持一致性。</p>
+<pre><code>[译者注]:这里说的提案出许多值是因为没有决策者或者多于一个决策者导致的
+</code></pre><h3 id="Synod算法：一个菜鸟的视角"><a href="#Synod算法：一个菜鸟的视角" class="headerlink" title="Synod算法：一个菜鸟的视角"></a>Synod算法：一个菜鸟的视角</h3><p>简单起见，我们暂时不考虑每个日志索引都会执行一次Synod算法，只考虑单个Synod实例。</p>
+<pre><code>[译者注]：这里只用日志中的一个索引选取条目过程来理解Synod算法，多个条目的添加原理一样
+</code></pre><p>Synod算法由许多的选举组成，每一次选举又分为三个阶段:初始化，投票和决议。每次选举都分配唯一的编号，由其中一个节点管理。选举的编号代表它们的优先级，比如，编号为5的选举A优先级要低于编号为6的选举B.</p>
+<p>我们来谈谈每个阶段的细节。在初始化阶段，管理节点通知所有的节点会有一次新的选举，然后等着它们同意参与选举过程(而它们此时可能正在参与一个优先级更高的选举，而拒绝参与优先级更低的那一个)。补充一下，就是说如果它们同意成为此次选举的参与者，同时也会告诉管理节点哪个值应该被选出作为选举的结果。只要管理节点收到信息说节点的多数派都会参与此次选举，就开始投票阶段。接着管理节点从那些参与者发送的提案中选出一个值又发送给参与者。在还没有开始下一个新的选举之前，每个参与节点又根据这次的提案值进行投票。如果有更新的选举开始，参与节点就忽略更老的选举中的信息。最后，在决议阶段，如果管理节点收到所有参与节点的绿灯信号，管理节点就告知所有节点系统中已经决策出的值。</p>
+<pre><code>[译者注：这里的绿灯信号表示同意]
+</code></pre><p>在更详细地讨论之前，我们先分析一下上文中的描述。存在这种可能性：不同的选举过程并发执行（注意:这里和Synod算法的并发执行有所区别)，因此，其中一个选举过程可能永远不会结束。e.g.，如果一个选举已经开始了，到了投票阶段的时候另一个选举也开始了，第一个选举过程就有可能永远不会完成决议阶段，因为这时所有的参与节点都会参与更新的一次选举而在投票阶段就会忽略更老的选举。</p>
+<pre><code>[译者注：Synod算法的并发执行针对的对象是日志中不同的索引，选举的并发对象是单个索引的多次选举过程]
+</code></pre><p>根据以上所述，每次选举过程都有一个管理节点。不管哪个节点在管理选举(只要是单个节点管理每次选举)，算法都能保证一致性. 然而，为了保证最后能做出决议，只有Paxos算法中的决策者才能担任选举过程的管理节点。只要Paxos算法中只存在一个决策者，那在选举过程中就只有一个管理者管理所有的选举，因此每次只有一个单独的选举过程,这样一来，Synod算法很快就能终止。如果有多个节点认为自己就是Paxos算法中的决策者，那就会初始化许多的选举过程。然而，Synod算法要么不终止，要么终止的时候所有的节点都会在同一个值上达成共识，这样一致性就永远能保证。</p>
+<pre><code>[译者注：这里指的管理者只有一个的情况下，是指管理者不会同时初始化多次选举带来算法无法终止的问题，并非管理者至始至终只能发起一次选举过程；当然也存在多个管理者的情况，这样Synod算法就无法终止了，但是一致性仍然能保证]
+</code></pre><p>在讨论细节之前再说最后一点，考虑以下情形：选举X正在执行，在投票阶段，节点U发送了提案值。在选举X结束之前，一个新的选举开始了，节点U被要求参与这次新的选举。只要新的选举比选举X优先级更高，节点U就会参与新的选举。我们假设新的选举过程比选举X更早结束。这样一来，新选举中的管理者就会做出一次决议。如果这时选举X还没有结束，那在它结束的时候做出的决议就必须和这次新的选举决议出的值保持一致，不然就会违背Synod算法的一致性原则了。下面我们来探讨一些机制，来确保所有的选举都会产生相同的决议值，目前我们就当这个性质已经能保证了，在我看来这才是Synod算法的核心。</p>
+<h3 id="Synod算法：深入研究"><a href="#Synod算法：深入研究" class="headerlink" title="Synod算法：深入研究"></a>Synod算法：深入研究</h3><p>通过前面的章节对Synod算法选举过程中的三个阶段有个大致的了解：<br>初始化，投票和决议。现在我想详细说说这三个阶段，以及每个阶段的状态。每个节点有四个变量： <code>lastTried</code>, <code>maxBallot</code>, <code>prevVote</code>和<code>prevBallot</code>. 对于任意节点X，<code>lastTried</code>指X最近一次要试着初始化的选举编号，<code>maxBallot</code>指X参与过的最高优先级的选举编号,<code>preVote</code>指X在<code>prevBallot</code>选举过程中投票的值，而<code>preBallot</code>指X上一次参与投票的选举编号。</p>
+<pre><code>[译者注：`lastTried`中的选举还没有开始，而`preBallot`已经参与投票了]
+</code></pre><p><code>lastTried</code>和<code>maxBallot</code>背后的考虑很简单–为了确保管理节点和参与节点讨论的是同一个选举。管理节点标记<code>lastTried</code>的选举编号并验证它接收到的每一条信息，以确保它标记的的确就是这次选举。另一方面，每个参与的节点标记它参与过的最高优先级的选举编号<code>maxBallot</code>，只有它们正在参与此次选举的时候才会给管理节点回复信息。正常执行过程中，一旦一个选举被初始化，所有节点的<code>maxBallot</code>变量值都和管理者的<code>lastTried</code>变量值相等。</p>
+<pre><code>[译者注：这里会有点绕，在看下文之前一定要先理解这几个变量的含义]
+</code></pre><p>为了简洁，下面的描述假设当管理者给每个节点发送信息的时候，也会给自己发送信息(当然也会回复自己)；这样对整个算法的描述和理解会变得更加简单。</p>
+<ul>
+<li><p>初始化</p>
+<ul>
+<li>管理节点为选举选取编号n，<code>n&gt;lastTried</code>， 接着设置<code>lastTried=n</code>,然后给每个节点发送<code>NextBallot(n)</code>.</li>
+<li>在收到<code>NextBallot(n),n&gt; maxBallot</code>信息后，接收节点给管理节点发送<code>LastVote(n,prevVote,prevBallot）</code>,接着设置<code>maxBallot=n</code>.</li>
+</ul>
+</li>
+<li><p>投票</p>
+<ul>
+<li>当管理节点从X节点收到信息 <code>LastVote(n,v,m), n==lastTried</code><br>时，X节点就被当做此次选举的参与者。如果节点的多数派都参与了此次选举，管理节点就可以继续进行投票过程，将<code>BeginBallot(n,Value）</code>发送给所有参与此次选举的节点。<br>所有参与节点发送的<code>LastVote(n,v,m)</code>选取最大m中的v值赋给<code>Value</code>（简单地说，每个参与节点将它在最近一次选举过程中的投票发送给管理者，然后管理者从它们的投票中选取最近的一次投票结果)</li>
+<li>在接收到信息<code>BeginBallot(n,v),n==maxBallot</code>后，接收的节点将<code>prevVote</code>设置成<code>v</code>，<code>preBallot</code>设置成<code>n</code>，然后回应信息<code>Voted(n)</code>给管理节点。</li>
+</ul>
+</li>
+<li>决议<ul>
+<li>如果管理节点从每个参与节点中收到<code>Voted(n)</code>， <code>n=lastTried</code>信息后，管理节点就当作选举过程已经完成，Synod算法达成共识后的输出值就是投票过程中选出的<code>Value</code>。控管理节点会把<code>Success(Value）</code>信息发送给所有的节点。（注意，这时没必要把选举编号也发送出去，下文会解释原因)</li>
+<li>在收到任意一个节点发送的<code>Success(v</code>）信息后，接收的节点都会认为这次选举结束了，并同意输出值<code>v</code>。</li>
+</ul>
+</li>
+</ul>
+<pre><code>[译者注: 这里的`Value`被赋值`v`]
+</code></pre><p>对上面的算法作一些评论。首先，要注意在有些情况下，一个节点没必要回复信息(比如，当节点收到<code>NextBallot(n)</code>信息的时候，那是它正在参与一次优先级更高的选举). 这时，管理节点在选举过程中可能会遇到”阻塞”，而不会继续执行。因为另外一个节点正在执行一次新的选举，新的选举就会替代阻塞的选举执行。为了让算法更加健壮，管理节点可以设置一个计时器，如果在设置的时间范围内没有收到足够的信息，管理节点就会放弃当前选举，而开始一个更新的选举。当两个不同的管理节点分别在对方的选举结束前开始一次新的选举，计时器机制可能会引起竞争条件。这种情况可以将Paxos算法中的决策者设定为一个来解决，这时Synod算法中也就只有一个管理者了。</p>
+<p>第二，选举编号在算法中起着至关重要的作用。如果不同的管理者都开始一个有相同编号的选举，算法就会崩溃。为了解决这个问题，每个管理者必须拥有唯一编号的数字集合，这种机制可以用下面的方法来保证：比如说，假定在Paxos算法中只有三个节点，给第一个节点分配1，4，7…第二个节点分配2，5，8…第三个节点分配3，6，9…</p>
+<p>最后，一旦<code>V</code>的值被投票选出(有足够的节点在投票过程中为V投票)，如果此时另一个选举也结束了，算法总能保证此选举也以相同的V值结束(下文会描述这个性质). 因此，一旦<code>V</code>的值被选出，就可以发送给所有的节点。我们就没必要考虑这个值来自哪次选举。这就是为什么<code>SUCCESS</code>信息不必含有选举编号</p>
+<h3 id="为什么这样有效？"><a href="#为什么这样有效？" class="headerlink" title="为什么这样有效？"></a>为什么这样有效？</h3><p>在Synod算法中最需要论证的点在于它不会产生两个不同的输出。只有当一个值在投票阶段有足够的节点给它投票时这个值才会被输出。因此，我们需要阐述在投票阶段有足够的节点给V投票时，任何其它的选举当进行到决议阶段的时候都会选举V作为输出。</p>
+<p>考虑Synod算法的一次执行，对于选举编号<code>n</code>，V值在投票过程中被投票，之后选举进行到决议阶段。要进行到决议阶就要求所有参与节点已经投票，并且要进行到投票阶段需要节点的多数派都会在初始化阶段给出回应。这样，我们可以得到一个结论，节点的多数派都把票投给了值V。 也就是说，在投票阶段，它们都将<code>prevVote</code>的值设置成<code>V</code>，<code>prevBallot</code>设置成<code>n</code>.</p>
+<p>现在，再考虑下面的选举过程(m是大于n的最小的那个编号），选举通过了初始化阶段，开始进行投票阶段。它必须收到节点的多数派对<code>LastVote</code>信息的响应。如果我们有两个集合，每个集合含有超过一半的节点，那就肯定有一个节点同时都在这两个集合内。因此，会有一个节点在选举n中把票投给了<code>V</code>值，并在选举<code>m</code>中发送了信息<code>LastVote(m,V,n)</code>。由于<code>V</code>的值来源于最高优先级的选举结果(回忆一下，n是具有最高优先级的选举，而不是<code>m</code>）， 这个值是选举<code>m</code>中的管理者选出来的，因此，如果有任何节点更新了<code>prevVote</code>的值，都会把这个值赋给<code>V</code>。如果接下来的的选举都结束了，结束的时候都会选举出与选举<code>n</code>中相同的值，比如说，结束的时候输出值为<code>V</code>。</p>
+<pre><code>[译者注：n是在上一次选举的最高优先级编号,虽然m&gt;n，这时m已经是下一次选举了]
+</code></pre><h3 id="长话短说"><a href="#长话短说" class="headerlink" title="长话短说"></a>长话短说</h3><p>好吧，说了一大堆。我们来回忆一下。Paxos算法为分布式日志的每条索引都运行一个Synod实例。比如，对第一条索引运行一次Synod实例，对第二条索引又运行另一个实例，以此类推。Synod算法通过选举决议最终都会在同一个值上达成共识。每次选举有一个管理节点，管理节点试着让节点的多数派都能同意参与到选举过程中，然后收集参与节点的提案值，选出其中一个值让节点投票。如果管理节点收到足够的投票，这个值就会被选出作为Synod算法的输出值。</p>
+<p>Synod的算法关键在于要确保多个选举过程能并发执行的同时，输出的值还能保证一致性。比如，如果选举X和选举Y同时进行，选举X结束的时候输出V值，那么在选举Y结束的时候，也必须输出V值。</p>
+<p>由于多个选举可能并发执行的原因，可能会带来相互干扰的问题，进而引发竞争条件导致选举的无限循环。然而，如果Paxos算法只有一个决策者，那在Synod的每个实例中，只有一个节点管理选举过程时，就能确保每次执行一次选举，进而能避免竞争条件和无限循环。</p>
+<h3 id="Related-papers"><a href="#Related-papers" class="headerlink" title="Related papers"></a>Related papers</h3><p><a href="http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf?tduid=(dd7507dc5da69f82517b43f2b4f6d1a2" target="_blank" rel="external">The Part-Time Parliament, Lamport</a>(256380)(2459594)(TnL5HPStwNw-cQHoEYux98mXntql_ljIyw)())</p>
+<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>注：[特别重要]</p>
+<p>[Lamport论文中对Paxos算法的描述是出了名的晦涩难懂，也由于Paxos算法本身的复杂性，以至于让Lamport每次都得解释好几遍。故挑选几篇对Paxos算法描述比较浅显易懂的博客翻译，希望能对大家理解Paxos算法有那么一点点帮助</p>
+<p>译者水平有限，对Paxos算法的理解离Lamport大师本人要表达的精髓还相差甚远，如有不对的地方，请一定要指出]</p>
+<p>本文遵守Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0)</p>
+<p>译文，仅为学习使用，未经博主同意，请勿转载。</p>
+<p>原文地址：<a href="https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/" target="_blank" rel="external">https://distributedthoughts.wordpress.com/2013/09/30/understanding-paxos-part-2/</a></p>
+<p>本文地址： <a href="http://www.chongh.wiki/blog/2016/04/28/understand-paxos2/" target="_blank" rel="external">http://www.chongh.wiki/blog/2016/04/28/understand-paxos2/</a></p>
+<p>译者 [ 新浪微博: <a href="http://weibo.com/2767520802/profile?rightmod=1&amp;wvr=6&amp;mod=personinfo" target="_blank" rel="external">@diting0x</a>] ，感谢好友<a href="http://weibo.com/u/2765244861?topnav=1&amp;wvr=6&amp;topsug=1&amp;is_all=1" target="_blank" rel="external">@睡眼惺忪的小叶先生</a>与我几次激烈的讨论，对本文很有帮助</p>
+
+    
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="post.bak/2016-04-28-understand-paxos2.html"
+           data-title="深入理解Paxos算法(二)" data-url="http://yoursite.com/post.bak/2016-04-28-understand-paxos2.html">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel  sidebar-panel-active ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Obsolete" />
+          <p class="site-author-name" itemprop="name">Obsolete</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/">
+              <span class="site-state-item-count">11</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/diting0x" target="_blank" title="微博">
+                  
+                  微博
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element">
+            <div class="links-of-blogroll-title">
+              <i class="fa fa-globe fa-fw"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://yebangyu.org/" title="yebangyu" target="_blank">yebangyu</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://xiaolili.net/" title="wangli" target="_blank">wangli</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://skykewei.top/" title="dukewei" target="_blank">dukewei</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://armsword.com/" title="armsword" target="_blank">armsword</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+      </section>
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2015 - 
+  <span itemprop="copyrightYear">2017</span>
+  <!--chonghua 注释--> 
+ <!--span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span-->
+  <span class="author" itemprop="copyrightHolder">Obsolete</span>
+</div>
+
+
+<!--chonghua注释掉了-->
+
+<!--div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div-->
+
+<!--div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div-->
+
+        
+
+        
+      </div>
+    </footer>
+
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chongh"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+  
+
+
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
